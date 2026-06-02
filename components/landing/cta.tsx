@@ -7,7 +7,7 @@ export function CtaSection() {
         <Mascot width={120} height={120} className="pl-cta-mark" />
         <h2>You already know who you want to be.</h2>
         <div className="pl-cta-row">
-          <a className="pl-btn pl-btn-primary pl-btn-lg" href="#">
+          <a className="pl-btn pl-btn-primary pl-btn-lg" href="/onboarding">
             Start building identity <span className="pl-arr">→</span>
           </a>
           <a className="pl-btn pl-btn-ghost pl-btn-lg" href="#">

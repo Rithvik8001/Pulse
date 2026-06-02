@@ -15,10 +15,10 @@ export function Nav() {
           <a href="#">Changelog</a>
         </div>
         <div className="pl-nav-right">
-          <a className="pl-signin" href="#">
+          <a className="pl-signin" href="/app/today">
             Sign in
           </a>
-          <a className="pl-btn pl-btn-primary" href="#">
+          <a className="pl-btn pl-btn-primary" href="/onboarding">
             Start free <span className="pl-arr">→</span>
           </a>
         </div>

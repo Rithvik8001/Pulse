@@ -7,69 +7,103 @@ export function MascotDefs() {
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id="m-body" cx="36%" cy="26%" r="82%">
-          <stop offset="0%" stopColor="#5a5a5e" />
-          <stop offset="38%" stopColor="#2c2c30" />
-          <stop offset="78%" stopColor="#141416" />
-          <stop offset="100%" stopColor="#070708" />
-        </radialGradient>
-        <radialGradient id="m-shine" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0.85" />
-          <stop offset="60%" stopColor="#fff" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="m-rim" x1="0" y1="1" x2="1" y2="0.2">
-          <stop offset="0%" stopColor="#6f6f74" stopOpacity="0.9" />
-          <stop offset="55%" stopColor="#6f6f74" stopOpacity="0" />
+        <linearGradient id="m-arrow-face" x1="52" y1="34" x2="148" y2="166">
+          <stop offset="0%" stopColor="#ffcf8a" />
+          <stop offset="32%" stopColor="#ff9a2f" />
+          <stop offset="72%" stopColor="#f26a13" />
+          <stop offset="100%" stopColor="#b83b08" />
         </linearGradient>
+        <linearGradient id="m-arrow-side" x1="114" y1="46" x2="166" y2="160">
+          <stop offset="0%" stopColor="#ff9b2f" />
+          <stop offset="54%" stopColor="#d84f0b" />
+          <stop offset="100%" stopColor="#7b2205" />
+        </linearGradient>
+        <linearGradient id="m-arrow-edge" x1="58" y1="62" x2="141" y2="145">
+          <stop offset="0%" stopColor="#fff1c8" />
+          <stop offset="40%" stopColor="#ffb454" />
+          <stop offset="100%" stopColor="#d7500b" />
+        </linearGradient>
+        <radialGradient id="m-arrow-glow" cx="38%" cy="22%" r="78%">
+          <stop offset="0%" stopColor="#fff7d6" stopOpacity="0.92" />
+          <stop offset="36%" stopColor="#ffd184" stopOpacity="0.36" />
+          <stop offset="100%" stopColor="#ff7a14" stopOpacity="0" />
+        </radialGradient>
         <filter id="m-soft" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="6" />
+        </filter>
+        <filter
+          id="m-arrow-shadow"
+          x="-30%"
+          y="-30%"
+          width="160%"
+          height="170%"
+        >
+          <feDropShadow
+            dx="0"
+            dy="13"
+            stdDeviation="10"
+            floodColor="#9a2d03"
+            floodOpacity="0.32"
+          />
+          <feDropShadow
+            dx="-6"
+            dy="8"
+            stdDeviation="5"
+            floodColor="#000"
+            floodOpacity="0.16"
+          />
         </filter>
         <symbol id="mascot" viewBox="0 0 200 200">
           <ellipse
             cx="100"
-            cy="190"
-            rx="56"
-            ry="11"
-            fill="#0a0a0a"
-            opacity="0.15"
+            cy="174"
+            rx="58"
+            ry="14"
+            fill="#8a2a04"
+            opacity="0.16"
             filter="url(#m-soft)"
           />
-          <ellipse cx="80" cy="182" rx="14" ry="8" fill="#16171a" />
-          <ellipse cx="120" cy="182" rx="14" ry="8" fill="#16171a" />
           <path
-            d="M100 22 C 148 22 176 60 176 108 C 176 156 146 176 100 176 C 54 176 24 156 24 108 C 24 60 52 22 100 22 Z"
-            fill="url(#m-body)"
+            d="M40 95 L112 28 C119 22 131 26 134 36 L163 135 C166 146 156 156 145 152 L46 123 C36 120 32 102 40 95 Z"
+            fill="url(#m-arrow-side)"
+            filter="url(#m-arrow-shadow)"
           />
           <path
-            d="M100 22 C 148 22 176 60 176 108 C 176 156 146 176 100 176 C 54 176 24 156 24 108 C 24 60 52 22 100 22 Z"
+            d="M43 95 L120 37 C126 33 134 37 135 44 L151 132 C153 142 143 150 134 146 L45 121 C36 118 34 101 43 95 Z"
+            fill="url(#m-arrow-face)"
+          />
+          <path
+            d="M120 37 L151 132 L105 111 Z"
+            fill="url(#m-arrow-side)"
+            opacity="0.9"
+          />
+          <path d="M43 95 L151 132 L88 118 Z" fill="#ff8a1b" opacity="0.5" />
+          <path
+            d="M51 96 L121 48 L100 104 L145 132 L57 115 Z"
+            fill="url(#m-arrow-edge)"
+            opacity="0.88"
+          />
+          <path
+            d="M64 91 L113 59 L99 95 L130 116 L72 106 Z"
+            fill="url(#m-arrow-glow)"
+            opacity="0.95"
+          />
+          <path
+            d="M52 96 L121 47"
             fill="none"
-            stroke="url(#m-rim)"
-            strokeWidth="3"
-            opacity="0.5"
-          />
-          <ellipse
-            cx="72"
-            cy="70"
-            rx="38"
-            ry="48"
-            fill="url(#m-shine)"
-            transform="rotate(-20 72 70)"
-          />
-          <circle cx="60" cy="50" r="6" fill="#fff" opacity="0.9" />
-          <ellipse cx="76" cy="100" rx="12" ry="14.5" fill="#f6f6f7" />
-          <ellipse cx="124" cy="100" rx="12" ry="14.5" fill="#f6f6f7" />
-          <circle cx="78" cy="103" r="5.6" fill="#101012" />
-          <circle cx="126" cy="103" r="5.6" fill="#101012" />
-          <circle cx="75.6" cy="99.4" r="2" fill="#fff" />
-          <circle cx="123.6" cy="99.4" r="2" fill="#fff" />
-          <path
-            d="M73 130 H86 l5 -12 6 24 6 -20 5 8 H127"
-            fill="none"
-            stroke="#f0f0f1"
-            strokeWidth="4"
+            stroke="#fff5d5"
             strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeWidth="5"
+            opacity="0.62"
+          />
+          <circle cx="83" cy="88" r="5" fill="#fff8dd" opacity="0.92" />
+          <circle cx="70" cy="96" r="2.4" fill="#fff8dd" opacity="0.7" />
+          <path
+            d="M41 95 L112 28 C119 22 131 26 134 36 L163 135 C166 146 156 156 145 152 L46 123 C36 120 32 102 40 95 Z"
+            fill="none"
+            stroke="#7d2605"
+            strokeOpacity="0.16"
+            strokeWidth="3"
           />
         </symbol>
       </defs>

@@ -1,5 +1,4 @@
 import "./landing.css";
-import { MascotDefs } from "@/components/landing/mascot-defs";
 import { Nav } from "@/components/landing/nav";
 import { Hero } from "@/components/landing/hero";
 import { LogoCloud } from "@/components/landing/logo-cloud";
@@ -15,7 +14,6 @@ import { RevealInit } from "@/components/landing/reveal-init";
 export default function LandingPage() {
   return (
     <div className="pl-root">
-      <MascotDefs />
       <Nav />
       <Hero />
       <LogoCloud />

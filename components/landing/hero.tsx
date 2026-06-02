@@ -31,7 +31,7 @@ export function Hero() {
           and watch the proof of identity stack up.
         </p>
         <div className="pl-hero-cta" data-reveal>
-          <a className="pl-btn pl-btn-primary pl-btn-lg" href="#">
+          <a className="pl-btn pl-btn-primary pl-btn-lg" href="/onboarding">
             Start building free <span className="pl-arr">→</span>
           </a>
           <a className="pl-btn pl-btn-ghost pl-btn-lg" href="#how">
