@@ -16,9 +16,8 @@ export function Nav() {
         <div className="pl-nav-right">
           <a
             className="pl-signin"
-            href="#"
-            aria-label="Sign in coming soon"
-            title="Sign in is coming soon"
+            href="/sign-in"
+            aria-label="Sign in"
           >
             Sign in
           </a>
