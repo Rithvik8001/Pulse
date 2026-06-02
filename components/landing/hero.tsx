@@ -1,6 +1,6 @@
 import { Mascot } from "./mascot";
 
-function generateHabitGrid(seed = 7, cells = 130): number[] {
+function generateQuestGrid(seed = 7, cells = 130): number[] {
   let s = seed;
   const rnd = () => {
     s = (s * 9301 + 49297) % 233280;
@@ -12,7 +12,7 @@ function generateHabitGrid(seed = 7, cells = 130): number[] {
   });
 }
 
-const GRID_DATA = generateHabitGrid();
+const GRID_DATA = generateQuestGrid();
 
 export function Hero() {
   return (
@@ -22,24 +22,24 @@ export function Hero() {
         <h1 className="pl-hero-title" data-reveal>
           <span className="pl-b">Stop counting streaks.</span>
           <span className="pl-b">
-            Start building <em>identity.</em>
+            Start building <em>character.</em>
           </span>
         </h1>
         <p className="pl-hero-sub" data-reveal>
-          Pulse is the AI habit tracker that cares less about the number on a
+          Pulse is the playful habit tracker that cares less about the number on a
           calendar and more about who you&apos;re becoming. Show up, reflect,
-          and watch the proof of identity stack up.
+          and watch your proof stack up.
         </p>
         <div className="pl-hero-cta" data-reveal>
           <a className="pl-btn pl-btn-primary pl-btn-lg" href="/onboarding">
-            Start building free <span className="pl-arr">→</span>
+            Try the demo <span className="pl-arr">→</span>
           </a>
           <a className="pl-btn pl-btn-ghost pl-btn-lg" href="#how">
             See how it works
           </a>
         </div>
         <p className="pl-hero-note" data-reveal>
-          No credit card · Free forever for one identity
+          No account needed · Nothing saved in the demo
         </p>
 
         <div className="pl-stage" data-reveal>
@@ -77,16 +77,16 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Variant C: habit grid */}
+          {/* Variant C: quest grid */}
           <div className="pl-stage-variant" data-variant="grid">
             <div className="pl-grid-card">
               <div className="pl-gc-top">
                 <span className="pl-t">
-                  Identity: &ldquo;I am a writer&rdquo;
+                  Character: &ldquo;I am a writer&rdquo;
                 </span>
-                <span className="pl-s">214 days of proof</span>
+                <span className="pl-s">214 proof days</span>
               </div>
-              <div className="pl-habit-grid">
+              <div className="pl-quest-grid">
                 {GRID_DATA.map((level, i) => (
                   <i key={i} {...(level > 0 ? { "data-l": level } : {})} />
                 ))}

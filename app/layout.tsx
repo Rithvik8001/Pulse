@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Pulse",
-  description: "Stop Counting Streaks. Start Building Identity.",
+  description: "Stop Counting Streaks. Start Building Character.",
 };
 
 export default function RootLayout({

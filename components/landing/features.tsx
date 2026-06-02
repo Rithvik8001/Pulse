@@ -8,7 +8,7 @@ export function Features() {
             The system
           </span>
           <h2 className="pl-h-sec">
-            Habits are votes. Pulse counts who they make you.
+            Quests become proof. Pulse shows who they make you.
           </h2>
           <p className="pl-sub">
             Every check-in is evidence for the person you&apos;re deciding to
@@ -29,10 +29,10 @@ export function Features() {
                 <circle cx="12" cy="12" r="3.4" />
               </svg>
             </div>
-            <h3>Identity-based goals</h3>
+            <h3>Character-based goals</h3>
             <p>
               Don&apos;t set a target — declare a person. &ldquo;I am a
-              runner.&rdquo; Pulse anchors every habit to the identity it
+              runner.&rdquo; Pulse anchors every quest to the character it
               reinforces.
             </p>
           </div>
@@ -48,10 +48,10 @@ export function Features() {
                 <circle cx="12" cy="13" r="2.6" />
               </svg>
             </div>
-            <h3>AI reflections</h3>
+            <h3>Journal magic</h3>
             <p>
-              A short prompt after each check-in. Pulse reads your patterns and
-              reflects them back — not as numbers, but as narrative.
+              A short note after each check-in. Pulse turns your patterns into
+              story, not just numbers.
             </p>
           </div>
           <div className="pl-feat">
@@ -69,7 +69,7 @@ export function Features() {
             <h3>Adaptive nudges</h3>
             <p>
               Miss a day? No guilt-trip streak reset. Pulse adjusts, reframes
-              the slip, and nudges you toward the next vote.
+              the slip, and nudges you toward the next quest.
             </p>
           </div>
         </div>
@@ -91,7 +91,7 @@ export function Features() {
             <p>
               Your dashboard isn&apos;t a fragile streak counter waiting to
               break. It&apos;s a growing archive of proof — every entry a
-              permanent vote for who you are.
+              permanent win for who you are.
             </p>
           </div>
           <div className="pl-feat">
@@ -105,10 +105,10 @@ export function Features() {
                 <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" />
               </svg>
             </div>
-            <h3>Weekly identity recap</h3>
+            <h3>Weekly story</h3>
             <p>
               Every Sunday, Pulse writes you a letter: what you proved, where
-              you drifted, and the single vote that matters most this week.
+              you drifted, and the single quest that matters most this week.
             </p>
           </div>
         </div>
@@ -117,13 +117,13 @@ export function Features() {
           <div className="pl-stat">
             <div className="pl-n">3×</div>
             <div className="pl-l">
-              more likely to keep a habit when it&apos;s tied to identity*
+              more likely to keep a quest when it&apos;s tied to character*
             </div>
           </div>
           <div className="pl-stat">
             <div className="pl-n">~40s</div>
             <div className="pl-l">
-              average daily check-in, reflection included
+              average daily check-in, journal note included
             </div>
           </div>
           <div className="pl-stat">

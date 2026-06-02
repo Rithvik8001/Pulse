@@ -10,7 +10,7 @@ export function Footer() {
             Pulse
           </a>
           <p>
-            The AI habit tracker for people who&apos;d rather build an identity
+            The playful habit tracker for people who&apos;d rather build character
             than chase a streak.
           </p>
           <div className="pl-foot-social">
@@ -35,7 +35,7 @@ export function Footer() {
           <h5>Explore</h5>
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
-          <a href="#insights">AI reflections</a>
+          <a href="#insights">Journal magic</a>
           <a href="#dashboard">Dashboard</a>
         </nav>
       </div>

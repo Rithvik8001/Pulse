@@ -1,45 +1,68 @@
 "use client";
 
 const STORAGE_KEY = "pulse:mvp-state";
-const VERSION = 1;
+const VERSION = 2;
 
-export type DailyEntryStatus = "done" | "skipped";
+export type CheckInStatus = "win" | "pass";
 
-export type Identity = {
+export type Character = {
   id: string;
   name: string;
   createdAt: string;
 };
 
-export type Habit = {
+export type Quest = {
   id: string;
-  identityId: string;
+  characterId: string;
   name: string;
   createdAt: string;
   archivedAt?: string;
 };
 
-export type DailyEntry = {
+export type CheckIn = {
   id: string;
-  habitId: string;
+  questId: string;
   date: string;
-  status: DailyEntryStatus;
-  reflection?: string;
+  status: CheckInStatus;
+  journalNote?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type PulseState = {
   version: number;
-  identity: Identity | null;
-  habits: Habit[];
-  entries: DailyEntry[];
+  character: Character | null;
+  quests: Quest[];
+  checkIns: CheckIn[];
 };
 
 export type ProofStats = {
-  daysOfProof: number;
-  votesThisWeek: number;
-  identityStrength: number;
+  proofDays: number;
+  winsThisWeek: number;
+  momentum: number;
+};
+
+type LegacyDailyEntryStatus = "done" | "skipped";
+
+type LegacyPulseState = {
+  version?: number;
+  identity?: Character | null;
+  habits?: Array<{
+    id: string;
+    identityId: string;
+    name: string;
+    createdAt: string;
+    archivedAt?: string;
+  }>;
+  entries?: Array<{
+    id: string;
+    habitId: string;
+    date: string;
+    status: LegacyDailyEntryStatus;
+    reflection?: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 };
 
 export function getTodayKey(date = new Date()) {
@@ -53,9 +76,9 @@ export function getTodayKey(date = new Date()) {
 export function getEmptyState(): PulseState {
   return {
     version: VERSION,
-    identity: null,
-    habits: [],
-    entries: [],
+    character: null,
+    quests: [],
+    checkIns: [],
   };
 }
 
@@ -71,14 +94,7 @@ export function readPulseState(): PulseState {
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<PulseState>;
-
-    return {
-      version: VERSION,
-      identity: parsed.identity ?? null,
-      habits: Array.isArray(parsed.habits) ? parsed.habits : [],
-      entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-    };
+    return normalizePulseState(JSON.parse(raw));
   } catch {
     return getEmptyState();
   }
@@ -96,62 +112,62 @@ export function clearPulseState() {
 }
 
 export function createInitialPulseState(
-  identityName: string,
-  habitNames: string[],
+  characterName: string,
+  questNames: string[],
 ): PulseState {
   const now = new Date().toISOString();
-  const identity: Identity = {
-    id: createId("identity"),
-    name: normalizeIdentityName(identityName),
+  const character: Character = {
+    id: createId("character"),
+    name: normalizeCharacterName(characterName),
     createdAt: now,
   };
 
   return {
     version: VERSION,
-    identity,
-    habits: habitNames
+    character,
+    quests: questNames
       .map((name) => name.trim())
       .filter(Boolean)
       .slice(0, 3)
       .map((name) => ({
-        id: createId("habit"),
-        identityId: identity.id,
+        id: createId("quest"),
+        characterId: character.id,
         name,
         createdAt: now,
       })),
-    entries: [],
+    checkIns: [],
   };
 }
 
-export function setHabitStatus(
+export function setQuestStatus(
   state: PulseState,
-  habitId: string,
-  status: DailyEntryStatus,
-  reflection = "",
+  questId: string,
+  status: CheckInStatus,
+  journalNote = "",
   date = getTodayKey(),
 ): PulseState {
   const now = new Date().toISOString();
-  const nextEntries = [...state.entries];
-  const existingIndex = nextEntries.findIndex(
-    (entry) => entry.habitId === habitId && entry.date === date,
+  const nextCheckIns = [...state.checkIns];
+  const existingIndex = nextCheckIns.findIndex(
+    (checkIn) => checkIn.questId === questId && checkIn.date === date,
   );
-  const existingReflection =
-    getDailyReflection(state, date) || reflection.trim() || undefined;
+  const existingJournalNote =
+    getDailyJournalNote(state, date) || journalNote.trim() || undefined;
 
   if (existingIndex >= 0) {
-    nextEntries[existingIndex] = {
-      ...nextEntries[existingIndex],
+    nextCheckIns[existingIndex] = {
+      ...nextCheckIns[existingIndex],
       status,
-      reflection: existingReflection,
+      journalNote: existingJournalNote,
       updatedAt: now,
     };
   } else {
-    nextEntries.push({
-      id: createId("entry"),
-      habitId,
+    nextCheckIns.push({
+      id: createId("check_in"),
+      questId,
       date,
       status,
-      reflection: existingReflection,
+      journalNote: existingJournalNote,
       createdAt: now,
       updatedAt: now,
     });
@@ -159,40 +175,41 @@ export function setHabitStatus(
 
   return {
     ...state,
-    entries: syncDailyReflection(nextEntries, date, reflection),
+    checkIns: syncDailyJournalNote(nextCheckIns, date, journalNote),
   };
 }
 
-export function setDailyReflection(
+export function setDailyJournalNote(
   state: PulseState,
-  reflection: string,
+  journalNote: string,
   date = getTodayKey(),
 ): PulseState {
   return {
     ...state,
-    entries: syncDailyReflection(state.entries, date, reflection),
+    checkIns: syncDailyJournalNote(state.checkIns, date, journalNote),
   };
 }
 
-export function getDailyReflection(state: PulseState, date = getTodayKey()) {
+export function getDailyJournalNote(state: PulseState, date = getTodayKey()) {
   return (
-    state.entries.find(
-      (entry) => entry.date === date && typeof entry.reflection === "string",
-    )?.reflection ?? ""
+    state.checkIns.find(
+      (checkIn) =>
+        checkIn.date === date && typeof checkIn.journalNote === "string",
+    )?.journalNote ?? ""
   );
 }
 
-export function getActiveHabits(state: PulseState) {
-  return state.habits.filter((habit) => !habit.archivedAt);
+export function getActiveQuests(state: PulseState) {
+  return state.quests.filter((quest) => !quest.archivedAt);
 }
 
-export function getEntryForHabit(
+export function getCheckInForQuest(
   state: PulseState,
-  habitId: string,
+  questId: string,
   date = getTodayKey(),
 ) {
-  return state.entries.find(
-    (entry) => entry.habitId === habitId && entry.date === date,
+  return state.checkIns.find(
+    (checkIn) => checkIn.questId === questId && checkIn.date === date,
   );
 }
 
@@ -200,24 +217,22 @@ export function getProofStats(
   state: PulseState,
   date = new Date(),
 ): ProofStats {
-  const activeHabitIds = new Set(
-    getActiveHabits(state).map((habit) => habit.id),
+  const activeQuestIds = new Set(getActiveQuests(state).map((quest) => quest.id));
+  const winCheckIns = state.checkIns.filter(
+    (checkIn) => activeQuestIds.has(checkIn.questId) && checkIn.status === "win",
   );
-  const doneEntries = state.entries.filter(
-    (entry) => activeHabitIds.has(entry.habitId) && entry.status === "done",
-  );
-  const proofDates = new Set(doneEntries.map((entry) => entry.date));
+  const proofDates = new Set(winCheckIns.map((checkIn) => checkIn.date));
   const weekStart = getWeekStart(date);
   const weekEnd = getWeekEnd(date);
 
-  const votesThisWeek = doneEntries.filter((entry) => {
-    return entry.date >= weekStart && entry.date <= weekEnd;
+  const winsThisWeek = winCheckIns.filter((checkIn) => {
+    return checkIn.date >= weekStart && checkIn.date <= weekEnd;
   }).length;
 
   return {
-    daysOfProof: proofDates.size,
-    votesThisWeek,
-    identityStrength: getIdentityStrength(state, date),
+    proofDays: proofDates.size,
+    winsThisWeek,
+    momentum: getMomentum(state, date),
   };
 }
 
@@ -229,63 +244,101 @@ export function getRecentDates(count = 7, from = new Date()) {
   });
 }
 
-export function getRecentReflectionEntries(state: PulseState, limit = 4) {
+export function getRecentJournalNotes(state: PulseState, limit = 4) {
   const byDate = new Map<string, string>();
 
-  for (const entry of state.entries) {
-    if (entry.reflection?.trim()) {
-      byDate.set(entry.date, entry.reflection.trim());
+  for (const checkIn of state.checkIns) {
+    if (checkIn.journalNote?.trim()) {
+      byDate.set(checkIn.date, checkIn.journalNote.trim());
     }
   }
 
   return Array.from(byDate.entries())
     .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, limit)
-    .map(([date, reflection]) => ({ date, reflection }));
+    .map(([date, journalNote]) => ({ date, journalNote }));
 }
 
-function syncDailyReflection(
-  entries: DailyEntry[],
-  date: string,
-  reflection: string,
-) {
-  const trimmed = reflection.trim();
+function normalizePulseState(value: unknown): PulseState {
+  const parsed = value as Partial<PulseState> & LegacyPulseState;
 
-  return entries.map((entry) => {
-    if (entry.date !== date) {
-      return entry;
+  if ("character" in parsed || "quests" in parsed || "checkIns" in parsed) {
+    return {
+      version: VERSION,
+      character: parsed.character ?? null,
+      quests: Array.isArray(parsed.quests) ? parsed.quests : [],
+      checkIns: Array.isArray(parsed.checkIns) ? parsed.checkIns : [],
+    };
+  }
+
+  return {
+    version: VERSION,
+    character: parsed.identity ?? null,
+    quests: Array.isArray(parsed.habits)
+      ? parsed.habits.map((habit) => ({
+          id: renameLegacyId(habit.id, "habit", "quest"),
+          characterId: renameLegacyId(habit.identityId, "identity", "character"),
+          name: habit.name,
+          createdAt: habit.createdAt,
+          archivedAt: habit.archivedAt,
+        }))
+      : [],
+    checkIns: Array.isArray(parsed.entries)
+      ? parsed.entries.map((entry) => ({
+          id: renameLegacyId(entry.id, "entry", "check_in"),
+          questId: renameLegacyId(entry.habitId, "habit", "quest"),
+          date: entry.date,
+          status: entry.status === "done" ? "win" : "pass",
+          journalNote: entry.reflection,
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt,
+        }))
+      : [],
+  };
+}
+
+function syncDailyJournalNote(
+  checkIns: CheckIn[],
+  date: string,
+  journalNote: string,
+) {
+  const trimmed = journalNote.trim();
+
+  return checkIns.map((checkIn) => {
+    if (checkIn.date !== date) {
+      return checkIn;
     }
 
     return {
-      ...entry,
-      reflection: trimmed || undefined,
+      ...checkIn,
+      journalNote: trimmed || undefined,
       updatedAt: new Date().toISOString(),
     };
   });
 }
 
-function getIdentityStrength(state: PulseState, date: Date) {
-  const habits = getActiveHabits(state);
+function getMomentum(state: PulseState, date: Date) {
+  const quests = getActiveQuests(state);
 
-  if (habits.length === 0) {
+  if (quests.length === 0) {
     return 0;
   }
 
   const dates = getRecentDates(14, date);
-  const possibleVotes = dates.length * habits.length;
-  const doneVotes = state.entries.filter((entry) => {
+  const possibleWins = dates.length * quests.length;
+  const actualWins = state.checkIns.filter((checkIn) => {
     return (
-      dates.includes(entry.date) &&
-      entry.status === "done" &&
-      habits.some((habit) => habit.id === entry.habitId)
+      dates.includes(checkIn.date) &&
+      checkIn.status === "win" &&
+      quests.some((quest) => quest.id === checkIn.questId)
     );
   }).length;
 
-  if (possibleVotes === 0) {
+  if (possibleWins === 0) {
     return 0;
   }
 
-  return Math.min(100, Math.round((doneVotes / possibleVotes) * 100));
+  return Math.min(100, Math.round((actualWins / possibleWins) * 100));
 }
 
 function getWeekStart(date: Date) {
@@ -306,11 +359,15 @@ function getWeekEnd(date: Date) {
   return getTodayKey(weekEnd);
 }
 
-function normalizeIdentityName(name: string) {
+function normalizeCharacterName(name: string) {
   return name
     .trim()
     .replace(/^i\s+am\s+(an?\s+)?/i, "")
     .trim();
+}
+
+function renameLegacyId(id: string, from: string, to: string) {
+  return id.startsWith(`${from}_`) ? id.replace(`${from}_`, `${to}_`) : id;
 }
 
 function createId(prefix: string) {

@@ -9,7 +9,7 @@ export function AiShowcase() {
             <div className="pl-chat-card">
               <div className="pl-chat-top">
                 <Mascot width={26} height={26} className="pl-ava" />
-                <b>Pulse</b> · reflection
+                <b>Pulse</b> · journal
                 <span className="pl-live">
                   <span className="pl-pd" />
                   live
@@ -26,7 +26,7 @@ export function AiShowcase() {
                 </div>
                 <div className="pl-bubble pl-ai">
                   <span className="pl-k">PULSE</span>
-                  Done. I shrank Monday&apos;s goal, not your identity.
+                  Nice. I shrank Monday&apos;s quest, not your character.
                   You&apos;re still a writer — just one who&apos;s kind to their
                   Mondays. ✍︎
                 </div>
@@ -37,7 +37,7 @@ export function AiShowcase() {
           <div data-reveal>
             <span className="pl-eyebrow">
               <span className="pl-dot" />
-              AI that reflects
+              Journal magic
             </span>
             <h2 className="pl-h-sec" style={{ margin: "16px 0 14px" }}>
               It notices what you&apos;d miss.
@@ -71,11 +71,11 @@ export function AiShowcase() {
               <div className="pl-insight">
                 <div className="pl-ih">
                   <span className="pl-sq" />
-                  This week&apos;s one vote
+                  This week&apos;s one quest
                 </div>
                 <p>
                   &ldquo;If you do one thing: read 10 pages tonight. It&apos;s
-                  the smallest move with the biggest identity payoff.&rdquo;
+                  the smallest move with the biggest character payoff.&rdquo;
                 </p>
               </div>
             </div>

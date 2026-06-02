@@ -45,19 +45,19 @@ const navItems = [
     enabled: true,
   },
   {
-    label: "Identities",
+    label: "Character",
     href: "#",
     icon: Target01Icon,
     enabled: false,
   },
   {
-    label: "Reflections",
+    label: "Journal",
     href: "#",
     icon: NotebookIcon,
     enabled: false,
   },
   {
-    label: "Recaps",
+    label: "Story",
     href: "#",
     icon: Calendar03Icon,
     enabled: false,
@@ -147,7 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   size={15}
                   strokeWidth={1.7}
                 />
-                AI reflections
+                Journal magic
               </div>
               <p className="mt-1 text-xs/relaxed text-muted-foreground">
                 Notes are collected now. Pattern generation comes after auth.
@@ -161,7 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="min-w-0">
               <div className="text-sm font-medium tracking-tight">Today</div>
               <div className="text-xs text-muted-foreground">
-                A calm view of the proof you are building.
+                Check in on your quests and proof.
               </div>
             </div>
             <Button

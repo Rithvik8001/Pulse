@@ -12,14 +12,18 @@ export function Nav() {
           <a href="#features">Product</a>
           <a href="#how">How it works</a>
           <a href="#insights">AI</a>
-          <a href="#">Changelog</a>
         </div>
         <div className="pl-nav-right">
-          <a className="pl-signin" href="/app/today">
+          <a
+            className="pl-signin"
+            href="#"
+            aria-label="Sign in coming soon"
+            title="Sign in is coming soon"
+          >
             Sign in
           </a>
           <a className="pl-btn pl-btn-primary" href="/onboarding">
-            Start free <span className="pl-arr">→</span>
+            Try demo <span className="pl-arr">→</span>
           </a>
         </div>
       </div>
