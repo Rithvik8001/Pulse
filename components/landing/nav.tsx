@@ -6,7 +6,7 @@ export function Nav() {
       <div className="pl-nav-in">
         <a className="pl-brand" href="#" aria-label="Pulse">
           <Mascot width={30} height={30} />
-          Pulse
+          <span className="sr-only">Pulse</span>
         </a>
         <div className="pl-nav-links">
           <a href="#features">Product</a>

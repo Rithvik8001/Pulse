@@ -77,13 +77,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <TooltipProvider>
       <SidebarProvider>
         <Sidebar collapsible="offcanvas" className="border-r">
-          <SidebarHeader className="border-b px-3 py-3">
+          <SidebarHeader className="h-14 justify-center border-b px-3 py-0">
             <Link
               href="/"
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold tracking-tight"
+              aria-label="Pulse"
+              className="flex size-9 items-center justify-center rounded-md"
             >
               <Mascot width={28} height={28} />
-              <span className="sr-only">Pulse</span>
             </Link>
           </SidebarHeader>
           <SidebarContent>

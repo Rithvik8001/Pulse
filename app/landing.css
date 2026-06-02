@@ -8,8 +8,9 @@
   --pl-faint: #9b9ba1;
   --pl-border: #ececed;
   --pl-border-2: #e2e2e4;
-  --pl-accent: #0a0a0a;
-  --pl-accent-soft: rgba(10, 10, 10, 0.06);
+  --pl-accent: #c94a08;
+  --pl-accent-hover: #a93a05;
+  --pl-accent-soft: rgba(201, 74, 8, 0.13);
   --pl-maxw: 1140px;
   --pl-pad: 24px;
   --pl-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -40,7 +41,7 @@
   cursor: pointer;
 }
 .pl-root ::selection {
-  background: #0a0a0a;
+  background: var(--pl-accent);
   color: #fff;
 }
 .pl-root * {
@@ -147,11 +148,11 @@
   transform: translateY(1px);
 }
 .pl-btn-primary {
-  background: var(--pl-fg);
+  background: var(--pl-accent);
   color: #fff;
 }
 .pl-btn-primary:hover {
-  background: #34343b;
+  background: var(--pl-accent-hover);
 }
 .pl-btn-ghost {
   background: var(--pl-bg);

@@ -293,7 +293,7 @@ export function TodayDashboard() {
                 <span>Open</span>
                 <span className="size-2.5 rounded-[2px] border border-border bg-background" />
                 <span className="size-2.5 rounded-[2px] border border-muted-foreground/20 bg-muted-foreground/20" />
-                <span className="size-2.5 rounded-[2px] border border-foreground bg-foreground" />
+                <span className="size-2.5 rounded-[2px] border border-[var(--primary)] bg-[var(--primary)]" />
                 <span>Done</span>
               </div>
             </CardContent>
@@ -369,7 +369,8 @@ function StatusDot({ status }: { status?: DailyEntryStatus }) {
     <span
       className={cn(
         "size-2 rounded-full bg-muted ring-4 ring-muted/35",
-        status === "done" && "bg-foreground ring-foreground/10",
+        status === "done" &&
+          "bg-[var(--primary)] ring-[color-mix(in_oklch,var(--primary),transparent_82%)]",
         status === "skipped" && "bg-muted-foreground ring-muted",
       )}
     />
@@ -378,7 +379,7 @@ function StatusDot({ status }: { status?: DailyEntryStatus }) {
 
 function getContributionCellClass(status?: DailyEntryStatus) {
   if (status === "done") {
-    return "border-foreground bg-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]";
+    return "border-[var(--primary)] bg-[var(--primary)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]";
   }
 
   if (status === "skipped") {
