@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
@@ -28,12 +28,20 @@ export type RecentProof = DashboardCheckIn & {
   questTitle: string;
 };
 
+export type ProofHistoryDay = {
+  localDate: string;
+  winCount: number;
+  passCount: number;
+  totalCount: number;
+};
+
 export type DashboardData =
   | {
       isSetupComplete: false;
       character: null;
       quests: [];
       recentProof: [];
+      proofHistory: [];
     }
   | {
       isSetupComplete: true;
@@ -43,6 +51,7 @@ export type DashboardData =
       };
       quests: DashboardQuest[];
       recentProof: RecentProof[];
+      proofHistory: ProofHistoryDay[];
     };
 
 export async function requireUserId() {
@@ -74,44 +83,58 @@ export async function getDashboardData(): Promise<DashboardData> {
       character: null,
       quests: [],
       recentProof: [],
+      proofHistory: [],
     };
   }
 
-  const [userQuests, todayCheckIns, recentProofRows] = await Promise.all([
-    db
-    .select({
-      id: quests.id,
-      title: quests.title,
-      position: quests.position,
-    })
-    .from(quests)
-    .where(eq(quests.userId, userId))
-      .orderBy(asc(quests.position)),
-    db
-      .select({
-        id: checkIns.id,
-        questId: checkIns.questId,
-        localDate: checkIns.localDate,
-        outcome: checkIns.outcome,
-        note: checkIns.note,
-      })
-      .from(checkIns)
-      .where(and(eq(checkIns.userId, userId), eq(checkIns.localDate, today))),
-    db
-      .select({
-        id: checkIns.id,
-        questId: checkIns.questId,
-        localDate: checkIns.localDate,
-        outcome: checkIns.outcome,
-        note: checkIns.note,
-        questTitle: quests.title,
-      })
-      .from(checkIns)
-      .innerJoin(quests, eq(checkIns.questId, quests.id))
-      .where(eq(checkIns.userId, userId))
-      .orderBy(desc(checkIns.localDate), desc(checkIns.updatedAt))
-      .limit(6),
-  ]);
+  const baseDate = new Date();
+  const historyStartDate = getLocalDate(offsetDate(baseDate, -55));
+  const [userQuests, todayCheckIns, recentProofRows, proofHistoryRows] =
+    await Promise.all([
+      db
+        .select({
+          id: quests.id,
+          title: quests.title,
+          position: quests.position,
+        })
+        .from(quests)
+        .where(eq(quests.userId, userId))
+        .orderBy(asc(quests.position)),
+      db
+        .select({
+          id: checkIns.id,
+          questId: checkIns.questId,
+          localDate: checkIns.localDate,
+          outcome: checkIns.outcome,
+          note: checkIns.note,
+        })
+        .from(checkIns)
+        .where(and(eq(checkIns.userId, userId), eq(checkIns.localDate, today))),
+      db
+        .select({
+          id: checkIns.id,
+          questId: checkIns.questId,
+          localDate: checkIns.localDate,
+          outcome: checkIns.outcome,
+          note: checkIns.note,
+          questTitle: quests.title,
+        })
+        .from(checkIns)
+        .innerJoin(quests, eq(checkIns.questId, quests.id))
+        .where(eq(checkIns.userId, userId))
+        .orderBy(desc(checkIns.localDate), desc(checkIns.updatedAt))
+        .limit(6),
+      db
+        .select({
+          localDate: checkIns.localDate,
+          outcome: checkIns.outcome,
+        })
+        .from(checkIns)
+        .where(
+          and(eq(checkIns.userId, userId), gte(checkIns.localDate, historyStartDate)),
+        )
+        .orderBy(asc(checkIns.localDate)),
+    ]);
 
   const checkInByQuestId = new Map(
     todayCheckIns.map((checkIn) => [checkIn.questId, toDashboardCheckIn(checkIn)]),
@@ -128,6 +151,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       ...toDashboardCheckIn(row),
       questTitle: row.questTitle,
     })),
+    proofHistory: buildProofHistory(proofHistoryRows, baseDate),
   };
 }
 
@@ -153,4 +177,49 @@ function toDashboardCheckIn(checkIn: {
     outcome: checkIn.outcome === "pass" ? "pass" : "win",
     note: checkIn.note,
   };
+}
+
+function offsetDate(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+
+  return nextDate;
+}
+
+function buildProofHistory(
+  rows: {
+    localDate: string;
+    outcome: string;
+  }[],
+  baseDate: Date,
+): ProofHistoryDay[] {
+  const byDate = new Map<string, ProofHistoryDay>();
+
+  for (let index = 55; index >= 0; index -= 1) {
+    const localDate = getLocalDate(offsetDate(baseDate, -index));
+    byDate.set(localDate, {
+      localDate,
+      winCount: 0,
+      passCount: 0,
+      totalCount: 0,
+    });
+  }
+
+  for (const row of rows) {
+    const day = byDate.get(row.localDate);
+
+    if (!day) {
+      continue;
+    }
+
+    if (row.outcome === "pass") {
+      day.passCount += 1;
+    } else {
+      day.winCount += 1;
+    }
+
+    day.totalCount += 1;
+  }
+
+  return Array.from(byDate.values());
 }

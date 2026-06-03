@@ -19,7 +19,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getDashboardData } from "@/lib/pulse/dashboard";
+import {
+  getDashboardData,
+  type ProofHistoryDay,
+} from "@/lib/pulse/dashboard";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Dashboard · Pulse",
@@ -31,6 +35,52 @@ type Stat = {
   value: string;
   icon: ComponentProps<typeof HugeiconsIcon>["icon"];
 };
+
+function ProofHistoryGrid({ days }: { days: ProofHistoryDay[] }) {
+  const winDays = days.filter((day) => day.winCount > 0).length;
+
+  return (
+    <div className="rounded-md border bg-muted/25 p-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium">Proof history</div>
+          <div className="text-xs text-muted-foreground">
+            {winDays} win {winDays === 1 ? "day" : "days"} in the last 8 weeks
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <span>Less</span>
+          <span className="size-3 rounded-[3px] border bg-background" />
+          <span className="size-3 rounded-[3px] border border-primary/20 bg-primary/25" />
+          <span className="size-3 rounded-[3px] border border-primary/30 bg-primary/55" />
+          <span className="size-3 rounded-[3px] border border-primary bg-primary" />
+          <span>More</span>
+        </div>
+      </div>
+      <div className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1">
+        {days.map((day) => (
+          <span
+            key={day.localDate}
+            title={`${day.localDate}: ${day.winCount} Win${
+              day.winCount === 1 ? "" : "s"
+            }, ${day.passCount} Pass${day.passCount === 1 ? "" : "es"}`}
+            aria-label={`${day.localDate}: ${day.winCount} Wins, ${day.passCount} Passes`}
+            className={cn(
+              "size-3 rounded-[3px] border",
+              day.winCount >= 3 && "border-primary bg-primary",
+              day.winCount === 2 && "border-primary/30 bg-primary/55",
+              day.winCount === 1 && "border-primary/20 bg-primary/25",
+              day.winCount === 0 &&
+                day.passCount > 0 &&
+                "border-muted-foreground/30 bg-muted-foreground/25",
+              day.totalCount === 0 && "border-border bg-background",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function getStats(
   characterName: string,
@@ -96,15 +146,12 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
       <section className="grid gap-2">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-          Authenticated workspace
-        </p>
         <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
-          You are building {dashboard.character.name}.
+          Welcome back, {dashboard.character.name}.
         </h1>
         <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
-          Your first Quests are saved. The next product milestone turns these
-          into daily Check-ins, Proof, Journal entries, and Momentum.
+          Check in on today&apos;s Quests and turn each Win or Pass into visible
+          Proof.
         </p>
       </section>
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -147,7 +194,8 @@ export default async function DashboardPage() {
               Your latest Wins and Passes across saved Quests.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-3">
+            <ProofHistoryGrid days={dashboard.proofHistory} />
             {dashboard.recentProof.length > 0 ? (
               <div className="grid gap-2 text-sm">
                 {dashboard.recentProof.map((proof) => (
