@@ -1,11 +1,12 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
-import { characters, quests } from "@/lib/db/schema";
-import { requireUserId } from "@/lib/pulse/dashboard";
+import { characters, checkIns, quests } from "@/lib/db/schema";
+import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
 
 export type SetupFormState = {
   status: "idle" | "error";
@@ -23,6 +24,7 @@ export type SetupFormState = {
 const characterMaxLength = 48;
 const questMaxLength = 96;
 const questLimit = 3;
+const noteMaxLength = 240;
 
 function normalizeText(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
@@ -106,4 +108,103 @@ export async function createInitialSetup(
 
   revalidatePath("/dashboard");
   redirect("/dashboard");
+}
+
+export type CheckInFormState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+};
+
+export async function upsertCheckInAction(
+  _state: CheckInFormState,
+  formData: FormData,
+): Promise<CheckInFormState> {
+  const userId = await requireUserId();
+  const questId = normalizeText(formData.get("questId"));
+  const localDate = normalizeDate(formData.get("localDate"));
+  const outcome = normalizeOutcome(formData.get("outcome"));
+  const note = normalizeOptionalText(formData.get("note"));
+
+  if (!questId || !localDate || !outcome) {
+    return {
+      status: "error",
+      message: "Choose Win or Pass before saving proof.",
+    };
+  }
+
+  if (note && note.length > noteMaxLength) {
+    return {
+      status: "error",
+      message: `Keep proof notes under ${noteMaxLength} characters.`,
+    };
+  }
+
+  const [quest] = await db
+    .select({
+      id: quests.id,
+      characterId: quests.characterId,
+    })
+    .from(quests)
+    .where(and(eq(quests.id, questId), eq(quests.userId, userId)))
+    .limit(1);
+
+  if (!quest) {
+    return {
+      status: "error",
+      message: "We could not find that Quest for your account.",
+    };
+  }
+
+  await db
+    .insert(checkIns)
+    .values({
+      userId,
+      characterId: quest.characterId,
+      questId: quest.id,
+      localDate,
+      outcome,
+      note,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [checkIns.userId, checkIns.questId, checkIns.localDate],
+      set: {
+        outcome,
+        note,
+        updatedAt: new Date(),
+      },
+    });
+
+  revalidatePath("/dashboard");
+
+  return {
+    status: "success",
+    message: outcome === "win" ? "Win saved." : "Pass saved.",
+  };
+}
+
+function normalizeDate(value: FormDataEntryValue | null) {
+  const text = normalizeText(value);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return getLocalDate();
+  }
+
+  return text;
+}
+
+function normalizeOutcome(value: FormDataEntryValue | null) {
+  const text = normalizeText(value).toLowerCase();
+
+  if (text === "win" || text === "pass") {
+    return text;
+  }
+
+  return null;
+}
+
+function normalizeOptionalText(value: FormDataEntryValue | null) {
+  const text = normalizeText(value);
+
+  return text.length > 0 ? text : null;
 }

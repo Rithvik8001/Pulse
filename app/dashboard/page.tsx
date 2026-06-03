@@ -9,6 +9,7 @@ import {
   Target01Icon,
 } from "@hugeicons/core-free-icons";
 
+import { CheckInList } from "@/components/product/check-in-list";
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,7 +32,11 @@ type Stat = {
   icon: ComponentProps<typeof HugeiconsIcon>["icon"];
 };
 
-function getStats(characterName: string, questCount: number): Stat[] {
+function getStats(
+  characterName: string,
+  questCount: number,
+  checkInCount: number,
+): Stat[] {
   return [
     {
       label: "Character",
@@ -45,7 +50,7 @@ function getStats(characterName: string, questCount: number): Stat[] {
     },
     {
       label: "Check-ins",
-      value: "Ready",
+      value: `${checkInCount}/${questCount} today`,
       icon: CheckmarkCircle01Icon,
     },
     {
@@ -61,7 +66,7 @@ export default async function DashboardPage() {
 
   if (!dashboard.isSetupComplete) {
     return (
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
         <section className="grid gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Authenticated setup
@@ -75,14 +80,21 @@ export default async function DashboardPage() {
           </p>
         </section>
         <DashboardSetupForm />
-      </main>
+      </div>
     );
   }
 
-  const stats = getStats(dashboard.character.name, dashboard.quests.length);
+  const completedToday = dashboard.quests.filter(
+    (quest) => quest.todayCheckIn,
+  ).length;
+  const stats = getStats(
+    dashboard.character.name,
+    dashboard.quests.length,
+    completedToday,
+  );
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
       <section className="grid gap-2">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
           Authenticated workspace
@@ -116,38 +128,87 @@ export default async function DashboardPage() {
         <CardHeader>
           <CardTitle>Today</CardTitle>
           <CardDescription>
-            Choose one Quest worth proving today. Check-ins arrive next.
+            Mark each Quest as a Win or Pass and add a short proof note.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2 text-sm">
-            {dashboard.quests.map((quest) => (
-              <div
-                key={quest.id}
-                className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-3"
-              >
-                <span className="min-w-0 truncate">{quest.title}</span>
-                <Badge variant="outline" className="shrink-0">
-                  Quest {quest.position}
-                </Badge>
-              </div>
-            ))}
-          </div>
+          <CheckInList quests={dashboard.quests} />
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg">
-        <CardHeader>
-          <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <HugeiconsIcon icon={EnergyIcon} size={17} strokeWidth={1.8} />
-          </div>
-          <CardTitle>Proof starts here</CardTitle>
-          <CardDescription>
-            Your setup is persistent now. Wins, Passes, and Momentum can build
-            on this saved foundation.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    </main>
+      <section className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">
+        <Card className="rounded-lg">
+          <CardHeader>
+            <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <HugeiconsIcon icon={EnergyIcon} size={17} strokeWidth={1.8} />
+            </div>
+            <CardTitle>Recent Proof</CardTitle>
+            <CardDescription>
+              Your latest Wins and Passes across saved Quests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {dashboard.recentProof.length > 0 ? (
+              <div className="grid gap-2 text-sm">
+                {dashboard.recentProof.map((proof) => (
+                  <div
+                    key={proof.id}
+                    className="rounded-md border bg-muted/25 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">
+                          {proof.questTitle}
+                        </div>
+                        <div className="mt-0.5 text-xs text-muted-foreground">
+                          {proof.localDate}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={
+                          proof.outcome === "win" ? "default" : "secondary"
+                        }
+                        className="shrink-0"
+                      >
+                        {proof.outcome === "win" ? "Win" : "Pass"}
+                      </Badge>
+                    </div>
+                    {proof.note ? (
+                      <p className="mt-2 line-clamp-2 text-xs/relaxed text-muted-foreground">
+                        {proof.note}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                Check in on a Quest to start building Proof.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle>Momentum</CardTitle>
+            <CardDescription>
+              Daily scoring comes next. For now, Proof is the source of truth.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold tracking-tight">
+              {completedToday}
+              <span className="ml-1 text-sm font-normal text-muted-foreground">
+                /{dashboard.quests.length}
+              </span>
+            </div>
+            <p className="mt-2 text-sm/relaxed text-muted-foreground">
+              Quests checked in today.
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+    </div>
   );
 }
