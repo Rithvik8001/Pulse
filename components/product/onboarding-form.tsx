@@ -40,7 +40,9 @@ export function OnboardingForm() {
 
   function updateQuest(index: number, value: string) {
     setQuests((current) =>
-      current.map((quest, questIndex) => (questIndex === index ? value : quest)),
+      current.map((quest, questIndex) =>
+        questIndex === index ? value : quest,
+      ),
     );
     setDemoReady(false);
   }
@@ -88,23 +90,11 @@ export function OnboardingForm() {
             <Mascot width={30} height={30} />
           </Link>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label="Sign in coming soon"
-              title="Sign in is coming soon"
-            >
-              Sign in
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/sign-in">Sign in</Link>
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              aria-label="Sign up coming soon"
-              title="Sign up is coming soon"
-            >
-              Sign up
+            <Button asChild variant="outline" size="sm">
+              <Link href="/sign-up">Sign up</Link>
             </Button>
           </div>
         </header>
@@ -145,7 +135,7 @@ export function OnboardingForm() {
                       icon={CheckmarkCircle01Icon}
                       size={15}
                       strokeWidth={1.7}
-                      className="text-[var(--primary)]"
+                      className="text-primary"
                     />
                     {title}
                   </div>
@@ -295,7 +285,7 @@ export function OnboardingForm() {
                     icon={EnergyIcon}
                     size={17}
                     strokeWidth={1.7}
-                    className="text-[var(--primary)]"
+                    className="text-primary"
                   />
                   Proof preview
                 </CardTitle>
@@ -305,11 +295,11 @@ export function OnboardingForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="text-xs text-muted-foreground">
-                    Character
-                  </div>
+                  <div className="text-xs text-muted-foreground">Character</div>
                   <div className="mt-1 truncate text-xl font-semibold tracking-tight">
-                    {character.trim() ? `You're a ${character.trim()}.` : "You're a writer."}
+                    {character.trim()
+                      ? `You're a ${character.trim()}.`
+                      : "You're a writer."}
                   </div>
                 </div>
 
