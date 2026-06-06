@@ -92,7 +92,7 @@ function StoryLetter({ story }: { story: WeeklyStory | null }) {
               {story.sourceCheckInCount === 1 ? "" : "s"}
             </span>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight">
             {story.title}
           </h2>
         </div>
@@ -254,7 +254,7 @@ export default async function StoryPage({
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Story setup
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Create your Character before Pulse can write your Story.
           </h1>
           <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
@@ -276,7 +276,7 @@ export default async function StoryPage({
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Weekly Story
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             What did {data.character.name} prove this week?
           </h1>
           <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">

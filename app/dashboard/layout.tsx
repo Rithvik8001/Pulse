@@ -59,8 +59,7 @@ export default async function DashboardLayout({
                 data-active="false"
                 className={cn(sidebarLinkClassName, "h-10")}
               >
-                <Mascot width={28} height={28} />
-                <span>Dashboard</span>
+                <Mascot width={32} height={32} />
               </Link>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -94,13 +93,6 @@ export default async function DashboardLayout({
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:hidden">
           <SidebarTrigger />
-          <Link
-            href="/dashboard"
-            aria-label="Pulse dashboard"
-            className="flex size-8 items-center justify-center rounded-md"
-          >
-            <Mascot width={27} height={27} />
-          </Link>
         </header>
         {children}
       </SidebarInset>

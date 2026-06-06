@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { MascotDefs } from "@/components/landing/mascot-defs";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+
+const lora = Lora({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +38,7 @@ export default function RootLayout({
         geistMono.variable,
         "font-sans",
         inter.variable,
+        lora.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

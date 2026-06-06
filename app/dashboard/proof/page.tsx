@@ -35,7 +35,7 @@ export default async function ProofPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Proof archive
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Create your Character before saving Proof.
           </h1>
           <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
@@ -54,7 +54,7 @@ export default async function ProofPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Proof archive
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Review what {data.character.name} has proven.
           </h1>
           <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">

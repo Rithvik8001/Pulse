@@ -33,7 +33,7 @@ export default async function QuestsPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Quest setup
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Create your Character before managing Quests.
           </h1>
           <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
@@ -52,7 +52,7 @@ export default async function QuestsPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Quest system
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Shape the proof for {data.character.name}.
           </h1>
           <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">

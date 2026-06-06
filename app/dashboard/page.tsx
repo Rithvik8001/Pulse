@@ -11,6 +11,7 @@ import {
 
 import { CheckInList } from "@/components/product/check-in-list";
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
+import { MomentumCard } from "@/components/product/momentum-card";
 import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
 import { SuggestionList } from "@/components/product/suggestion-card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getDashboardData } from "@/lib/pulse/dashboard";
+import { getMomentumData } from "@/lib/pulse/momentum";
 import {
   computeSuggestions,
   getSuggestionsData,
@@ -69,13 +71,15 @@ function getStats(
 }
 
 export default async function DashboardPage() {
-  const [dashboard, { suggestions, isAtQuestLimit }] = await Promise.all([
-    getDashboardData(),
-    getSuggestionsData().then((raw) => ({
-      suggestions: computeSuggestions(raw),
-      isAtQuestLimit: raw.activeQuestCount >= 12,
-    })),
-  ]);
+  const [dashboard, { suggestions, isAtQuestLimit }, momentum] =
+    await Promise.all([
+      getDashboardData(),
+      getSuggestionsData().then((raw) => ({
+        suggestions: computeSuggestions(raw),
+        isAtQuestLimit: raw.activeQuestCount >= 12,
+      })),
+      getMomentumData(),
+    ]);
 
   if (!dashboard.isSetupComplete) {
     return (
@@ -84,7 +88,7 @@ export default async function DashboardPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
             Authenticated setup
           </p>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
             Build proof for the person you are becoming.
           </h1>
           <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
@@ -109,7 +113,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
       <section className="grid gap-2">
-        <h1 className="max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+        <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
           Welcome back, {dashboard.character.name}.
         </h1>
         <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
@@ -203,25 +207,18 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg">
-          <CardHeader>
-            <CardTitle>Momentum</CardTitle>
-            <CardDescription>
-              Daily scoring comes next. For now, Proof is the source of truth.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-tight">
-              {completedToday}
-              <span className="ml-1 text-sm font-normal text-muted-foreground">
-                /{dashboard.quests.length}
-              </span>
-            </div>
-            <p className="mt-2 text-sm/relaxed text-muted-foreground">
-              Quests checked in today.
-            </p>
-          </CardContent>
-        </Card>
+        {momentum ? (
+          <MomentumCard momentum={momentum} />
+        ) : (
+          <Card className="rounded-lg">
+            <CardHeader>
+              <CardTitle>Momentum</CardTitle>
+              <CardDescription>
+                Add Quests and check in to see your score.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
       </section>
     </div>
   );
