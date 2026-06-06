@@ -3,6 +3,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgPolicy,
   pgTable,
   text,
@@ -159,8 +160,66 @@ export const checkIns = pgTable(
   ],
 ).enableRLS();
 
+export const weeklyStories = pgTable(
+  "weekly_stories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id")
+      .notNull()
+      .references(() => characters.id, { onDelete: "cascade" }),
+    weekStart: date("week_start").notNull(),
+    weekEnd: date("week_end").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    letterBody: text("letter_body").notNull(),
+    patternBullets: jsonb("pattern_bullets").$type<string[]>().notNull(),
+    nextQuest: text("next_quest").notNull(),
+    modelId: text("model_id").notNull(),
+    sourceCheckInCount: integer("source_check_in_count").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("weekly_stories_user_id_idx").on(table.userId),
+    index("weekly_stories_character_id_idx").on(table.characterId),
+    uniqueIndex("weekly_stories_user_week_unique").on(
+      table.userId,
+      table.weekStart,
+    ),
+    pgPolicy("weekly_stories_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("weekly_stories_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("weekly_stories_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("weekly_stories_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
+  weeklyStories: many(weeklyStories),
 }));
 
 export const questsRelations = relations(quests, ({ one }) => ({
@@ -181,6 +240,14 @@ export const checkInsRelations = relations(checkIns, ({ one }) => ({
   }),
 }));
 
+export const weeklyStoriesRelations = relations(weeklyStories, ({ one }) => ({
+  character: one(characters, {
+    fields: [weeklyStories.characterId],
+    references: [characters.id],
+  }),
+}));
+
 export type Character = typeof characters.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
+export type WeeklyStory = typeof weeklyStories.$inferSelect;

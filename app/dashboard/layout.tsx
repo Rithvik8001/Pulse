@@ -1,18 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  AiBrain01Icon,
-  CheckmarkCircle01Icon,
-  Home01Icon,
-  NotebookIcon,
-  Logout03Icon,
-  Target01Icon,
-  UserStoryIcon,
-} from "@hugeicons/core-free-icons";
+import { AiBrain01Icon, Logout03Icon } from "@hugeicons/core-free-icons";
 
 import { signOutAction } from "@/app/(auth)/auth/actions";
 import { Mascot } from "@/components/landing/mascot";
+import { DashboardSidebarNav } from "@/components/product/dashboard-sidebar-nav";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -21,7 +14,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
@@ -45,43 +37,6 @@ export default async function DashboardLayout({
   const email =
     typeof data.claims.email === "string" ? data.claims.email : "Signed in";
 
-  const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: Home01Icon,
-      active: true,
-      disabled: false,
-    },
-    {
-      label: "Quests",
-      href: "/dashboard",
-      icon: Target01Icon,
-      active: false,
-      disabled: true,
-    },
-    {
-      label: "Proof",
-      href: "/dashboard",
-      icon: CheckmarkCircle01Icon,
-      active: false,
-      disabled: true,
-    },
-    {
-      label: "Journal",
-      href: "/dashboard",
-      icon: NotebookIcon,
-      active: false,
-      disabled: true,
-    },
-    {
-      label: "Story",
-      href: "/dashboard",
-      icon: UserStoryIcon,
-      active: false,
-      disabled: true,
-    },
-  ];
   const sidebarLinkClassName = cn(
     "peer/menu-button group/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-[calc(var(--radius-sm)+2px)] p-2 text-left text-xs ring-sidebar-ring outline-hidden transition-[width,height,padding]",
     "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground",
@@ -111,47 +66,7 @@ export default async function DashboardLayout({
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu className="px-2">
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                {item.disabled ? (
-                  <SidebarMenuButton
-                    aria-disabled="true"
-                    disabled
-                    title={item.label}
-                  >
-                    <HugeiconsIcon
-                      icon={item.icon}
-                      size={15}
-                      strokeWidth={1.7}
-                    />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                ) : (
-                  <Link
-                    href={item.href}
-                    title={item.label}
-                    data-slot="sidebar-menu-button"
-                    data-sidebar="menu-button"
-                    data-size="default"
-                    data-active={item.active}
-                    className={cn(
-                      sidebarLinkClassName,
-                      item.active &&
-                        "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-                    )}
-                  >
-                    <HugeiconsIcon
-                      icon={item.icon}
-                      size={15}
-                      strokeWidth={1.7}
-                    />
-                    <span>{item.label}</span>
-                  </Link>
-                )}
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <DashboardSidebarNav linkClassName={sidebarLinkClassName} />
         </SidebarContent>
         <SidebarFooter>
           <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
@@ -167,11 +82,7 @@ export default async function DashboardLayout({
               size="sm"
               type="submit"
             >
-              <HugeiconsIcon
-                icon={Logout03Icon}
-                size={14}
-                strokeWidth={1.7}
-              />
+              <HugeiconsIcon icon={Logout03Icon} size={14} strokeWidth={1.7} />
               <span className="group-data-[collapsible=icon]:hidden">
                 Sign out
               </span>

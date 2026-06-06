@@ -131,13 +131,19 @@ export async function getDashboardData(): Promise<DashboardData> {
         })
         .from(checkIns)
         .where(
-          and(eq(checkIns.userId, userId), gte(checkIns.localDate, historyStartDate)),
+          and(
+            eq(checkIns.userId, userId),
+            gte(checkIns.localDate, historyStartDate),
+          ),
         )
         .orderBy(asc(checkIns.localDate)),
     ]);
 
   const checkInByQuestId = new Map(
-    todayCheckIns.map((checkIn) => [checkIn.questId, toDashboardCheckIn(checkIn)]),
+    todayCheckIns.map((checkIn) => [
+      checkIn.questId,
+      toDashboardCheckIn(checkIn),
+    ]),
   );
 
   return {

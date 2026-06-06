@@ -19,10 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getDashboardData,
-  type ProofHistoryDay,
-} from "@/lib/pulse/dashboard";
+import { getDashboardData, type ProofHistoryDay } from "@/lib/pulse/dashboard";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -159,11 +156,7 @@ export default async function DashboardPage() {
           <Card key={stat.label} className="rounded-lg">
             <CardHeader>
               <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                <HugeiconsIcon
-                  icon={stat.icon}
-                  size={17}
-                  strokeWidth={1.8}
-                />
+                <HugeiconsIcon icon={stat.icon} size={17} strokeWidth={1.8} />
               </div>
               <CardTitle>{stat.label}</CardTitle>
               <CardDescription>{stat.value}</CardDescription>
