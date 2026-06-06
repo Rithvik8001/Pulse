@@ -19,6 +19,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getDashboardData, type ProofHistoryDay } from "@/lib/pulse/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -54,29 +60,43 @@ function ProofHistoryGrid({ days }: { days: ProofHistoryDay[] }) {
           <span>More</span>
         </div>
       </div>
-      <div className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1">
-        {days.map((day) => (
-          <span
-            key={day.localDate}
-            title={`${day.localDate}: ${day.winCount} Win${
-              day.winCount === 1 ? "" : "s"
-            }, ${day.passCount} Pass${day.passCount === 1 ? "" : "es"}`}
-            aria-label={`${day.localDate}: ${day.winCount} Wins, ${day.passCount} Passes`}
-            className={cn(
-              "size-3 rounded-[3px] border",
-              day.winCount >= 3 && "border-primary bg-primary",
-              day.winCount === 2 && "border-primary/30 bg-primary/55",
-              day.winCount === 1 && "border-primary/20 bg-primary/25",
-              day.winCount === 0 &&
-                day.passCount > 0 &&
-                "border-muted-foreground/30 bg-muted-foreground/25",
-              day.totalCount === 0 && "border-border bg-background",
-            )}
-          />
-        ))}
-      </div>
+      <TooltipProvider>
+        <div className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1">
+          {days.map((day) => (
+            <Tooltip key={day.localDate}>
+              <TooltipTrigger asChild>
+                <button
+                  aria-label={formatProofTooltip(day)}
+                  className={cn(
+                    "size-3 rounded-[3px] border outline-none transition-[box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    day.winCount >= 3 && "border-primary bg-primary",
+                    day.winCount === 2 && "border-primary/30 bg-primary/55",
+                    day.winCount === 1 && "border-primary/20 bg-primary/25",
+                    day.winCount === 0 &&
+                      day.passCount > 0 &&
+                      "border-muted-foreground/30 bg-muted-foreground/25",
+                    day.totalCount === 0 && "border-border bg-background",
+                  )}
+                  type="button"
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6}>
+                {formatProofTooltip(day)}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
     </div>
   );
+}
+
+function formatProofTooltip(day: ProofHistoryDay) {
+  const proofLabel = `${day.totalCount} Proof`;
+  const winLabel = `${day.winCount} Win${day.winCount === 1 ? "" : "s"}`;
+  const passLabel = `${day.passCount} Pass${day.passCount === 1 ? "" : "es"}`;
+
+  return `${day.localDate}: ${proofLabel}, ${winLabel}, ${passLabel}`;
 }
 
 function getStats(

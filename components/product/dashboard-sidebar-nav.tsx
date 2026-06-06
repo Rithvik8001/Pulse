@@ -33,9 +33,9 @@ const navItems = [
   },
   {
     label: "Proof",
-    href: "/dashboard",
+    href: "/dashboard/proof",
     icon: CheckmarkCircle01Icon,
-    disabled: true,
+    disabled: false,
   },
   {
     label: "Journal",
