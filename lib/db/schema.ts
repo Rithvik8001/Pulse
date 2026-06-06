@@ -219,9 +219,61 @@ export const weeklyStories = pgTable(
   ],
 ).enableRLS();
 
+export const journalEntries = pgTable(
+  "journal_entries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id")
+      .notNull()
+      .references(() => characters.id, { onDelete: "cascade" }),
+    localDate: date("local_date").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("journal_entries_user_id_idx").on(table.userId),
+    index("journal_entries_character_id_idx").on(table.characterId),
+    index("journal_entries_local_date_idx").on(table.localDate),
+    uniqueIndex("journal_entries_user_date_unique").on(
+      table.userId,
+      table.localDate,
+    ),
+    pgPolicy("journal_entries_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("journal_entries_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("journal_entries_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("journal_entries_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
   weeklyStories: many(weeklyStories),
+  journalEntries: many(journalEntries),
 }));
 
 export const questsRelations = relations(quests, ({ one }) => ({
@@ -249,7 +301,15 @@ export const weeklyStoriesRelations = relations(weeklyStories, ({ one }) => ({
   }),
 }));
 
+export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
+  character: one(characters, {
+    fields: [journalEntries.characterId],
+    references: [characters.id],
+  }),
+}));
+
 export type Character = typeof characters.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
 export type WeeklyStory = typeof weeklyStories.$inferSelect;
+export type JournalEntry = typeof journalEntries.$inferSelect;

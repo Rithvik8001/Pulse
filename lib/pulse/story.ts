@@ -5,8 +5,15 @@ import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
-import { characters, checkIns, quests, weeklyStories } from "@/lib/db/schema";
+import {
+  characters,
+  checkIns,
+  journalEntries,
+  quests,
+  weeklyStories,
+} from "@/lib/db/schema";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { buildWeeklyStoryPrompt } from "@/lib/pulse/story-core";
 
 export const weeklyStoryModel = "openai/gpt-5.4-nano";
 
@@ -31,6 +38,7 @@ export type WeeklyStoryData =
       character: null;
       week: WeekRange;
       currentWeekProof: [];
+      currentWeekJournal: [];
       currentWeekStory: null;
       selectedStory: null;
       stories: [];
@@ -43,6 +51,7 @@ export type WeeklyStoryData =
       };
       week: WeekRange;
       currentWeekProof: WeeklyProof[];
+      currentWeekJournal: WeeklyJournalReflection[];
       currentWeekStory: WeeklyStory | null;
       selectedStory: WeeklyStory | null;
       stories: WeeklyStory[];
@@ -61,6 +70,12 @@ export type WeeklyProof = {
   questTitle: string;
 };
 
+export type WeeklyJournalReflection = {
+  id: string;
+  localDate: string;
+  body: string;
+};
+
 const weeklyStorySchema = z.object({
   title: z.string().min(1).max(80),
   summary: z.string().min(1).max(240),
@@ -71,7 +86,9 @@ const weeklyStorySchema = z.object({
 
 export class MissingWeeklyProofError extends Error {
   constructor() {
-    super("Add at least one Check-in this week before generating a Story.");
+    super(
+      "Add at least one Check-in or Journal entry this week before generating a Story.",
+    );
     this.name = "MissingWeeklyProofError";
   }
 }
@@ -103,13 +120,14 @@ export async function getWeeklyStoryData(
       character: null,
       week,
       currentWeekProof: [],
+      currentWeekJournal: [],
       currentWeekStory: null,
       selectedStory: null,
       stories: [],
     };
   }
 
-  const [storyRows, currentWeekProof] = await Promise.all([
+  const [storyRows, currentWeekProof, currentWeekJournal] = await Promise.all([
     db
       .select()
       .from(weeklyStories)
@@ -117,6 +135,7 @@ export async function getWeeklyStoryData(
       .orderBy(desc(weeklyStories.weekStart), desc(weeklyStories.updatedAt))
       .limit(10),
     getProofForWeek(userId, week),
+    getJournalForWeek(userId, week),
   ]);
 
   const stories = storyRows.map(toWeeklyStory);
@@ -133,6 +152,7 @@ export async function getWeeklyStoryData(
     character,
     week,
     currentWeekProof,
+    currentWeekJournal,
     currentWeekStory,
     selectedStory,
     stories,
@@ -159,7 +179,7 @@ export async function generateAndSaveWeeklyStory() {
     return null;
   }
 
-  const [userQuests, proof] = await Promise.all([
+  const [userQuests, proof, journal] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -176,9 +196,10 @@ export async function generateAndSaveWeeklyStory() {
       )
       .orderBy(asc(quests.position)),
     getProofForWeek(userId, week),
+    getJournalForWeek(userId, week),
   ]);
 
-  if (proof.length === 0) {
+  if (proof.length === 0 && journal.length === 0) {
     throw new MissingWeeklyProofError();
   }
 
@@ -191,6 +212,7 @@ export async function generateAndSaveWeeklyStory() {
       "You are Pulse, an identity-first reflection coach. Write friendly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming. be honest, motivating, encouraging. use emojis wherever necessary. ",
     prompt: buildWeeklyStoryPrompt({
       characterName: character.name,
+      journal,
       proof,
       quests: userQuests.map((quest) => quest.title),
       week,
@@ -277,39 +299,25 @@ async function getProofForWeek(
   }));
 }
 
-function buildWeeklyStoryPrompt({
-  characterName,
-  proof,
-  quests,
-  week,
-}: {
-  characterName: string;
-  proof: WeeklyProof[];
-  quests: string[];
-  week: WeekRange;
-}) {
-  const proofLines = proof
-    .map((entry) => {
-      const note = entry.note ? ` Note: ${entry.note}` : "";
-      return `- ${entry.localDate}: ${entry.questTitle} = ${entry.outcome.toUpperCase()}.${note}`;
+async function getJournalForWeek(
+  userId: string,
+  week: WeekRange,
+): Promise<WeeklyJournalReflection[]> {
+  return db
+    .select({
+      id: journalEntries.id,
+      localDate: journalEntries.localDate,
+      body: journalEntries.body,
     })
-    .join("\n");
-
-  return `Write a Weekly Story for a Pulse user.
-
-Character: ${characterName}
-Week: ${week.start} through ${week.end}
-Active quests: ${quests.join(", ")}
-
-Proof from this week:
-${proofLines}
-
-Return a concise, emotionally intelligent reflection with:
-- a title that sounds like a weekly letter, not a metric report
-- a one-sentence summary
-- a letter body in second person, 2-4 short paragraphs
-- 2-4 pattern bullets grounded in the provided proof
-- one next-week quest recommendation that is small and concrete`;
+    .from(journalEntries)
+    .where(
+      and(
+        eq(journalEntries.userId, userId),
+        gte(journalEntries.localDate, week.start),
+        lte(journalEntries.localDate, week.end),
+      ),
+    )
+    .orderBy(asc(journalEntries.localDate));
 }
 
 function toWeeklyStory(story: typeof weeklyStories.$inferSelect): WeeklyStory {

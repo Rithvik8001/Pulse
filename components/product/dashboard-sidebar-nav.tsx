@@ -46,9 +46,9 @@ const navItems = [
   },
   {
     label: "Journal",
-    href: "/dashboard",
+    href: "/dashboard/journal",
     icon: NotebookIcon,
-    disabled: true,
+    disabled: false,
   },
   {
     label: "Story",

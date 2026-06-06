@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/empty";
 import {
   getWeeklyStoryData,
+  type WeeklyJournalReflection,
   type WeeklyProof,
   type WeeklyStory,
 } from "@/lib/pulse/story";
@@ -69,7 +70,8 @@ function StoryLetter({ story }: { story: WeeklyStory | null }) {
           </EmptyMedia>
           <EmptyTitle>No Weekly Story yet</EmptyTitle>
           <EmptyDescription>
-            Generate a Story once this week has at least one Check-in.
+            Generate a Story once this week has at least one Check-in or
+            Journal entry.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -199,6 +201,29 @@ function ProofSourceList({ proof }: { proof: WeeklyProof[] }) {
   );
 }
 
+function JournalSourceList({ journal }: { journal: WeeklyJournalReflection[] }) {
+  if (journal.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+        Journal entries from this week will appear here.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      {journal.map((entry) => (
+        <div key={entry.id} className="rounded-md border bg-muted/25 p-3">
+          <div className="text-xs text-muted-foreground">{entry.localDate}</div>
+          <p className="mt-1 line-clamp-3 text-xs/relaxed text-muted-foreground">
+            {entry.body}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StoryHistoryItem({
   isSelected,
   story,
@@ -268,6 +293,8 @@ export default async function StoryPage({
   }
 
   const hasProof = data.currentWeekProof.length > 0;
+  const hasJournal = data.currentWeekJournal.length > 0;
+  const hasStorySource = hasProof || hasJournal;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
@@ -280,12 +307,12 @@ export default async function StoryPage({
             What did {data.character.name} prove this week?
           </h1>
           <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            Pulse turns this week&apos;s Wins, Passes, and proof notes into a
-            letter about who you are becoming.
+            Pulse turns this week&apos;s Wins, Passes, proof notes, and Journal
+            reflections into a letter about who you are becoming.
           </p>
         </div>
         <WeeklyStoryForm
-          disabled={!hasProof}
+          disabled={!hasStorySource}
           hasStory={Boolean(data.currentWeekStory)}
         />
       </section>
@@ -309,11 +336,17 @@ export default async function StoryPage({
               <CardDescription>
                 {formatDate(data.week.start)}-{formatDate(data.week.end)} ·{" "}
                 {data.currentWeekProof.length} Check-in
-                {data.currentWeekProof.length === 1 ? "" : "s"}
+                {data.currentWeekProof.length === 1 ? "" : "s"} ·{" "}
+                {data.currentWeekJournal.length} Journal entr
+                {data.currentWeekJournal.length === 1 ? "y" : "ies"}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="grid gap-4">
               <ProofSourceList proof={data.currentWeekProof} />
+              <div className="grid gap-2">
+                <div className="text-sm font-medium">Journal reflections</div>
+                <JournalSourceList journal={data.currentWeekJournal} />
+              </div>
             </CardContent>
           </Card>
 
