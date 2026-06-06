@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  ChartLineData01Icon,
   CheckmarkCircle01Icon,
   Home01Icon,
   NotebookIcon,
@@ -35,6 +36,12 @@ const navItems = [
     label: "Proof",
     href: "/dashboard/proof",
     icon: CheckmarkCircle01Icon,
+    disabled: false,
+  },
+  {
+    label: "Stats",
+    href: "/dashboard/stats",
+    icon: ChartLineData01Icon,
     disabled: false,
   },
   {
