@@ -188,7 +188,7 @@ export async function generateAndSaveWeeklyStory() {
       schema: weeklyStorySchema,
     }),
     system:
-      "You are Pulse, an identity-first reflection coach. Write warmly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming.",
+      "You are Pulse, an identity-first reflection coach. Write friendly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming. be honest, motivating, encouraging. use emojis wherever necessary. ",
     prompt: buildWeeklyStoryPrompt({
       characterName: character.name,
       proof,
