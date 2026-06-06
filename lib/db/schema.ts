@@ -66,6 +66,8 @@ export const quests = pgTable(
       .references(() => authUsers.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     position: integer("position").notNull(),
+    status: text("status").default("active").notNull(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

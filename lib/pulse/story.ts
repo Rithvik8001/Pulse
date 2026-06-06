@@ -1,7 +1,7 @@
 import "server-only";
 
 import { generateText, Output } from "ai";
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
@@ -167,7 +167,13 @@ export async function generateAndSaveWeeklyStory() {
         position: quests.position,
       })
       .from(quests)
-      .where(eq(quests.userId, userId))
+      .where(
+        and(
+          eq(quests.userId, userId),
+          eq(quests.status, "active"),
+          isNull(quests.archivedAt),
+        ),
+      )
       .orderBy(asc(quests.position)),
     getProofForWeek(userId, week),
   ]);

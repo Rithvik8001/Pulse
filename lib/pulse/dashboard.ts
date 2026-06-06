@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
@@ -98,7 +98,13 @@ export async function getDashboardData(): Promise<DashboardData> {
           position: quests.position,
         })
         .from(quests)
-        .where(eq(quests.userId, userId))
+        .where(
+          and(
+            eq(quests.userId, userId),
+            eq(quests.status, "active"),
+            isNull(quests.archivedAt),
+          ),
+        )
         .orderBy(asc(quests.position)),
       db
         .select({

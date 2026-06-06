@@ -27,9 +27,9 @@ const navItems = [
   },
   {
     label: "Quests",
-    href: "/dashboard",
+    href: "/dashboard/quests",
     icon: Target01Icon,
-    disabled: true,
+    disabled: false,
   },
   {
     label: "Proof",

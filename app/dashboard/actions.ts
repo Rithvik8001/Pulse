@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -145,7 +145,14 @@ export async function upsertCheckInAction(
       characterId: quests.characterId,
     })
     .from(quests)
-    .where(and(eq(quests.id, questId), eq(quests.userId, userId)))
+    .where(
+      and(
+        eq(quests.id, questId),
+        eq(quests.userId, userId),
+        eq(quests.status, "active"),
+        isNull(quests.archivedAt),
+      ),
+    )
     .limit(1);
 
   if (!quest) {
