@@ -13,6 +13,7 @@ import { CheckInList } from "@/components/product/check-in-list";
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
 import { MomentumCard } from "@/components/product/momentum-card";
 import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
+import { PulseCoach } from "@/components/product/pulse-coach";
 import { SuggestionList } from "@/components/product/suggestion-card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -97,6 +98,7 @@ export default async function DashboardPage() {
           </p>
         </section>
         <DashboardSetupForm />
+        <PulseCoach />
       </div>
     );
   }
@@ -220,6 +222,7 @@ export default async function DashboardPage() {
           </Card>
         )}
       </section>
+      <PulseCoach />
     </div>
   );
 }
