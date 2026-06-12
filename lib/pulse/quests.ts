@@ -272,6 +272,71 @@ export async function removeQuest(
   };
 }
 
+export async function archiveQuest(
+  questId: string,
+): Promise<QuestMutationResult> {
+  const userId = await requireUserId();
+
+  const [quest] = await db
+    .update(quests)
+    .set({
+      status: "archived",
+      archivedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(quests.id, questId),
+        eq(quests.userId, userId),
+        eq(quests.status, "active"),
+        isNull(quests.archivedAt),
+      ),
+    )
+    .returning({ id: quests.id });
+
+  if (!quest) {
+    return {
+      status: "error",
+      message: "We could not archive that active Quest.",
+    };
+  }
+
+  return {
+    status: "success",
+    message: "Quest archived. Your Proof stayed intact.",
+  };
+}
+
+export async function deleteQuestIfZeroProof(
+  questId: string,
+): Promise<QuestMutationResult> {
+  const userId = await requireUserId();
+  const quest = await getOwnedQuestWithProofCount(userId, questId);
+
+  if (!quest) {
+    return {
+      status: "error",
+      message: "We could not find that Quest for your account.",
+    };
+  }
+
+  if (quest.checkInCount > 0) {
+    return {
+      status: "error",
+      message: "This Quest has Proof, so it can be archived but not deleted.",
+    };
+  }
+
+  await db
+    .delete(quests)
+    .where(and(eq(quests.id, questId), eq(quests.userId, userId)));
+
+  return {
+    status: "success",
+    message: "Quest deleted.",
+  };
+}
+
 export async function restoreQuest(
   questId: string,
 ): Promise<QuestMutationResult> {

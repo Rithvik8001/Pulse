@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { MascotDefs } from "@/components/landing/mascot-defs";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <MascotDefs />
         {children}
+        <Toaster richColors />
       </body>
     </html>
   );
