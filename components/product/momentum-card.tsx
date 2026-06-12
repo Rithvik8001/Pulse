@@ -3,7 +3,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Activity01Icon } from "@hugeicons/core-free-icons";
 
-import type { MomentumData, MomentumTier } from "@/lib/pulse/momentum";
+import type { MomentumData, MomentumTier } from "@/lib/pulse/momentum-core";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,

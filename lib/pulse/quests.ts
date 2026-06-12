@@ -8,6 +8,8 @@ import { requireUserId } from "@/lib/pulse/dashboard";
 
 export const activeQuestLimit = 12;
 export const questTitleMaxLength = 96;
+const activeQuestLimitMessage = `Keep active Quests to ${activeQuestLimit} or fewer.`;
+const restoreActiveQuestLimitMessage = `Archive another Quest before restoring this one. The active limit is ${activeQuestLimit}.`;
 
 export type ManagedQuest = {
   id: string;
@@ -109,24 +111,49 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
     };
   }
 
-  const activeCount = await getActiveQuestCount(userId);
+  try {
+    const result = await db.transaction(async (tx) => {
+      await acquireActiveQuestLimitLock(tx, userId);
 
-  if (activeCount >= activeQuestLimit) {
-    return {
-      status: "error",
-      message: `Keep active Quests to ${activeQuestLimit} or fewer.`,
-    };
+      const activeCount = await getActiveQuestCountForClient(tx, userId);
+
+      if (activeCount >= activeQuestLimit) {
+        return "limit" as const;
+      }
+
+      const nextPosition = await getNextQuestPositionForClient(
+        tx,
+        character.id,
+      );
+
+      await tx.insert(quests).values({
+        characterId: character.id,
+        userId,
+        title: normalizedTitle,
+        position: nextPosition,
+        status: "active",
+        updatedAt: new Date(),
+      });
+
+      return "created" as const;
+    });
+
+    if (result === "limit") {
+      return {
+        status: "error",
+        message: activeQuestLimitMessage,
+      };
+    }
+  } catch (error) {
+    if (isActiveQuestLimitError(error)) {
+      return {
+        status: "error",
+        message: activeQuestLimitMessage,
+      };
+    }
+
+    throw error;
   }
-
-  const nextPosition = await getNextQuestPosition(character.id);
-  await db.insert(quests).values({
-    characterId: character.id,
-    userId,
-    title: normalizedTitle,
-    position: nextPosition,
-    status: "active",
-    updatedAt: new Date(),
-  });
 
   return {
     status: "success",
@@ -341,36 +368,58 @@ export async function restoreQuest(
   questId: string,
 ): Promise<QuestMutationResult> {
   const userId = await requireUserId();
-  const activeCount = await getActiveQuestCount(userId);
 
-  if (activeCount >= activeQuestLimit) {
-    return {
-      status: "error",
-      message: `Archive another Quest before restoring this one. The active limit is ${activeQuestLimit}.`,
-    };
-  }
+  try {
+    const result = await db.transaction(async (tx) => {
+      await acquireActiveQuestLimitLock(tx, userId);
 
-  const [quest] = await db
-    .update(quests)
-    .set({
-      status: "active",
-      archivedAt: null,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(quests.id, questId),
-        eq(quests.userId, userId),
-        eq(quests.status, "archived"),
-      ),
-    )
-    .returning({ id: quests.id });
+      const activeCount = await getActiveQuestCountForClient(tx, userId);
 
-  if (!quest) {
-    return {
-      status: "error",
-      message: "We could not restore that Quest.",
-    };
+      if (activeCount >= activeQuestLimit) {
+        return "limit" as const;
+      }
+
+      const [quest] = await tx
+        .update(quests)
+        .set({
+          status: "active",
+          archivedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(quests.id, questId),
+            eq(quests.userId, userId),
+            eq(quests.status, "archived"),
+          ),
+        )
+        .returning({ id: quests.id });
+
+      return quest ? ("restored" as const) : ("missing" as const);
+    });
+
+    if (result === "limit") {
+      return {
+        status: "error",
+        message: restoreActiveQuestLimitMessage,
+      };
+    }
+
+    if (result === "missing") {
+      return {
+        status: "error",
+        message: "We could not restore that Quest.",
+      };
+    }
+  } catch (error) {
+    if (isActiveQuestLimitError(error)) {
+      return {
+        status: "error",
+        message: restoreActiveQuestLimitMessage,
+      };
+    }
+
+    throw error;
   }
 
   return {
@@ -408,8 +457,11 @@ async function getCharacterForUser(userId: string) {
   return character ?? null;
 }
 
-async function getActiveQuestCount(userId: string) {
-  const [row] = await db
+async function getActiveQuestCountForClient(
+  client: Pick<typeof db, "select">,
+  userId: string,
+) {
+  const [row] = await client
     .select({
       count: count(),
     })
@@ -425,8 +477,11 @@ async function getActiveQuestCount(userId: string) {
   return Number(row?.count ?? 0);
 }
 
-async function getNextQuestPosition(characterId: string) {
-  const [row] = await db
+async function getNextQuestPositionForClient(
+  client: Pick<typeof db, "select">,
+  characterId: string,
+) {
+  const [row] = await client
     .select({
       position: max(quests.position),
     })
@@ -434,6 +489,30 @@ async function getNextQuestPosition(characterId: string) {
     .where(eq(quests.characterId, characterId));
 
   return Number(row?.position ?? 0) + 1;
+}
+
+async function acquireActiveQuestLimitLock(
+  client: Pick<typeof db, "execute">,
+  userId: string,
+) {
+  await client.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 12012))`,
+  );
+}
+
+function isActiveQuestLimitError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+
+  const constraint =
+    "constraint_name" in error && typeof error.constraint_name === "string"
+      ? error.constraint_name
+      : "constraint" in error && typeof error.constraint === "string"
+        ? error.constraint
+        : "";
+
+  return /active quest limit exceeded|quests_active_limit/i.test(
+    `${error.message} ${constraint}`,
+  );
 }
 
 async function getOwnedQuestWithProofCount(userId: string, questId: string) {

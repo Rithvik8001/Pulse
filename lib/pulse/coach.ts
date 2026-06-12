@@ -20,7 +20,7 @@ import {
   type PulseCoachContext,
 } from "@/lib/pulse/coach-core";
 import { getLocalDate } from "@/lib/pulse/dashboard";
-import { computeMomentum } from "@/lib/pulse/momentum";
+import { computeMomentum } from "@/lib/pulse/momentum-core";
 import { getProofArchiveData } from "@/lib/pulse/proof";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import { computeStatsData, statsWindowWeeks } from "@/lib/pulse/stats-core";

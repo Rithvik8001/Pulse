@@ -7,6 +7,10 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { checkIns, quests } from "@/lib/db/schema";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import {
+  offsetDate,
+  parseLocalDate,
+} from "@/lib/pulse/local-date-core";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 
 export type SuggestionType = "archive" | "reword" | "restore";
@@ -53,12 +57,6 @@ export class MissingAiKeyError extends Error {
     );
     this.name = "MissingAiKeyError";
   }
-}
-
-function offsetDate(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
 }
 
 export async function getSuggestionsData(): Promise<SuggestionsRawData> {
@@ -132,9 +130,9 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
     twentyOneDaysAgo,
   } = raw;
 
-  const sevenDaysCutoff = new Date(sevenDaysAgo);
-  const fourteenDaysCutoff = new Date(fourteenDaysAgo);
-  const twentyOneDaysAgoDate = new Date(twentyOneDaysAgo);
+  const sevenDaysCutoff = parseLocalDate(sevenDaysAgo);
+  const fourteenDaysCutoff = parseLocalDate(fourteenDaysAgo);
+  const twentyOneDaysAgoDate = parseLocalDate(twentyOneDaysAgo);
 
   const archiveCandidates: QuestSuggestion[] = [];
   const rewordCandidates: QuestSuggestion[] = [];

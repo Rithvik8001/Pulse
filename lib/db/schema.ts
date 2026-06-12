@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   date,
   index,
   integer,
@@ -12,6 +13,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
+
+export type QuestStatus = "active" | "archived";
+export type CheckInOutcome = "win" | "pass";
 
 export const characters = pgTable(
   "characters",
@@ -66,7 +70,7 @@ export const quests = pgTable(
       .references(() => authUsers.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     position: integer("position").notNull(),
-    status: text("status").default("active").notNull(),
+    status: text("status").$type<QuestStatus>().default("active").notNull(),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -81,6 +85,17 @@ export const quests = pgTable(
     uniqueIndex("quests_character_position_unique").on(
       table.characterId,
       table.position,
+    ),
+    check(
+      "quests_status_check",
+      sql`${table.status} in ('active', 'archived')`,
+    ),
+    check(
+      "quests_archive_state_check",
+      sql`(
+        (${table.status} = 'active' and ${table.archivedAt} is null)
+        or (${table.status} = 'archived' and ${table.archivedAt} is not null)
+      )`,
     ),
     pgPolicy("quests_select_own", {
       for: "select",
@@ -120,7 +135,7 @@ export const checkIns = pgTable(
       .notNull()
       .references(() => quests.id, { onDelete: "cascade" }),
     localDate: date("local_date").notNull(),
-    outcome: text("outcome").notNull(),
+    outcome: text("outcome").$type<CheckInOutcome>().notNull(),
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -137,6 +152,10 @@ export const checkIns = pgTable(
       table.userId,
       table.questId,
       table.localDate,
+    ),
+    check(
+      "check_ins_outcome_check",
+      sql`${table.outcome} in ('win', 'pass')`,
     ),
     pgPolicy("check_ins_select_own", {
       for: "select",
