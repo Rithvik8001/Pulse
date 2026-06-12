@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   check,
+  boolean,
   date,
   index,
   integer,
@@ -16,6 +17,8 @@ import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 export type QuestStatus = "active" | "archived";
 export type CheckInOutcome = "win" | "pass";
+export type EmailDeliveryType = "welcome" | "weekly_digest";
+export type EmailDeliveryStatus = "pending" | "sent" | "error" | "skipped";
 
 export const characters = pgTable(
   "characters",
@@ -289,10 +292,102 @@ export const journalEntries = pgTable(
   ],
 ).enableRLS();
 
+export const emailPreferences = pgTable(
+  "email_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    productEmailsEnabled: boolean("product_emails_enabled")
+      .default(true)
+      .notNull(),
+    weeklyDigestEnabled: boolean("weekly_digest_enabled")
+      .default(true)
+      .notNull(),
+    unsubscribeToken: text("unsubscribe_token").notNull(),
+    welcomeEmailSentAt: timestamp("welcome_email_sent_at", {
+      withTimezone: true,
+    }),
+    unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("email_preferences_user_id_unique").on(table.userId),
+    uniqueIndex("email_preferences_unsubscribe_token_unique").on(
+      table.unsubscribeToken,
+    ),
+    pgPolicy("email_preferences_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("email_preferences_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("email_preferences_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const emailDeliveries = pgTable(
+  "email_deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    type: text("type").$type<EmailDeliveryType>().notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    recipient: text("recipient").notNull(),
+    resendId: text("resend_id"),
+    status: text("status").$type<EmailDeliveryStatus>().notNull(),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("email_deliveries_user_id_idx").on(table.userId),
+    index("email_deliveries_type_idx").on(table.type),
+    uniqueIndex("email_deliveries_dedupe_key_unique").on(table.dedupeKey),
+    check(
+      "email_deliveries_type_check",
+      sql`${table.type} in ('welcome', 'weekly_digest')`,
+    ),
+    check(
+      "email_deliveries_status_check",
+      sql`${table.status} in ('pending', 'sent', 'error', 'skipped')`,
+    ),
+    pgPolicy("email_deliveries_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
   weeklyStories: many(weeklyStories),
   journalEntries: many(journalEntries),
+  emailPreferences: many(emailPreferences),
+  emailDeliveries: many(emailDeliveries),
 }));
 
 export const questsRelations = relations(quests, ({ one }) => ({
@@ -327,8 +422,30 @@ export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
   }),
 }));
 
+export const emailPreferencesRelations = relations(
+  emailPreferences,
+  ({ one }) => ({
+    character: one(characters, {
+      fields: [emailPreferences.userId],
+      references: [characters.userId],
+    }),
+  }),
+);
+
+export const emailDeliveriesRelations = relations(
+  emailDeliveries,
+  ({ one }) => ({
+    character: one(characters, {
+      fields: [emailDeliveries.userId],
+      references: [characters.userId],
+    }),
+  }),
+);
+
 export type Character = typeof characters.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
 export type WeeklyStory = typeof weeklyStories.$inferSelect;
 export type JournalEntry = typeof journalEntries.$inferSelect;
+export type EmailPreference = typeof emailPreferences.$inferSelect;
+export type EmailDelivery = typeof emailDeliveries.$inferSelect;

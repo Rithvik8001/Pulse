@@ -43,6 +43,13 @@
       "when": 1781277517894,
       "tag": "0005_silly_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781282201822,
+      "tag": "0006_slimy_molten_man",
+      "breakpoints": true
     }
   ]
 }

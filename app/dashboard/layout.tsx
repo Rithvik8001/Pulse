@@ -19,6 +19,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { syncEmailPreference } from "@/lib/email/preferences";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,10 @@ export default async function DashboardLayout({
 
   const email =
     typeof data.claims.email === "string" ? data.claims.email : "Signed in";
+
+  if (typeof data.claims.sub === "string" && typeof data.claims.email === "string") {
+    await syncEmailPreference(data.claims.sub, data.claims.email);
+  }
 
   const sidebarLinkClassName = cn(
     "peer/menu-button group/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-[calc(var(--radius-sm)+2px)] p-2 text-left text-xs ring-sidebar-ring outline-hidden transition-[width,height,padding]",

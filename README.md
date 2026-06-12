@@ -1,45 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pulse
 
-## Environment
+Identity-first habit tracking for people who want proof of who they are becoming, not another streak counter.
 
-Pulse expects Supabase/Postgres variables for auth and data access. The Weekly
-Story AI loop also needs Vercel AI Gateway auth for local generation:
+Pulse lets users define a **Character**, manage a small set of repeatable **Quests**, and log daily **Proof** as Wins or Passes. AI features turn that history into weekly reflection, coaching, and confirmed habit operations.
 
-```bash
-AI_GATEWAY_API_KEY=your_gateway_key
-```
+## Features
+
+- Character-first onboarding and daily Quest check-ins
+- Proof archive, journal, momentum, stats, and heuristic suggestions
+- Weekly Story generation from Proof and Journal context
+- Pulse Coach for reflective AI guidance with confirmed actions
+- Habit Agent for confirmed create/update/archive/restore/delete habit operations
+- Resend product emails: welcome email, weekly digest, and unsubscribe handling
+- Supabase auth with branded SMTP delivery through Resend
+
+## Stack
+
+- Next.js 16 App Router, React 19, TypeScript
+- Tailwind CSS v4, shadcn/ui, Hugeicons, Recharts
+- Supabase Auth + Supabase Postgres
+- Drizzle ORM + SQL migrations
+- AI SDK with OpenAI and Vercel AI Gateway
+- Resend + React Email
+- Vercel Cron for scheduled weekly digests
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env` with the required Supabase, AI, and email values:
 
-## Learn More
+```bash
+DATABASE_URL=
+DIRECT_DATABASE_URL=
 
-To learn more about Next.js, take a look at the following resources:
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+OPENAI_PULSE_API_KEY=
+AI_GATEWAY_API_KEY=
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+RESEND_API_KEY=
+EMAIL_FROM_PRODUCT="Pulse <hello@yourdomain.com>"
+EMAIL_FROM_AUTH="Pulse <auth@yourdomain.com>"
+EMAIL_REPLY_TO=hello@yourdomain.com
+CRON_SECRET=
+```
 
-## Deploy on Vercel
+For production, set `NEXT_PUBLIC_SITE_URL` to the deployed domain and configure Supabase Auth SMTP with Resend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Commands
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+bun run test
+bun run lint
+bun run build
+bun run db:generate
+bun run db:migrate
+```
+
+## Deployment
+
+Pulse is designed for Vercel. Add the same production environment variables in Vercel, run Drizzle migrations against the production database, and verify the Resend domain before sending emails.

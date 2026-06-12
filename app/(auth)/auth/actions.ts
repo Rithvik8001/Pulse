@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+import { syncEmailPreference } from "@/lib/email/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = {
@@ -66,19 +67,24 @@ function safeRedirectPath(value: FormDataEntryValue | null) {
 }
 
 async function getSiteOrigin() {
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+  const requestOrigin = host ? `${protocol}://${host}` : null;
+  const isLocalRequest =
+    host?.startsWith("localhost") ||
+    host?.startsWith("127.0.0.1") ||
+    host?.startsWith("192.168.");
+
+  if (requestOrigin && isLocalRequest) {
+    return requestOrigin;
+  }
+
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
 
-  const headerStore = await headers();
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-
-  if (!host) {
-    return "http://localhost:3000";
-  }
-
-  return `${protocol}://${host}`;
+  return requestOrigin ?? "http://localhost:3000";
 }
 
 export async function signInAction(
@@ -111,6 +117,14 @@ export async function signInAction(
     };
   }
 
+  const { data } = await supabase.auth.getClaims();
+  if (
+    typeof data?.claims?.sub === "string" &&
+    typeof data.claims.email === "string"
+  ) {
+    await syncEmailPreference(data.claims.sub, data.claims.email);
+  }
+
   redirect(next);
 }
 
@@ -135,7 +149,7 @@ export async function signUpAction(
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/confirm?next=/dashboard`,
+      emailRedirectTo: `${origin}/auth/confirm`,
     },
   });
 

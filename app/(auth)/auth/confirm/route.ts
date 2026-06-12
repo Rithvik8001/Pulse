@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { syncEmailPreference } from "@/lib/email/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 function safeRedirectPath(value: string | null) {
@@ -20,6 +21,14 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const { data } = await supabase.auth.getClaims();
+      if (
+        typeof data?.claims?.sub === "string" &&
+        typeof data.claims.email === "string"
+      ) {
+        await syncEmailPreference(data.claims.sub, data.claims.email);
+      }
+
       return NextResponse.redirect(new URL(next, request.url));
     }
   }

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
+import { sendWelcomeEmailAfterSetup } from "@/lib/email/welcome";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
 
 export type SetupFormState = {
@@ -107,6 +108,9 @@ export async function createInitialSetup(
   }
 
   revalidatePath("/dashboard");
+  sendWelcomeEmailAfterSetup(character).catch((error: unknown) => {
+    console.error("Welcome email failed", error);
+  });
   redirect("/dashboard");
 }
 
