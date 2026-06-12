@@ -1,15 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { syncEmailPreference } from "@/lib/email/preferences";
+import {
+  passwordResetIntentCookie,
+  safeRedirectPath,
+} from "@/lib/auth/auth-core";
 import { createClient } from "@/lib/supabase/server";
-
-function safeRedirectPath(value: string | null) {
-  if (!value?.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return value;
-}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -29,7 +25,19 @@ export async function GET(request: NextRequest) {
         await syncEmailPreference(data.claims.sub, data.claims.email);
       }
 
-      return NextResponse.redirect(new URL(next, request.url));
+      const response = NextResponse.redirect(new URL(next, request.url));
+
+      if (next === "/reset-password") {
+        response.cookies.set(passwordResetIntentCookie, "1", {
+          httpOnly: true,
+          maxAge: 10 * 60,
+          path: "/",
+          sameSite: "lax",
+          secure: requestUrl.protocol === "https:",
+        });
+      }
+
+      return response;
     }
   }
 

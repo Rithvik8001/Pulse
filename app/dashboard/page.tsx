@@ -11,10 +11,9 @@ import {
 
 import { CheckInList } from "@/components/product/check-in-list";
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
-import { HabitAgentPanel } from "@/components/product/habit-agent-panel";
 import { MomentumCard } from "@/components/product/momentum-card";
 import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
-import { PulseCoach } from "@/components/product/pulse-coach";
+import { PulseAssistantLauncher } from "@/components/product/pulse-assistant-launcher";
 import { SuggestionList } from "@/components/product/suggestion-card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -99,7 +98,7 @@ export default async function DashboardPage() {
           </p>
         </section>
         <DashboardSetupForm />
-        <PulseCoach />
+        <PulseAssistantLauncher showHabits={false} />
       </div>
     );
   }
@@ -155,8 +154,6 @@ export default async function DashboardPage() {
           isAtQuestLimit={isAtQuestLimit}
         />
       ) : null}
-
-      <HabitAgentPanel />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">
         <Card className="rounded-lg">
@@ -225,7 +222,7 @@ export default async function DashboardPage() {
           </Card>
         )}
       </section>
-      <PulseCoach />
+      <PulseAssistantLauncher />
     </div>
   );
 }

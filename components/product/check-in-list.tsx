@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CheckmarkCircle01Icon,
   SentIcon,
   UnavailableIcon,
 } from "@hugeicons/core-free-icons";
+import { toast } from "sonner";
 
 import {
   type CheckInFormState,
@@ -40,6 +41,23 @@ export function CheckInList({ quests }: CheckInListProps) {
           .filter((quest) => quest.todayCheckIn)
           .map((quest) => [quest.id, quest.todayCheckIn?.outcome ?? "win"]),
       ),
+  );
+  const setQuestOutcome = useCallback(
+    (questId: string, outcome: "win" | "pass" | null) => {
+      setOutcomes((current) => {
+        if (outcome) {
+          return {
+            ...current,
+            [questId]: outcome,
+          };
+        }
+
+        const next = { ...current };
+        delete next[questId];
+        return next;
+      });
+    },
+    [],
   );
 
   return (
@@ -79,12 +97,7 @@ export function CheckInList({ quests }: CheckInListProps) {
             activeOutcome={outcomes[quest.id] ?? null}
             localDate={localDate}
             quest={quest}
-            setOutcome={(outcome) =>
-              setOutcomes((current) => ({
-                ...current,
-                [quest.id]: outcome,
-              }))
-            }
+            setQuestOutcome={setQuestOutcome}
           />
         ))}
       </div>
@@ -96,26 +109,77 @@ function CheckInRow({
   activeOutcome,
   localDate,
   quest,
-  setOutcome,
+  setQuestOutcome,
 }: {
   activeOutcome: "win" | "pass" | null;
   localDate: string;
   quest: DashboardQuest;
-  setOutcome: (outcome: "win" | "pass") => void;
+  setQuestOutcome: (questId: string, outcome: "win" | "pass" | null) => void;
 }) {
   const initialState: CheckInFormState = {
     status: "idle",
   };
-  const [state, action, pending] = useActionState(
-    upsertCheckInAction,
-    initialState,
+  const [state, setState] = useState<CheckInFormState>(initialState);
+  const [pending, startTransition] = useTransition();
+  const savedOutcome = quest.todayCheckIn?.outcome ?? null;
+  const currentOutcome = activeOutcome ?? savedOutcome;
+  const [note, setNote] = useState(quest.todayCheckIn?.note ?? "");
+  const [savedNote, setSavedNote] = useState(quest.todayCheckIn?.note ?? "");
+  const rollbackOutcomeRef = useRef<"win" | "pass" | null | undefined>(
+    undefined,
   );
-  const currentOutcome = activeOutcome ?? quest.todayCheckIn?.outcome;
+  const submittedOutcomeRef = useRef<"win" | "pass" | null>(null);
+  const isDirty = note !== savedNote;
+  const canSaveNote = Boolean(currentOutcome);
+
+  function rememberOutcomeSubmit(outcome: "win" | "pass") {
+    rollbackOutcomeRef.current = currentOutcome;
+    submittedOutcomeRef.current = outcome;
+    setQuestOutcome(quest.id, outcome);
+  }
+
+  function rememberNoteSubmit() {
+    rollbackOutcomeRef.current = undefined;
+    submittedOutcomeRef.current = currentOutcome;
+  }
+
+  function submitCheckIn(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const submitter = (
+      event.nativeEvent as SubmitEvent
+    ).submitter as HTMLButtonElement | null;
+
+    if (submitter?.name) {
+      formData.set(submitter.name, submitter.value);
+    }
+
+    startTransition(async () => {
+      const result = await upsertCheckInAction(initialState, formData);
+      setState(result);
+
+      if (result.status === "success") {
+        if (submittedOutcomeRef.current) {
+          setQuestOutcome(quest.id, submittedOutcomeRef.current);
+        }
+        setSavedNote(note);
+        toast.success(result.message ?? "Proof saved.");
+      } else {
+        if (rollbackOutcomeRef.current !== undefined) {
+          setQuestOutcome(quest.id, rollbackOutcomeRef.current);
+        }
+        toast.error(result.message ?? "Proof could not be saved.");
+      }
+
+      rollbackOutcomeRef.current = undefined;
+      submittedOutcomeRef.current = null;
+    });
+  }
 
   return (
     <form
-      action={action}
       className="grid gap-3 rounded-md border bg-muted/25 p-3 text-sm"
+      onSubmit={submitCheckIn}
     >
       <input name="questId" type="hidden" value={quest.id} />
       <input name="localDate" type="hidden" value={localDate} />
@@ -143,7 +207,7 @@ function CheckInRow({
             size="sm"
             variant={currentOutcome === "win" ? "default" : "outline"}
             disabled={pending}
-            onClick={() => setOutcome("win")}
+            onClick={() => rememberOutcomeSubmit("win")}
           >
             <HugeiconsIcon
               icon={CheckmarkCircle01Icon}
@@ -159,7 +223,7 @@ function CheckInRow({
             size="sm"
             variant={currentOutcome === "pass" ? "default" : "outline"}
             disabled={pending}
-            onClick={() => setOutcome("pass")}
+            onClick={() => rememberOutcomeSubmit("pass")}
           >
             <HugeiconsIcon icon={UnavailableIcon} size={14} strokeWidth={1.7} />
             Pass
@@ -170,24 +234,30 @@ function CheckInRow({
         <Input
           name="note"
           placeholder="Proof note, optional"
-          defaultValue={quest.todayCheckIn?.note ?? ""}
+          value={note}
           maxLength={240}
           className="h-9 text-sm"
+          onChange={(event) => setNote(event.target.value)}
         />
         <Button
           name="outcome"
-          value={currentOutcome ?? "win"}
+          value={currentOutcome ?? ""}
           type="submit"
           size="sm"
           variant="ghost"
-          disabled={pending}
+          disabled={pending || !canSaveNote || !isDirty}
           className="h-9 justify-center sm:px-3"
-          onClick={() => setOutcome(currentOutcome ?? "win")}
+          onClick={rememberNoteSubmit}
         >
           <HugeiconsIcon icon={SentIcon} size={14} strokeWidth={1.7} />
-          Save note
+          {!canSaveNote || isDirty ? "Save note" : "Saved"}
         </Button>
       </div>
+      {!canSaveNote ? (
+        <p className="text-xs text-muted-foreground">
+          Choose Win or Pass before saving a proof note.
+        </p>
+      ) : null}
       {state.message ? (
         <p
           className={

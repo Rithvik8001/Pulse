@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/components/auth/auth-form";
+import { isResetSuccessParam, safeRedirectPath } from "@/lib/auth/auth-core";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -9,20 +10,10 @@ export const metadata: Metadata = {
   description: "Sign in to your Pulse dashboard.",
 };
 
-function safeRedirectPath(value: string | string[] | undefined) {
-  const next = Array.isArray(value) ? value[0] : value;
-
-  if (!next?.startsWith("/") || next.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return next;
-}
-
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{ next?: string | string[]; reset?: string | string[] }>;
 }) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -33,5 +24,11 @@ export default async function SignInPage({
 
   const params = await searchParams;
 
-  return <AuthForm mode="sign-in" nextPath={safeRedirectPath(params.next)} />;
+  return (
+    <AuthForm
+      mode="sign-in"
+      nextPath={safeRedirectPath(params.next)}
+      resetSuccess={isResetSuccessParam(params.reset)}
+    />
+  );
 }

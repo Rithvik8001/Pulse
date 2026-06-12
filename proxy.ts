@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { updateSession } from "@/lib/supabase/proxy";
 
-const authRoutes = new Set(["/sign-in", "/sign-up"]);
+const authRoutes = new Set(["/sign-in", "/sign-up", "/forgot-password"]);
 
 function redirectWithSessionCookies(url: URL, sessionResponse: NextResponse) {
   const redirectResponse = NextResponse.redirect(url);
@@ -48,5 +48,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/sign-in", "/sign-up"],
+  matcher: [
+    "/",
+    "/dashboard/:path*",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/reset-password",
+  ],
 };

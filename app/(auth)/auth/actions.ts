@@ -2,7 +2,18 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { cookies } from "next/headers";
 
+import {
+  buildAuthRedirectOrigin,
+  isValidEmail,
+  normalizeEmail,
+  normalizePassword,
+  passwordResetIntentCookie,
+  passwordMinLength,
+  safeRedirectPath,
+  validatePasswordUpdate,
+} from "@/lib/auth/auth-core";
 import { syncEmailPreference } from "@/lib/email/preferences";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,19 +30,25 @@ export type AuthFormState = {
   };
 };
 
-const passwordMinLength = 8;
+export type PasswordResetRequestState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+  fields?: {
+    email?: string;
+  };
+  errors?: {
+    email?: string;
+  };
+};
 
-function normalizeEmail(value: FormDataEntryValue | null) {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
-function normalizePassword(value: FormDataEntryValue | null) {
-  return typeof value === "string" ? value : "";
-}
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+export type PasswordUpdateState = {
+  status: "idle" | "error";
+  message?: string;
+  errors?: {
+    password?: string;
+    confirmPassword?: string;
+  };
+};
 
 function validateCredentials(formData: FormData) {
   const email = normalizeEmail(formData.get("email"));
@@ -54,37 +71,15 @@ function validateCredentials(formData: FormData) {
   };
 }
 
-function safeRedirectPath(value: FormDataEntryValue | null) {
-  if (typeof value !== "string" || !value.startsWith("/")) {
-    return "/dashboard";
-  }
-
-  if (value.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return value;
-}
-
 async function getSiteOrigin() {
   const headerStore = await headers();
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-  const requestOrigin = host ? `${protocol}://${host}` : null;
-  const isLocalRequest =
-    host?.startsWith("localhost") ||
-    host?.startsWith("127.0.0.1") ||
-    host?.startsWith("192.168.");
 
-  if (requestOrigin && isLocalRequest) {
-    return requestOrigin;
-  }
-
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-
-  return requestOrigin ?? "http://localhost:3000";
+  return buildAuthRedirectOrigin({
+    forwardedHost: headerStore.get("x-forwarded-host"),
+    forwardedProto: headerStore.get("x-forwarded-proto"),
+    host: headerStore.get("host"),
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  });
 }
 
 export async function signInAction(
@@ -174,4 +169,86 @@ export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/sign-in");
+}
+
+export async function requestPasswordResetAction(
+  _state: PasswordResetRequestState,
+  formData: FormData,
+): Promise<PasswordResetRequestState> {
+  const email = normalizeEmail(formData.get("email"));
+
+  if (!isValidEmail(email)) {
+    return {
+      status: "error",
+      message: "Enter the email address for your Pulse account.",
+      fields: { email },
+      errors: {
+        email: "Enter a valid email address.",
+      },
+    };
+  }
+
+  const supabase = await createClient();
+  const origin = await getSiteOrigin();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/reset-password`,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: "We could not send a reset link right now. Try again soon.",
+      fields: { email },
+    };
+  }
+
+  return {
+    status: "success",
+    message:
+      "If that email has a Pulse account, a password reset link is on the way.",
+    fields: { email },
+  };
+}
+
+export async function updatePasswordAction(
+  _state: PasswordUpdateState,
+  formData: FormData,
+): Promise<PasswordUpdateState> {
+  const cookieStore = await cookies();
+
+  if (cookieStore.get(passwordResetIntentCookie)?.value !== "1") {
+    return {
+      status: "error",
+      message: "Request a new password reset link before updating.",
+    };
+  }
+
+  const parsed = validatePasswordUpdate(
+    formData.get("password"),
+    formData.get("confirmPassword"),
+  );
+
+  if (!parsed.isValid) {
+    return {
+      status: "error",
+      message: "Check the highlighted fields and try again.",
+      errors: parsed.errors,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.password,
+  });
+
+  if (error) {
+    return {
+      status: "error",
+      message: "We could not update your password. Request a new reset link.",
+    };
+  }
+
+  await supabase.auth.signOut();
+  cookieStore.delete(passwordResetIntentCookie);
+  redirect("/sign-in?reset=success");
 }
