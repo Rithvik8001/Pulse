@@ -7,6 +7,7 @@ import {
   MissingAiGatewayKeyError,
   MissingWeeklyProofError,
 } from "@/lib/pulse/story";
+import { AiLimitReachedError } from "@/lib/pulse/ai-limits";
 
 export type WeeklyStoryFormState = {
   status: "idle" | "success" | "error";
@@ -39,7 +40,8 @@ export async function generateWeeklyStoryAction(): Promise<WeeklyStoryFormState>
   } catch (error) {
     if (
       error instanceof MissingWeeklyProofError ||
-      error instanceof MissingAiGatewayKeyError
+      error instanceof MissingAiGatewayKeyError ||
+      error instanceof AiLimitReachedError
     ) {
       return {
         status: "error",

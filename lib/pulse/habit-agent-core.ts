@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const habitAgentModel = "gpt-5.4-nano";
+export const habitAgentModel = "openai/gpt-5.4-nano";
 export const habitAgentTextLimit = 180;
 
 export const habitAgentActionSchema = z.discriminatedUnion("type", [

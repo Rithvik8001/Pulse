@@ -64,8 +64,8 @@ function makeContext(): HabitAgentContext {
 }
 
 describe("habitAgentActionSchema", () => {
-  it("uses the direct OpenAI Habit Agent model", () => {
-    assert.equal(habitAgentModel, "gpt-5.4-nano");
+  it("uses the AI Gateway Habit Agent model", () => {
+    assert.equal(habitAgentModel, "openai/gpt-5.4-nano");
   });
 
   it("accepts habit operations and rejects non-habit actions", () => {

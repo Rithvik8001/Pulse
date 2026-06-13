@@ -96,8 +96,8 @@ function makeContext(): PulseCoachContext {
 }
 
 describe("buildPulseCoachSystemPrompt", () => {
-  it("uses the direct OpenAI Pulse Coach model", () => {
-    assert.equal(pulseCoachModel, "gpt-5.4-nano");
+  it("uses the AI Gateway Pulse Coach model", () => {
+    assert.equal(pulseCoachModel, "openai/gpt-5.4-nano");
   });
 
   it("includes full Pulse context and proposal-only action rules", () => {

@@ -50,6 +50,13 @@
       "when": 1781282201822,
       "tag": "0006_slimy_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781381112298,
+      "tag": "0007_shallow_lightspeed",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,18 @@ export type QuestStatus = "active" | "archived";
 export type CheckInOutcome = "win" | "pass";
 export type EmailDeliveryType = "welcome" | "weekly_digest";
 export type EmailDeliveryStatus = "pending" | "sent" | "error" | "skipped";
+export type AiUsageScopeType = "user" | "global";
+export type AiUsageFeature =
+  | "pulse-coach"
+  | "habit-agent"
+  | "weekly-story"
+  | "reword-suggestions";
+export type AiUsagePeriod = "day" | "week";
+export type AiUsageEventStatus =
+  | "allowed"
+  | "blocked"
+  | "completed"
+  | "failed";
 
 export const characters = pgTable(
   "characters",
@@ -382,6 +394,120 @@ export const emailDeliveries = pgTable(
   ],
 ).enableRLS();
 
+export const aiUsageBuckets = pgTable(
+  "ai_usage_buckets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => authUsers.id, {
+      onDelete: "cascade",
+    }),
+    scopeType: text("scope_type").$type<AiUsageScopeType>().notNull(),
+    scopeId: text("scope_id").notNull(),
+    feature: text("feature").$type<AiUsageFeature>().notNull(),
+    period: text("period").$type<AiUsagePeriod>().notNull(),
+    periodStart: date("period_start").notNull(),
+    requestCount: integer("request_count").default(0).notNull(),
+    estimatedTokenCount: integer("estimated_token_count").default(0).notNull(),
+    inputTokenCount: integer("input_token_count").default(0).notNull(),
+    outputTokenCount: integer("output_token_count").default(0).notNull(),
+    totalTokenCount: integer("total_token_count").default(0).notNull(),
+    blockedCount: integer("blocked_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ai_usage_buckets_user_id_idx").on(table.userId),
+    index("ai_usage_buckets_scope_idx").on(table.scopeType, table.scopeId),
+    uniqueIndex("ai_usage_buckets_scope_feature_period_unique").on(
+      table.scopeType,
+      table.scopeId,
+      table.feature,
+      table.period,
+      table.periodStart,
+    ),
+    check(
+      "ai_usage_buckets_scope_type_check",
+      sql`${table.scopeType} in ('user', 'global')`,
+    ),
+    check(
+      "ai_usage_buckets_feature_check",
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions')`,
+    ),
+    check(
+      "ai_usage_buckets_period_check",
+      sql`${table.period} in ('day', 'week')`,
+    ),
+    check(
+      "ai_usage_buckets_scope_user_check",
+      sql`(
+        (${table.scopeType} = 'user' and ${table.userId} is not null)
+        or (${table.scopeType} = 'global' and ${table.userId} is null)
+      )`,
+    ),
+    pgPolicy("ai_usage_buckets_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const aiUsageEvents = pgTable(
+  "ai_usage_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    feature: text("feature").$type<AiUsageFeature>().notNull(),
+    status: text("status").$type<AiUsageEventStatus>().notNull(),
+    period: text("period").$type<AiUsagePeriod>().notNull(),
+    periodStart: date("period_start").notNull(),
+    estimatedInputTokens: integer("estimated_input_tokens")
+      .default(0)
+      .notNull(),
+    inputTokens: integer("input_tokens").default(0).notNull(),
+    outputTokens: integer("output_tokens").default(0).notNull(),
+    totalTokens: integer("total_tokens").default(0).notNull(),
+    finishReason: text("finish_reason"),
+    error: text("error"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ai_usage_events_user_id_idx").on(table.userId),
+    index("ai_usage_events_feature_idx").on(table.feature),
+    index("ai_usage_events_status_idx").on(table.status),
+    index("ai_usage_events_period_idx").on(table.period, table.periodStart),
+    check(
+      "ai_usage_events_feature_check",
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions')`,
+    ),
+    check(
+      "ai_usage_events_status_check",
+      sql`${table.status} in ('allowed', 'blocked', 'completed', 'failed')`,
+    ),
+    check(
+      "ai_usage_events_period_check",
+      sql`${table.period} in ('day', 'week')`,
+    ),
+    pgPolicy("ai_usage_events_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
   weeklyStories: many(weeklyStories),
@@ -442,6 +568,23 @@ export const emailDeliveriesRelations = relations(
   }),
 );
 
+export const aiUsageBucketsRelations = relations(
+  aiUsageBuckets,
+  ({ one }) => ({
+    character: one(characters, {
+      fields: [aiUsageBuckets.userId],
+      references: [characters.userId],
+    }),
+  }),
+);
+
+export const aiUsageEventsRelations = relations(aiUsageEvents, ({ one }) => ({
+  character: one(characters, {
+    fields: [aiUsageEvents.userId],
+    references: [characters.userId],
+  }),
+}));
+
 export type Character = typeof characters.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
@@ -449,3 +592,5 @@ export type WeeklyStory = typeof weeklyStories.$inferSelect;
 export type JournalEntry = typeof journalEntries.$inferSelect;
 export type EmailPreference = typeof emailPreferences.$inferSelect;
 export type EmailDelivery = typeof emailDeliveries.$inferSelect;
+export type AiUsageBucket = typeof aiUsageBuckets.$inferSelect;
+export type AiUsageEvent = typeof aiUsageEvents.$inferSelect;

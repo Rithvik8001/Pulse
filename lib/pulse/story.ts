@@ -12,6 +12,13 @@ import {
   quests,
   weeklyStories,
 } from "@/lib/db/schema";
+import {
+  AiLimitReachedError,
+  completeAiUsage,
+  estimateAiTextTokens,
+  failAiUsage,
+  reserveAiUsage,
+} from "@/lib/pulse/ai-limits";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
 import { buildWeeklyStoryPrompt } from "@/lib/pulse/story-core";
 
@@ -95,7 +102,9 @@ export class MissingWeeklyProofError extends Error {
 
 export class MissingAiGatewayKeyError extends Error {
   constructor() {
-    super("Add AI_GATEWAY_API_KEY to your environment before generating.");
+    super(
+      "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment before generating.",
+    );
     this.name = "MissingAiGatewayKeyError";
   }
 }
@@ -203,21 +212,56 @@ export async function generateAndSaveWeeklyStory() {
     throw new MissingWeeklyProofError();
   }
 
-  const { output } = await generateText({
-    model: weeklyStoryModel,
-    output: Output.object({
-      schema: weeklyStorySchema,
-    }),
-    system:
-      "You are Pulse, an identity-first reflection coach. Write friendly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming. be honest, motivating, encouraging. use emojis wherever necessary. ",
-    prompt: buildWeeklyStoryPrompt({
-      characterName: character.name,
-      journal,
-      proof,
-      quests: userQuests.map((quest) => quest.title),
-      week,
-    }),
+  const system =
+    "You are Pulse, an identity-first reflection coach. Write friendly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming. Be honest, motivating, and encouraging.";
+  const prompt = buildWeeklyStoryPrompt({
+    characterName: character.name,
+    journal,
+    proof,
+    quests: userQuests.map((quest) => quest.title),
+    week,
   });
+  const reservation = await reserveAiUsage({
+    userId,
+    feature: "weekly-story",
+    estimatedInputTokens: estimateAiTextTokens(`${system}\n${prompt}`),
+    metadata: {
+      action: "generateWeeklyStory",
+      proofCount: proof.length,
+      journalCount: journal.length,
+    },
+  });
+
+  if (!reservation.allowed) {
+    throw new AiLimitReachedError(
+      reservation.message,
+      reservation.retryAfterSeconds,
+    );
+  }
+
+  let output: z.infer<typeof weeklyStorySchema>;
+
+  try {
+    const result = await generateText({
+      model: weeklyStoryModel,
+      output: Output.object({
+        schema: weeklyStorySchema,
+      }),
+      system,
+      prompt,
+      providerOptions: reservation.providerOptions,
+      maxOutputTokens: reservation.maxOutputTokens,
+    });
+    output = result.output;
+    await completeAiUsage({
+      eventId: reservation.eventId,
+      usage: result.totalUsage,
+      finishReason: result.finishReason,
+    });
+  } catch (error) {
+    await failAiUsage({ eventId: reservation.eventId, error });
+    throw error;
+  }
 
   const now = new Date();
   const [story] = await db

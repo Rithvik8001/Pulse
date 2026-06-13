@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { updateQuestTitle } from "@/lib/pulse/quests";
 import { getRewordOptions, MissingAiKeyError } from "@/lib/pulse/suggestions";
+import { AiLimitReachedError } from "@/lib/pulse/ai-limits";
 
 export type RewordOptionsState = {
   status: "idle" | "success" | "error";
@@ -30,6 +31,9 @@ export async function getRewordOptionsAction(
     return { status: "success", alternatives };
   } catch (error) {
     if (error instanceof MissingAiKeyError) {
+      return { status: "error", message: error.message };
+    }
+    if (error instanceof AiLimitReachedError) {
       return { status: "error", message: error.message };
     }
     return {

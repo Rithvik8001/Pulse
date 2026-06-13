@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const pulseCoachModel = "gpt-5.4-nano";
+export const pulseCoachModel = "openai/gpt-5.4-nano";
 
 export const coachRecentProofLimit = 14;
 export const coachJournalLimit = 7;

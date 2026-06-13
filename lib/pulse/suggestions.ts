@@ -6,6 +6,13 @@ import { z } from "zod";
 
 import { db } from "@/lib/db";
 import { checkIns, quests } from "@/lib/db/schema";
+import {
+  AiLimitReachedError,
+  completeAiUsage,
+  estimateAiTextTokens,
+  failAiUsage,
+  reserveAiUsage,
+} from "@/lib/pulse/ai-limits";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
 import {
   offsetDate,
@@ -53,7 +60,7 @@ export type SuggestionsRawData = {
 export class MissingAiKeyError extends Error {
   constructor() {
     super(
-      "Add AI_GATEWAY_API_KEY to your environment to generate reword suggestions.",
+      "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment to generate reword suggestions.",
     );
     this.name = "MissingAiKeyError";
   }
@@ -241,16 +248,47 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
   const passNotes = passNoteRows
     .map((r) => r.note)
     .filter((n): n is string => n !== null && n.trim().length > 0);
-
-  const { output } = await generateText({
-    model: "openai/gpt-5.4-nano",
-    output: Output.object({ schema: rewordSchema }),
-    system:
-      "You are Pulse, a habit coach. Suggest shorter, more achievable rewordings of a user's quest. Keep each under 80 characters. Be concrete and kind.",
-    prompt: buildRewordPrompt(questRow.title, passNotes),
+  const truncatedPassNotes = passNotes.slice(0, 10).map(truncateRewordNote);
+  const system =
+    "You are Pulse, a habit coach. Suggest shorter, more achievable rewordings of a user's quest. Keep each under 80 characters. Be concrete and kind.";
+  const prompt = buildRewordPrompt(questRow.title, truncatedPassNotes);
+  const reservation = await reserveAiUsage({
+    userId,
+    feature: "reword-suggestions",
+    estimatedInputTokens: estimateAiTextTokens(`${system}\n${prompt}`),
+    metadata: {
+      action: "getRewordOptions",
+      passNoteCount: truncatedPassNotes.length,
+    },
   });
 
-  return output.alternatives;
+  if (!reservation.allowed) {
+    throw new AiLimitReachedError(
+      reservation.message,
+      reservation.retryAfterSeconds,
+    );
+  }
+
+  try {
+    const { output, totalUsage, finishReason } = await generateText({
+      model: "openai/gpt-5.4-nano",
+      output: Output.object({ schema: rewordSchema }),
+      system,
+      prompt,
+      providerOptions: reservation.providerOptions,
+      maxOutputTokens: reservation.maxOutputTokens,
+    });
+    await completeAiUsage({
+      eventId: reservation.eventId,
+      usage: totalUsage,
+      finishReason,
+    });
+
+    return output.alternatives;
+  } catch (error) {
+    await failAiUsage({ eventId: reservation.eventId, error });
+    throw error;
+  }
 }
 
 function buildRewordPrompt(title: string, passNotes: string[]): string {
@@ -260,4 +298,10 @@ function buildRewordPrompt(title: string, passNotes: string[]): string {
       : "";
 
   return `Quest: "${title}"${notesSection}\n\nSuggest 2–3 shorter, more achievable alternative phrasings. Each must be under 80 characters.`;
+}
+
+function truncateRewordNote(note: string) {
+  const text = note.trim().replace(/\s+/g, " ");
+
+  return text.length <= 180 ? text : `${text.slice(0, 179).trim()}…`;
 }
