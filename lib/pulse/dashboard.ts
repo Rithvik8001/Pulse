@@ -5,6 +5,15 @@ import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
+import {
+  formatLocalDate,
+  getLocalDateInTimeZone,
+  offsetLocalDate,
+} from "@/lib/pulse/local-date-core";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 import { createClient } from "@/lib/supabase/server";
 
 export type DashboardQuest = {
@@ -67,7 +76,16 @@ export async function requireUserId() {
 
 export async function getDashboardData(): Promise<DashboardData> {
   const userId = await requireUserId();
-  const today = getLocalDate();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getDashboardDataForUser(userId, dateContext);
+}
+
+export async function getDashboardDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<DashboardData> {
+  const today = dateContext.today;
   const [character] = await db
     .select({
       id: characters.id,
@@ -87,8 +105,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   }
 
-  const baseDate = new Date();
-  const historyStartDate = getLocalDate(offsetDate(baseDate, -55));
+  const historyStartDate = offsetLocalDate(today, -55);
   const [userQuests, todayCheckIns, recentProofRows, proofHistoryRows] =
     await Promise.all([
       db
@@ -163,16 +180,12 @@ export async function getDashboardData(): Promise<DashboardData> {
       ...toDashboardCheckIn(row),
       questTitle: row.questTitle,
     })),
-    proofHistory: buildProofHistory(proofHistoryRows, baseDate),
+    proofHistory: buildProofHistory(proofHistoryRows, today),
   };
 }
 
 export function getLocalDate(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return formatLocalDate(date);
 }
 
 function toDashboardCheckIn(checkIn: {
@@ -191,11 +204,8 @@ function toDashboardCheckIn(checkIn: {
   };
 }
 
-function offsetDate(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-
-  return nextDate;
+export function getLocalDateForTimeZone(date: Date, timeZone: string) {
+  return getLocalDateInTimeZone(date, timeZone);
 }
 
 function buildProofHistory(
@@ -203,12 +213,12 @@ function buildProofHistory(
     localDate: string;
     outcome: string;
   }[],
-  baseDate: Date,
+  today: string,
 ): ProofHistoryDay[] {
   const byDate = new Map<string, ProofHistoryDay>();
 
   for (let index = 55; index >= 0; index -= 1) {
-    const localDate = getLocalDate(offsetDate(baseDate, -index));
+    const localDate = offsetLocalDate(today, -index);
     byDate.set(localDate, {
       localDate,
       winCount: 0,

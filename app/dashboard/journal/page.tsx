@@ -17,7 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getJournalData, journalHistoryDays } from "@/lib/pulse/journal";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { getJournalDataForUser, journalHistoryDays } from "@/lib/pulse/journal";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Journal · Pulse",
@@ -33,7 +35,9 @@ export default async function JournalPage({
   const selectedDate = Array.isArray(params.date)
     ? params.date[0]
     : params.date;
-  const data = await getJournalData(selectedDate);
+  const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const data = await getJournalDataForUser(userId, dateContext, selectedDate);
 
   if (!data.isSetupComplete) {
     return (

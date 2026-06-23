@@ -16,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getQuestManagerData } from "@/lib/pulse/quests";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { getQuestManagerDataForUser } from "@/lib/pulse/quests";
 
 export const metadata: Metadata = {
   title: "Quests · Pulse",
@@ -24,7 +25,8 @@ export const metadata: Metadata = {
 };
 
 export default async function QuestsPage() {
-  const data = await getQuestManagerData();
+  const userId = await requireUserId();
+  const data = await getQuestManagerDataForUser(userId);
 
   if (!data.isSetupComplete) {
     return (

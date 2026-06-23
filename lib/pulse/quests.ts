@@ -46,6 +46,13 @@ export type QuestMutationResult = {
 
 export async function getQuestManagerData(): Promise<QuestManagerData> {
   const userId = await requireUserId();
+
+  return getQuestManagerDataForUser(userId);
+}
+
+export async function getQuestManagerDataForUser(
+  userId: string,
+): Promise<QuestManagerData> {
   const character = await getCharacterForUser(userId);
 
   if (!character) {

@@ -11,6 +11,7 @@ import {
   getResendClient,
   getSiteUrl,
 } from "@/lib/email/resend";
+import { logError, logInfo, logWarn } from "@/lib/observability/logger";
 
 type ProductEmailInput = {
   userId: string;
@@ -33,6 +34,14 @@ export async function sendProductEmail(
   const reserved = await reserveDelivery(input);
 
   if (!reserved) {
+    logInfo({
+      event: "email_delivery_skipped",
+      message: "Product email skipped because delivery already exists.",
+      userId: input.userId,
+      metadata: {
+        type: input.type,
+      },
+    });
     return { status: "skipped", reason: "duplicate" };
   }
 
@@ -62,6 +71,15 @@ export async function sendProductEmail(
     );
 
     if (error) {
+      logError({
+        event: "email_send_failed",
+        message: "Resend returned an email send error.",
+        userId: input.userId,
+        error: new Error(error.message),
+        metadata: {
+          type: input.type,
+        },
+      });
       await markDeliveryError(reserved.id, error.message);
       return { status: "error", error: error.message };
     }
@@ -76,9 +94,27 @@ export async function sendProductEmail(
       })
       .where(eq(emailDeliveries.id, reserved.id));
 
+    logInfo({
+      event: "email_send_completed",
+      message: "Product email sent.",
+      userId: input.userId,
+      metadata: {
+        type: input.type,
+      },
+    });
+
     return { status: "sent", resendId };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error.";
+    logError({
+      event: "email_send_failed",
+      message: "Product email send threw.",
+      userId: input.userId,
+      error,
+      metadata: {
+        type: input.type,
+      },
+    });
     await markDeliveryError(reserved.id, message);
 
     return { status: "error", error: message };
@@ -99,6 +135,15 @@ async function reserveDelivery(input: ProductEmailInput) {
     if (existing.status !== "error") {
       return null;
     }
+
+    logWarn({
+      event: "email_delivery_retrying",
+      message: "Retrying previously failed email delivery.",
+      userId: input.userId,
+      metadata: {
+        type: input.type,
+      },
+    });
 
     const [reserved] = await db
       .update(emailDeliveries)

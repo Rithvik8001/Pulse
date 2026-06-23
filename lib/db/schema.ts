@@ -508,12 +508,48 @@ export const aiUsageEvents = pgTable(
   ],
 ).enableRLS();
 
+export const userSettings = pgTable(
+  "user_settings",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    timeZone: text("time_zone").default("UTC").notNull(),
+    locale: text("locale").default("en").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    pgPolicy("user_settings_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("user_settings_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("user_settings_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
   weeklyStories: many(weeklyStories),
   journalEntries: many(journalEntries),
   emailPreferences: many(emailPreferences),
   emailDeliveries: many(emailDeliveries),
+  userSettings: many(userSettings),
 }));
 
 export const questsRelations = relations(quests, ({ one }) => ({
@@ -585,6 +621,13 @@ export const aiUsageEventsRelations = relations(aiUsageEvents, ({ one }) => ({
   }),
 }));
 
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  character: one(characters, {
+    fields: [userSettings.userId],
+    references: [characters.userId],
+  }),
+}));
+
 export type Character = typeof characters.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
@@ -594,3 +637,4 @@ export type EmailPreference = typeof emailPreferences.$inferSelect;
 export type EmailDelivery = typeof emailDeliveries.$inferSelect;
 export type AiUsageBucket = typeof aiUsageBuckets.$inferSelect;
 export type AiUsageEvent = typeof aiUsageEvents.$inferSelect;
+export type UserSettings = typeof userSettings.$inferSelect;

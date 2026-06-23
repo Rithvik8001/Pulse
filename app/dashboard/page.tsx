@@ -23,12 +23,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getDashboardData } from "@/lib/pulse/dashboard";
-import { getMomentumData } from "@/lib/pulse/momentum";
+import { getDashboardDataForUser, requireUserId } from "@/lib/pulse/dashboard";
+import { getMomentumDataForUser } from "@/lib/pulse/momentum";
 import {
   computeSuggestions,
-  getSuggestionsData,
+  getSuggestionsDataForUser,
 } from "@/lib/pulse/suggestions";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Dashboard · Pulse",
@@ -72,14 +73,16 @@ function getStats(
 }
 
 export default async function DashboardPage() {
+  const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
   const [dashboard, { suggestions, isAtQuestLimit }, momentum] =
     await Promise.all([
-      getDashboardData(),
-      getSuggestionsData().then((raw) => ({
+      getDashboardDataForUser(userId, dateContext),
+      getSuggestionsDataForUser(userId, dateContext).then((raw) => ({
         suggestions: computeSuggestions(raw),
         isAtQuestLimit: raw.activeQuestCount >= 12,
       })),
-      getMomentumData(),
+      getMomentumDataForUser(userId, dateContext),
     ]);
 
   if (!dashboard.isSetupComplete) {

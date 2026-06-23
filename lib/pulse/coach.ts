@@ -19,36 +19,41 @@ import {
   type CoachProposal,
   type PulseCoachContext,
 } from "@/lib/pulse/coach-core";
-import { getLocalDate } from "@/lib/pulse/dashboard";
+import { getLocalDateForTimeZone } from "@/lib/pulse/dashboard";
+import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { computeMomentum } from "@/lib/pulse/momentum-core";
-import { getProofArchiveData } from "@/lib/pulse/proof";
+import { getProofArchiveDataForUser } from "@/lib/pulse/proof";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import { computeStatsData, statsWindowWeeks } from "@/lib/pulse/stats-core";
 import {
   computeSuggestions,
-  getSuggestionsData,
+  getSuggestionsDataForUser,
 } from "@/lib/pulse/suggestions";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export { buildPulseCoachSystemPrompt } from "@/lib/pulse/coach-core";
-
-function offsetDate(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-
-  return nextDate;
-}
 
 export async function getPulseCoachContext(
   userId: string,
 ): Promise<PulseCoachContext> {
-  const baseDate = new Date();
-  const today = getLocalDate(baseDate);
-  const fourteenDaysAgo = getLocalDate(offsetDate(baseDate, -13));
-  const thirtyDaysAgo = getLocalDate(offsetDate(baseDate, -30));
-  const ninetyDaysAgo = getLocalDate(offsetDate(baseDate, -90));
-  const statsStart = getLocalDate(
-    offsetDate(baseDate, -(statsWindowWeeks * 7)),
-  );
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getPulseCoachContextForUser(userId, dateContext);
+}
+
+export async function getPulseCoachContextForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<PulseCoachContext> {
+  const baseDate = parseLocalDate(dateContext.today);
+  const today = dateContext.today;
+  const fourteenDaysAgo = offsetLocalDate(today, -13);
+  const thirtyDaysAgo = offsetLocalDate(today, -30);
+  const ninetyDaysAgo = offsetLocalDate(today, -90);
+  const statsStart = offsetLocalDate(today, -(statsWindowWeeks * 7));
 
   const [character] = await db
     .select({ id: characters.id, name: characters.name })
@@ -177,7 +182,7 @@ export async function getPulseCoachContext(
       .groupBy(quests.id)
       .orderBy(desc(quests.archivedAt), asc(quests.title))
       .limit(12),
-    getProofArchiveData(),
+    getProofArchiveDataForUser(userId, dateContext),
     db
       .select({
         questId: checkIns.questId,
@@ -193,7 +198,7 @@ export async function getPulseCoachContext(
         ),
       )
       .orderBy(asc(checkIns.localDate)),
-    getSuggestionsData(),
+    getSuggestionsDataForUser(userId, dateContext),
     db
       .select({
         localDate: journalEntries.localDate,
@@ -309,7 +314,9 @@ export async function getPulseCoachContext(
       title: quest.title,
       proofCount: Number(quest.proofCount),
       winCount: Number(quest.winCount),
-      archivedAt: quest.archivedAt ? getLocalDate(quest.archivedAt) : null,
+      archivedAt: quest.archivedAt
+        ? getLocalDateForTimeZone(quest.archivedAt, dateContext.timeZone)
+        : null,
     })),
     recentProof: recentProofRows.map((entry) => ({
       localDate: entry.localDate,
@@ -472,7 +479,16 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
 }
 
 export async function getPulseCoachPromptAndTools(userId: string) {
-  const context = await getPulseCoachContext(userId);
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getPulseCoachPromptAndToolsForUser(userId, dateContext);
+}
+
+export async function getPulseCoachPromptAndToolsForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+) {
+  const context = await getPulseCoachContextForUser(userId, dateContext);
 
   return {
     context,

@@ -14,19 +14,32 @@ import {
   type HabitAgentHabit,
   type HabitAgentProposal,
 } from "@/lib/pulse/habit-agent-core";
-import { getLocalDate } from "@/lib/pulse/dashboard";
+import { getLocalDateForTimeZone } from "@/lib/pulse/dashboard";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import {
   computeSuggestions,
-  getSuggestionsData,
+  getSuggestionsDataForUser,
 } from "@/lib/pulse/suggestions";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export { buildHabitAgentSystemPrompt } from "@/lib/pulse/habit-agent-core";
 
 export async function getHabitAgentContext(
   userId: string,
 ): Promise<HabitAgentContext | null> {
-  const today = getLocalDate();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getHabitAgentContextForUser(userId, dateContext);
+}
+
+export async function getHabitAgentContextForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<HabitAgentContext | null> {
+  const today = dateContext.today;
   const [character] = await db
     .select({ id: characters.id, name: characters.name })
     .from(characters)
@@ -54,7 +67,7 @@ export async function getHabitAgentContext(
       .where(eq(quests.userId, userId))
       .groupBy(quests.id)
       .orderBy(asc(quests.position), desc(quests.updatedAt)),
-    getSuggestionsData(),
+    getSuggestionsDataForUser(userId, dateContext),
   ]);
 
   const habits: HabitAgentHabit[] = habitRows.map((habit) => ({
@@ -65,7 +78,9 @@ export async function getHabitAgentContext(
     winCount: Number(habit.winCount),
     passCount: Number(habit.passCount),
     lastCheckInDate: habit.lastCheckInDate,
-    archivedAt: habit.archivedAt ? getLocalDate(habit.archivedAt) : null,
+    archivedAt: habit.archivedAt
+      ? getLocalDateForTimeZone(habit.archivedAt, dateContext.timeZone)
+      : null,
   }));
 
   return {
@@ -167,7 +182,16 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
 }
 
 export async function getHabitAgentPromptAndTools(userId: string) {
-  const context = await getHabitAgentContext(userId);
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getHabitAgentPromptAndToolsForUser(userId, dateContext);
+}
+
+export async function getHabitAgentPromptAndToolsForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+) {
+  const context = await getHabitAgentContextForUser(userId, dateContext);
 
   if (!context) {
     return null;

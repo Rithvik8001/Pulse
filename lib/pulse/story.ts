@@ -12,6 +12,7 @@ import {
   quests,
   weeklyStories,
 } from "@/lib/db/schema";
+import { logError } from "@/lib/observability/logger";
 import {
   AiLimitReachedError,
   completeAiUsage,
@@ -20,7 +21,12 @@ import {
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { parseLocalDate } from "@/lib/pulse/local-date-core";
 import { buildWeeklyStoryPrompt } from "@/lib/pulse/story-core";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export const weeklyStoryModel = "openai/gpt-5.4-nano";
 
@@ -113,7 +119,17 @@ export async function getWeeklyStoryData(
   selectedStoryId?: string,
 ): Promise<WeeklyStoryData> {
   const userId = await requireUserId();
-  const week = getWeekRange();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getWeeklyStoryDataForUser(userId, dateContext, selectedStoryId);
+}
+
+export async function getWeeklyStoryDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+  selectedStoryId?: string,
+): Promise<WeeklyStoryData> {
+  const week = getWeekRange(parseLocalDate(dateContext.today));
   const [character] = await db
     .select({
       id: characters.id,
@@ -174,7 +190,8 @@ export async function generateAndSaveWeeklyStory() {
   }
 
   const userId = await requireUserId();
-  const week = getWeekRange();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const week = getWeekRange(parseLocalDate(dateContext.today));
   const [character] = await db
     .select({
       id: characters.id,
@@ -259,6 +276,17 @@ export async function generateAndSaveWeeklyStory() {
       finishReason: result.finishReason,
     });
   } catch (error) {
+    logError({
+      event: "weekly_story_generation_failed",
+      message: "Weekly Story generation failed.",
+      feature: "weekly-story",
+      userId,
+      error,
+      metadata: {
+        proofCount: proof.length,
+        journalCount: journal.length,
+      },
+    });
     await failAiUsage({ eventId: reservation.eventId, error });
     throw error;
   }

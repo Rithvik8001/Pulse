@@ -4,13 +4,18 @@ import { and, desc, eq, gte } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { characters, checkIns, journalEntries, quests } from "@/lib/db/schema";
-import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { parseLocalDate } from "@/lib/pulse/local-date-core";
 import {
   getJournalHistoryStart,
   normalizeJournalBody,
   normalizeJournalDate,
   validateJournalBody,
 } from "@/lib/pulse/journal-core";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export {
   getJournalHistoryStart,
@@ -65,7 +70,17 @@ export async function getJournalData(
   selectedDate?: string,
 ): Promise<JournalData> {
   const userId = await requireUserId();
-  const today = getLocalDate();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getJournalDataForUser(userId, dateContext, selectedDate);
+}
+
+export async function getJournalDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+  selectedDate?: string,
+): Promise<JournalData> {
+  const today = dateContext.today;
   const date = normalizeJournalDate(selectedDate, today);
   const [character] = await db
     .select({
@@ -87,7 +102,7 @@ export async function getJournalData(
     };
   }
 
-  const historyStart = getJournalHistoryStart(new Date());
+  const historyStart = getJournalHistoryStart(parseLocalDate(today));
   const [entryRows, proofRows, historyRows] = await Promise.all([
     db
       .select({
@@ -152,7 +167,8 @@ export async function upsertJournalEntry(
   body: string,
 ): Promise<JournalMutationResult> {
   const userId = await requireUserId();
-  const selectedDate = normalizeJournalDate(localDate, getLocalDate());
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const selectedDate = normalizeJournalDate(localDate, dateContext.today);
   const cleanBody = normalizeJournalBody(body);
   const validationError = validateJournalBody(cleanBody);
 

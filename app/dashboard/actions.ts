@@ -7,7 +7,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
 import { sendWelcomeEmailAfterSetup } from "@/lib/email/welcome";
-import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { logError } from "@/lib/observability/logger";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type SetupFormState = {
   status: "idle" | "error";
@@ -109,7 +111,12 @@ export async function createInitialSetup(
 
   revalidatePath("/dashboard");
   sendWelcomeEmailAfterSetup(character).catch((error: unknown) => {
-    console.error("Welcome email failed", error);
+    logError({
+      event: "welcome_email_background_failed",
+      message: "Welcome email failed after setup.",
+      userId,
+      error,
+    });
   });
   redirect("/dashboard");
 }
@@ -124,8 +131,9 @@ export async function upsertCheckInAction(
   formData: FormData,
 ): Promise<CheckInFormState> {
   const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
   const questId = normalizeText(formData.get("questId"));
-  const localDate = normalizeDate(formData.get("localDate"));
+  const localDate = normalizeDate(formData.get("localDate"), dateContext.today);
   const outcome = normalizeOutcome(formData.get("outcome"));
   const note = normalizeOptionalText(formData.get("note"));
 
@@ -194,11 +202,11 @@ export async function upsertCheckInAction(
   };
 }
 
-function normalizeDate(value: FormDataEntryValue | null) {
+function normalizeDate(value: FormDataEntryValue | null, fallback: string) {
   const text = normalizeText(value);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return getLocalDate();
+    return fallback;
   }
 
   return text;

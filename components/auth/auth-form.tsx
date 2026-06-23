@@ -157,7 +157,10 @@ export function AuthForm({
             </Field>
             {mode === "sign-in" ? (
               <div className="-mt-2 text-right text-xs">
-                <Link className="font-medium text-primary" href="/forgot-password">
+                <Link
+                  className="font-medium text-primary"
+                  href="/forgot-password"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -211,9 +214,7 @@ export function AuthFrame({ children }: { children: React.ReactNode }) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-70 [background-image:linear-gradient(#ececed_1px,transparent_1px),linear-gradient(90deg,#ececed_1px,transparent_1px)] [background-size:46px_46px] [mask-image:radial-gradient(ellipse_72%_64%_at_50%_42%,#000_28%,transparent_78%)]"
       />
-      <div className="relative w-full max-w-[440px]">
-        {children}
-      </div>
+      <div className="relative w-full max-w-[440px]">{children}</div>
     </main>
   );
 }

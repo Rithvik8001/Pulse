@@ -6,6 +6,7 @@ import { AiBrain01Icon, Logout03Icon } from "@hugeicons/core-free-icons";
 import { signOutAction } from "@/app/(auth)/auth/actions";
 import { Mascot } from "@/components/landing/mascot";
 import { DashboardSidebarNav } from "@/components/product/dashboard-sidebar-nav";
+import { UserSettingsSync } from "@/components/product/user-settings-sync";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -20,6 +21,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { syncEmailPreference } from "@/lib/email/preferences";
+import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,10 +39,12 @@ export default async function DashboardLayout({
 
   const email =
     typeof data.claims.email === "string" ? data.claims.email : "Signed in";
+  const userId = typeof data.claims.sub === "string" ? data.claims.sub : null;
 
-  if (typeof data.claims.sub === "string" && typeof data.claims.email === "string") {
-    await syncEmailPreference(data.claims.sub, data.claims.email);
+  if (userId && typeof data.claims.email === "string") {
+    await syncEmailPreference(userId, data.claims.email);
   }
+  const settings = userId ? await getUserSettingsForUser(userId) : null;
 
   const sidebarLinkClassName = cn(
     "peer/menu-button group/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-[calc(var(--radius-sm)+2px)] p-2 text-left text-xs ring-sidebar-ring outline-hidden transition-[width,height,padding]",
@@ -96,6 +100,12 @@ export default async function DashboardLayout({
         <SidebarRail />
       </Sidebar>
       <SidebarInset>
+        {settings ? (
+          <UserSettingsSync
+            locale={settings.locale}
+            timeZone={settings.timeZone}
+          />
+        ) : null}
         <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:hidden">
           <SidebarTrigger />
         </header>

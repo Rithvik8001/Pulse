@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { checkIns, quests } from "@/lib/db/schema";
 import { coachActionSchema, type CoachAction } from "@/lib/pulse/coach-core";
-import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { requireUserId } from "@/lib/pulse/dashboard";
 import { upsertJournalEntry } from "@/lib/pulse/journal";
 import {
   createQuest,
@@ -14,6 +14,7 @@ import {
   restoreQuest,
   updateQuestTitle,
 } from "@/lib/pulse/quests";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type CoachConfirmResult = {
   status: "success" | "error";
@@ -67,9 +68,10 @@ async function saveCoachCheckIn(
   action: Extract<CoachAction, { type: "saveCheckIn" }>,
 ): Promise<CoachConfirmResult> {
   const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
   const localDate = /^\d{4}-\d{2}-\d{2}$/.test(action.localDate)
     ? action.localDate
-    : getLocalDate();
+    : dateContext.today;
   const cleanNote = action.note?.trim().replace(/\s+/g, " ") || null;
 
   if (cleanNote && cleanNote.length > 240) {

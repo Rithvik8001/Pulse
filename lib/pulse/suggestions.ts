@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { db } from "@/lib/db";
 import { checkIns, quests } from "@/lib/db/schema";
+import { logError } from "@/lib/observability/logger";
 import {
   AiLimitReachedError,
   completeAiUsage,
@@ -13,12 +14,16 @@ import {
   failAiUsage,
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
-import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { requireUserId } from "@/lib/pulse/dashboard";
 import {
-  offsetDate,
+  offsetLocalDate,
   parseLocalDate,
 } from "@/lib/pulse/local-date-core";
 import { activeQuestLimit } from "@/lib/pulse/quests";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export type SuggestionType = "archive" | "reword" | "restore";
 
@@ -68,11 +73,19 @@ export class MissingAiKeyError extends Error {
 
 export async function getSuggestionsData(): Promise<SuggestionsRawData> {
   const userId = await requireUserId();
-  const now = new Date();
-  const sevenDaysAgo = getLocalDate(offsetDate(now, -7));
-  const fourteenDaysAgo = getLocalDate(offsetDate(now, -14));
-  const twentyOneDaysAgo = getLocalDate(offsetDate(now, -21));
-  const thirtyDaysAgo = getLocalDate(offsetDate(now, -30));
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getSuggestionsDataForUser(userId, dateContext);
+}
+
+export async function getSuggestionsDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<SuggestionsRawData> {
+  const sevenDaysAgo = offsetLocalDate(dateContext.today, -7);
+  const fourteenDaysAgo = offsetLocalDate(dateContext.today, -14);
+  const twentyOneDaysAgo = offsetLocalDate(dateContext.today, -21);
+  const thirtyDaysAgo = offsetLocalDate(dateContext.today, -30);
 
   const [activeRows, archivedRows] = await Promise.all([
     db
@@ -220,7 +233,8 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
   }
 
   const userId = await requireUserId();
-  const thirtyDaysAgo = getLocalDate(offsetDate(new Date(), -30));
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const thirtyDaysAgo = offsetLocalDate(dateContext.today, -30);
 
   const [questRow] = await db
     .select({ id: quests.id, title: quests.title })
@@ -286,6 +300,16 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
 
     return output.alternatives;
   } catch (error) {
+    logError({
+      event: "reword_generation_failed",
+      message: "Reword suggestion generation failed.",
+      feature: "reword-suggestions",
+      userId,
+      error,
+      metadata: {
+        passNoteCount: truncatedPassNotes.length,
+      },
+    });
     await failAiUsage({ eventId: reservation.eventId, error });
     throw error;
   }

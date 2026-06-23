@@ -5,7 +5,12 @@ import {
   stepCountIs,
 } from "ai";
 
-import { getHabitAgentPromptAndTools } from "@/lib/pulse/habit-agent";
+import {
+  createRequestId,
+  logError,
+  logWarn,
+} from "@/lib/observability/logger";
+import { getHabitAgentPromptAndToolsForUser } from "@/lib/pulse/habit-agent";
 import { habitAgentModel } from "@/lib/pulse/habit-agent-core";
 import {
   completeAiUsage,
@@ -15,13 +20,22 @@ import {
   validateAndTrimAiChatMessages,
 } from "@/lib/pulse/ai-limits";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  const requestId = createRequestId(request.headers);
   const apiKey = process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN;
 
   if (!apiKey) {
+    logError({
+      event: "ai_missing_gateway_key",
+      message: "Habit Agent request missing AI Gateway key.",
+      route: "/api/habit-agent",
+      feature: "habit-agent",
+      requestId,
+    });
     return Response.json(
       {
         error:
@@ -32,9 +46,21 @@ export async function POST(request: Request) {
   }
 
   const userId = await requireUserId();
-  const promptAndTools = await getHabitAgentPromptAndTools(userId);
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const promptAndTools = await getHabitAgentPromptAndToolsForUser(
+    userId,
+    dateContext,
+  );
 
   if (!promptAndTools) {
+    logWarn({
+      event: "ai_missing_setup",
+      message: "Habit Agent requested before setup.",
+      route: "/api/habit-agent",
+      feature: "habit-agent",
+      userId,
+      requestId,
+    });
     return Response.json(
       { error: "Create your Character before using Habit Agent." },
       { status: 400 },
@@ -44,12 +70,28 @@ export async function POST(request: Request) {
   const { messages }: { messages?: UIMessage[] } = await request.json();
 
   if (!Array.isArray(messages)) {
+    logWarn({
+      event: "ai_invalid_messages",
+      message: "Habit Agent request did not include messages.",
+      route: "/api/habit-agent",
+      feature: "habit-agent",
+      userId,
+      requestId,
+    });
     return Response.json({ error: "Missing chat messages." }, { status: 400 });
   }
 
   const chatValidation = validateAndTrimAiChatMessages(messages);
 
   if (!chatValidation.valid) {
+    logWarn({
+      event: "ai_invalid_messages",
+      message: chatValidation.message,
+      route: "/api/habit-agent",
+      feature: "habit-agent",
+      userId,
+      requestId,
+    });
     return Response.json({ error: chatValidation.message }, { status: 400 });
   }
 
@@ -67,6 +109,18 @@ export async function POST(request: Request) {
   });
 
   if (!reservation.allowed) {
+    logWarn({
+      event: "ai_rate_limited",
+      message: reservation.message,
+      route: "/api/habit-agent",
+      feature: "habit-agent",
+      userId,
+      requestId,
+      metadata: {
+        retryAfterSeconds: reservation.retryAfterSeconds,
+        remaining: reservation.remaining,
+      },
+    });
     return rateLimitedResponse(reservation);
   }
 
@@ -90,8 +144,18 @@ export async function POST(request: Request) {
         usage: totalUsage,
         finishReason,
       }),
-    onError: ({ error }) =>
-      failAiUsage({ eventId: reservation.eventId, error }),
+    onError: ({ error }) => {
+      logError({
+        event: "ai_stream_failed",
+        message: "Habit Agent stream failed.",
+        route: "/api/habit-agent",
+        feature: "habit-agent",
+        userId,
+        requestId,
+        error,
+      });
+      return failAiUsage({ eventId: reservation.eventId, error });
+    },
   });
 
   return result.toUIMessageStreamResponse({

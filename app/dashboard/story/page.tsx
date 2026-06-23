@@ -28,11 +28,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  getWeeklyStoryData,
+  getWeeklyStoryDataForUser,
   type WeeklyJournalReflection,
   type WeeklyProof,
   type WeeklyStory,
 } from "@/lib/pulse/story";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -40,15 +43,15 @@ export const metadata: Metadata = {
   description: "Generate and revisit your Pulse Weekly Stories.",
 };
 
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDate(date: string, locale: string) {
+  return formatLocalDateForLocale(date, locale, {
     month: "short",
     day: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
+  });
 }
 
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat("en", {
+function formatDateTime(date: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -56,11 +59,20 @@ function formatDateTime(date: Date) {
   }).format(date);
 }
 
-function weekLabel(story: Pick<WeeklyStory, "weekStart" | "weekEnd">) {
-  return `${formatDate(story.weekStart)}-${formatDate(story.weekEnd)}`;
+function weekLabel(
+  story: Pick<WeeklyStory, "weekStart" | "weekEnd">,
+  locale: string,
+) {
+  return `${formatDate(story.weekStart, locale)}-${formatDate(story.weekEnd, locale)}`;
 }
 
-function StoryLetter({ story }: { story: WeeklyStory | null }) {
+function StoryLetter({
+  locale,
+  story,
+}: {
+  locale: string;
+  story: WeeklyStory | null;
+}) {
   if (!story) {
     return (
       <Empty className="min-h-[360px] rounded-lg border bg-muted/20">
@@ -88,7 +100,7 @@ function StoryLetter({ story }: { story: WeeklyStory | null }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{weekLabel(story)}</Badge>
+            <Badge variant="outline">{weekLabel(story, locale)}</Badge>
             <span className="text-xs text-muted-foreground">
               {story.sourceCheckInCount} source Check-in
               {story.sourceCheckInCount === 1 ? "" : "s"}
@@ -99,7 +111,7 @@ function StoryLetter({ story }: { story: WeeklyStory | null }) {
           </h2>
         </div>
         <div className="text-xs text-muted-foreground">
-          {formatDateTime(story.updatedAt)}
+          {formatDateTime(story.updatedAt, locale)}
         </div>
       </div>
 
@@ -226,9 +238,11 @@ function JournalSourceList({ journal }: { journal: WeeklyJournalReflection[] }) 
 
 function StoryHistoryItem({
   isSelected,
+  locale,
   story,
 }: {
   isSelected: boolean;
+  locale: string;
   story: WeeklyStory;
 }) {
   return (
@@ -251,7 +265,7 @@ function StoryHistoryItem({
         </span>
       </div>
       <div className="pl-4 text-[11px] leading-5 text-muted-foreground">
-        {weekLabel(story)} · {story.sourceCheckInCount} Check-in
+        {weekLabel(story, locale)} · {story.sourceCheckInCount} Check-in
         {story.sourceCheckInCount === 1 ? "" : "s"}
       </div>
       <p className="line-clamp-2 min-w-0 pl-4 text-xs/relaxed text-muted-foreground">
@@ -270,7 +284,13 @@ export default async function StoryPage({
   const selectedStoryId = Array.isArray(params.story)
     ? params.story[0]
     : params.story;
-  const data = await getWeeklyStoryData(selectedStoryId);
+  const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const data = await getWeeklyStoryDataForUser(
+    userId,
+    dateContext,
+    selectedStoryId,
+  );
 
   if (!data.isSetupComplete) {
     return (
@@ -319,7 +339,7 @@ export default async function StoryPage({
 
       <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid min-w-0 gap-4">
-          <StoryLetter story={data.selectedStory} />
+          <StoryLetter locale={dateContext.locale} story={data.selectedStory} />
         </div>
 
         <div className="grid min-w-0 content-start gap-4">
@@ -334,7 +354,8 @@ export default async function StoryPage({
               </div>
               <CardTitle>This week&apos;s source</CardTitle>
               <CardDescription>
-                {formatDate(data.week.start)}-{formatDate(data.week.end)} ·{" "}
+                {formatDate(data.week.start, dateContext.locale)}-
+                {formatDate(data.week.end, dateContext.locale)} ·{" "}
                 {data.currentWeekProof.length} Check-in
                 {data.currentWeekProof.length === 1 ? "" : "s"} ·{" "}
                 {data.currentWeekJournal.length} Journal entr
@@ -366,6 +387,7 @@ export default async function StoryPage({
                     <StoryHistoryItem
                       key={story.id}
                       isSelected={isSelected}
+                      locale={dateContext.locale}
                       story={story}
                     />
                   );

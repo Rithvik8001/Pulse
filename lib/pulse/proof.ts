@@ -4,7 +4,12 @@ import { and, desc, eq, gte } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
-import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export type ProofOutcome = "win" | "pass";
 export type ProofQuestStatus = "active" | "archived";
@@ -80,13 +85,21 @@ const noteMaxLength = 240;
 
 export async function getProofArchiveData(): Promise<ProofArchiveData> {
   const userId = await requireUserId();
-  const baseDate = new Date();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getProofArchiveDataForUser(userId, dateContext);
+}
+
+export async function getProofArchiveDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<ProofArchiveData> {
   const range = {
-    start: getLocalDate(offsetDate(baseDate, -(proofWindowDays - 1))),
-    end: getLocalDate(baseDate),
+    start: offsetLocalDate(dateContext.today, -(proofWindowDays - 1)),
+    end: dateContext.today,
     days: proofWindowDays,
   };
-  const emptyDays = buildProofHistory([], baseDate);
+  const emptyDays = buildProofHistory([], dateContext.today);
   const emptyStats = buildProofStats([]);
   const [character] = await db
     .select({
@@ -132,7 +145,7 @@ export async function getProofArchiveData(): Promise<ProofArchiveData> {
     character,
     range,
     entries,
-    days: buildProofHistory(entries, baseDate),
+    days: buildProofHistory(entries, dateContext.today),
     questOptions: buildQuestOptions(entries),
     stats: buildProofStats(entries),
   };
@@ -242,11 +255,11 @@ function toProofEntry(row: {
   };
 }
 
-function buildProofHistory(entries: ProofEntry[], baseDate: Date) {
+function buildProofHistory(entries: ProofEntry[], today: string) {
   const byDate = new Map<string, ProofHistoryDay>();
 
   for (let index = proofWindowDays - 1; index >= 0; index -= 1) {
-    const localDate = getLocalDate(offsetDate(baseDate, -index));
+    const localDate = offsetLocalDate(today, -index);
     byDate.set(localDate, {
       localDate,
       winCount: 0,
@@ -335,11 +348,4 @@ function normalizeOutcome(value: string): ProofOutcome | null {
   }
 
   return null;
-}
-
-function offsetDate(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-
-  return nextDate;
 }

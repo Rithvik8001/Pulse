@@ -5,6 +5,7 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { parseLocalDate } from "@/lib/pulse/local-date-core";
 import {
   buildStatsRange,
   computeStatsData,
@@ -15,6 +16,10 @@ import {
   type StatsSummary,
   type WeeklyTrendPoint,
 } from "@/lib/pulse/stats-core";
+import {
+  getUserLocalDateContextForUser,
+  type UserLocalDateContext,
+} from "@/lib/pulse/user-settings";
 
 export {
   buildStatsSummary,
@@ -58,7 +63,16 @@ export type StatsData =
 
 export async function getStatsData(): Promise<StatsData> {
   const userId = await requireUserId();
-  const baseDate = new Date();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+
+  return getStatsDataForUser(userId, dateContext);
+}
+
+export async function getStatsDataForUser(
+  userId: string,
+  dateContext: UserLocalDateContext,
+): Promise<StatsData> {
+  const baseDate = parseLocalDate(dateContext.today);
   const range = buildStatsRange(baseDate, statsWindowWeeks);
   const emptyStats = computeStatsData({
     baseDate,

@@ -11,6 +11,7 @@ import {
   emailPreferences,
   journalEntries,
   quests,
+  userSettings,
   weeklyStories,
 } from "@/lib/db/schema";
 import {
@@ -20,7 +21,8 @@ import {
 } from "@/lib/email/email-core";
 import { getSiteUrl } from "@/lib/email/resend";
 import { sendProductEmail } from "@/lib/email/send";
-import { getLocalDate } from "@/lib/pulse/dashboard";
+import { getLocalDateInTimeZone } from "@/lib/pulse/local-date-core";
+import { defaultTimeZone } from "@/lib/pulse/user-settings-core";
 import { computeStatsData } from "@/lib/pulse/stats-core";
 
 export type WeeklyDigestRunResult = {
@@ -36,16 +38,16 @@ type WeeklyDigestCandidate = {
   unsubscribeToken: string;
   characterId: string;
   characterName: string;
+  timeZone: string;
 };
 
 export async function sendWeeklyDigestBatch({
-  today = getLocalDate(),
+  now = new Date(),
   limit = 50,
 }: {
-  today?: string;
+  now?: Date;
   limit?: number;
 } = {}): Promise<WeeklyDigestRunResult> {
-  const week = getPreviousWeekRange(today);
   const candidates = await getWeeklyDigestCandidates(limit);
   const result: WeeklyDigestRunResult = {
     checked: candidates.length,
@@ -55,6 +57,8 @@ export async function sendWeeklyDigestBatch({
   };
 
   for (const candidate of candidates) {
+    const today = getLocalDateInTimeZone(now, candidate.timeZone);
+    const week = getPreviousWeekRange(today);
     const sendResult = await sendWeeklyDigestForCandidate(candidate, week);
 
     if (sendResult === "sent") result.sent += 1;
@@ -73,9 +77,11 @@ async function getWeeklyDigestCandidates(limit: number) {
       unsubscribeToken: emailPreferences.unsubscribeToken,
       characterId: characters.id,
       characterName: characters.name,
+      timeZone: userSettings.timeZone,
     })
     .from(emailPreferences)
     .innerJoin(characters, eq(characters.userId, emailPreferences.userId))
+    .leftJoin(userSettings, eq(userSettings.userId, emailPreferences.userId))
     .where(
       and(
         eq(emailPreferences.productEmailsEnabled, true),
@@ -83,7 +89,13 @@ async function getWeeklyDigestCandidates(limit: number) {
       ),
     )
     .orderBy(asc(emailPreferences.createdAt))
-    .limit(limit);
+    .limit(limit)
+    .then((rows) =>
+      rows.map((row) => ({
+        ...row,
+        timeZone: row.timeZone ?? defaultTimeZone,
+      })),
+    );
 }
 
 async function sendWeeklyDigestForCandidate(

@@ -5,8 +5,13 @@ import {
   stepCountIs,
 } from "ai";
 
-import { getPulseCoachPromptAndTools } from "@/lib/pulse/coach";
+import { getPulseCoachPromptAndToolsForUser } from "@/lib/pulse/coach";
 import { pulseCoachModel } from "@/lib/pulse/coach-core";
+import {
+  createRequestId,
+  logWarn,
+  logError,
+} from "@/lib/observability/logger";
 import {
   completeAiUsage,
   estimateAiTextTokens,
@@ -15,13 +20,22 @@ import {
   validateAndTrimAiChatMessages,
 } from "@/lib/pulse/ai-limits";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  const requestId = createRequestId(request.headers);
   const apiKey = process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN;
 
   if (!apiKey) {
+    logError({
+      event: "ai_missing_gateway_key",
+      message: "Pulse Coach request missing AI Gateway key.",
+      route: "/api/pulse-coach",
+      feature: "pulse-coach",
+      requestId,
+    });
     return Response.json(
       {
         error:
@@ -32,19 +46,39 @@ export async function POST(request: Request) {
   }
 
   const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
   const { messages }: { messages?: UIMessage[] } = await request.json();
 
   if (!Array.isArray(messages)) {
+    logWarn({
+      event: "ai_invalid_messages",
+      message: "Pulse Coach request did not include messages.",
+      route: "/api/pulse-coach",
+      feature: "pulse-coach",
+      userId,
+      requestId,
+    });
     return Response.json({ error: "Missing chat messages." }, { status: 400 });
   }
 
   const chatValidation = validateAndTrimAiChatMessages(messages);
 
   if (!chatValidation.valid) {
+    logWarn({
+      event: "ai_invalid_messages",
+      message: chatValidation.message,
+      route: "/api/pulse-coach",
+      feature: "pulse-coach",
+      userId,
+      requestId,
+    });
     return Response.json({ error: chatValidation.message }, { status: 400 });
   }
 
-  const { system, tools } = await getPulseCoachPromptAndTools(userId);
+  const { system, tools } = await getPulseCoachPromptAndToolsForUser(
+    userId,
+    dateContext,
+  );
   const estimatedInputTokens =
     estimateAiTextTokens(system) + chatValidation.estimatedInputTokens;
   const reservation = await reserveAiUsage({
@@ -58,6 +92,18 @@ export async function POST(request: Request) {
   });
 
   if (!reservation.allowed) {
+    logWarn({
+      event: "ai_rate_limited",
+      message: reservation.message,
+      route: "/api/pulse-coach",
+      feature: "pulse-coach",
+      userId,
+      requestId,
+      metadata: {
+        retryAfterSeconds: reservation.retryAfterSeconds,
+        remaining: reservation.remaining,
+      },
+    });
     return rateLimitedResponse(reservation);
   }
 
@@ -81,8 +127,18 @@ export async function POST(request: Request) {
         usage: totalUsage,
         finishReason,
       }),
-    onError: ({ error }) =>
-      failAiUsage({ eventId: reservation.eventId, error }),
+    onError: ({ error }) => {
+      logError({
+        event: "ai_stream_failed",
+        message: "Pulse Coach stream failed.",
+        route: "/api/pulse-coach",
+        feature: "pulse-coach",
+        userId,
+        requestId,
+        error,
+      });
+      return failAiUsage({ eventId: reservation.eventId, error });
+    },
   });
 
   return result.toUIMessageStreamResponse({

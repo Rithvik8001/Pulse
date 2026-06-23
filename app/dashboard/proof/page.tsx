@@ -18,7 +18,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getProofArchiveData } from "@/lib/pulse/proof";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
+import { getProofArchiveDataForUser } from "@/lib/pulse/proof";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Proof · Pulse",
@@ -26,7 +29,9 @@ export const metadata: Metadata = {
 };
 
 export default async function ProofPage() {
-  const data = await getProofArchiveData();
+  const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const data = await getProofArchiveDataForUser(userId, dateContext);
 
   if (!data.isSetupComplete) {
     return (
@@ -64,7 +69,8 @@ export default async function ProofPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Badge variant="outline">
-            {formatShortDate(data.range.start)}-{formatShortDate(data.range.end)}
+            {formatShortDate(data.range.start, dateContext.locale)}-
+            {formatShortDate(data.range.end, dateContext.locale)}
           </Badge>
           <Button asChild variant="outline">
             <Link href="/dashboard">
@@ -153,9 +159,9 @@ function ProofStatCard({
   );
 }
 
-function formatShortDate(date: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatShortDate(date: string, locale: string) {
+  return formatLocalDateForLocale(date, locale, {
     month: "short",
     day: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
+  });
 }

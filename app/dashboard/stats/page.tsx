@@ -18,7 +18,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getStatsData } from "@/lib/pulse/stats";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
+import { getStatsDataForUser } from "@/lib/pulse/stats";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Stats · Pulse",
@@ -26,7 +29,9 @@ export const metadata: Metadata = {
 };
 
 export default async function StatsPage() {
-  const data = await getStatsData();
+  const userId = await requireUserId();
+  const dateContext = await getUserLocalDateContextForUser(userId);
+  const data = await getStatsDataForUser(userId, dateContext);
 
   if (!data.isSetupComplete) {
     return (
@@ -64,8 +69,8 @@ export default async function StatsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Badge variant="outline">
-            {formatShortDate(data.range.start)}-
-            {formatShortDate(data.range.end)}
+            {formatShortDate(data.range.start, dateContext.locale)}-
+            {formatShortDate(data.range.end, dateContext.locale)}
           </Badge>
           <Button asChild variant="outline">
             <Link href="/dashboard">
@@ -147,9 +152,9 @@ export default async function StatsPage() {
   );
 }
 
-function formatShortDate(date: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatShortDate(date: string, locale: string) {
+  return formatLocalDateForLocale(date, locale, {
     month: "short",
     day: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
+  });
 }
