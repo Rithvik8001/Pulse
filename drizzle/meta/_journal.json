@@ -64,6 +64,13 @@
       "when": 1782250196892,
       "tag": "0008_young_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782262867478,
+      "tag": "0009_fearless_bedlam",
+      "breakpoints": true
     }
   ]
 }

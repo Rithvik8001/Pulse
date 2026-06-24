@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ComponentProps } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  AiBrain01Icon,
   Calendar03Icon,
   CheckmarkCircle01Icon,
   EnergyIcon,
@@ -16,6 +18,7 @@ import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
 import { PulseAssistantLauncher } from "@/components/product/pulse-assistant-launcher";
 import { SuggestionList } from "@/components/product/suggestion-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -24,6 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getDashboardDataForUser, requireUserId } from "@/lib/pulse/dashboard";
+import { getIdentityTimelineDataForUser } from "@/lib/pulse/identity";
 import { getMomentumDataForUser } from "@/lib/pulse/momentum";
 import {
   computeSuggestions,
@@ -75,7 +79,7 @@ function getStats(
 export default async function DashboardPage() {
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const [dashboard, { suggestions, isAtQuestLimit }, momentum] =
+  const [dashboard, { suggestions, isAtQuestLimit }, momentum, identity] =
     await Promise.all([
       getDashboardDataForUser(userId, dateContext),
       getSuggestionsDataForUser(userId, dateContext).then((raw) => ({
@@ -83,6 +87,7 @@ export default async function DashboardPage() {
         isAtQuestLimit: raw.activeQuestCount >= 12,
       })),
       getMomentumDataForUser(userId, dateContext),
+      getIdentityTimelineDataForUser(userId, dateContext),
     ]);
 
   if (!dashboard.isSetupComplete) {
@@ -156,6 +161,39 @@ export default async function DashboardPage() {
           suggestions={suggestions}
           isAtQuestLimit={isAtQuestLimit}
         />
+      ) : null}
+
+      {identity.isSetupComplete &&
+      (identity.latestSnapshot || identity.views["90d"].nodes.length > 0) ? (
+        <Card className="rounded-lg">
+          <CardHeader className="grid gap-3 md:grid-cols-[1fr_auto] md:items-start">
+            <div>
+              <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <HugeiconsIcon
+                  icon={AiBrain01Icon}
+                  size={17}
+                  strokeWidth={1.8}
+                />
+              </div>
+              <CardTitle>Identity evidence</CardTitle>
+              <CardDescription>
+                {identity.latestSnapshot
+                  ? identity.latestSnapshot.identityStatement
+                  : identity.views["90d"].fallbackSnapshot.identityStatement}
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/identity">
+                <HugeiconsIcon
+                  icon={AiBrain01Icon}
+                  size={14}
+                  strokeWidth={1.7}
+                />
+                Open Identity
+              </Link>
+            </Button>
+          </CardHeader>
+        </Card>
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-[1fr_0.78fr]">

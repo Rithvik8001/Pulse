@@ -10,6 +10,7 @@ const pulseFiles = [
   "proof.ts",
   "journal.ts",
   "story.ts",
+  "identity.ts",
   "suggestions.ts",
   "quests.ts",
   "coach.ts",

@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import {
   characters,
   checkIns,
+  identitySnapshots,
   journalEntries,
   quests,
   weeklyStories,
@@ -88,6 +89,7 @@ export async function getPulseCoachContextForUser(
       suggestions: [],
       journal: [],
       stories: [],
+      latestIdentitySnapshot: null,
     });
   }
 
@@ -103,6 +105,7 @@ export async function getPulseCoachContextForUser(
     suggestionsRaw,
     journalRows,
     storyRows,
+    identitySnapshotRows,
   ] = await Promise.all([
     db
       .select({
@@ -220,6 +223,15 @@ export async function getPulseCoachContextForUser(
       .where(eq(weeklyStories.userId, userId))
       .orderBy(desc(weeklyStories.weekStart), desc(weeklyStories.updatedAt))
       .limit(3),
+    db
+      .select({
+        periodEnd: identitySnapshots.periodEnd,
+        identityStatement: identitySnapshots.identityStatement,
+      })
+      .from(identitySnapshots)
+      .where(eq(identitySnapshots.userId, userId))
+      .orderBy(desc(identitySnapshots.periodEnd), desc(identitySnapshots.updatedAt))
+      .limit(1),
   ]);
 
   const activeQuestRows = questRows.filter(
@@ -358,6 +370,7 @@ export async function getPulseCoachContextForUser(
     })),
     journal: journalRows,
     stories: storyRows,
+    latestIdentitySnapshot: identitySnapshotRows[0] ?? null,
   });
 }
 

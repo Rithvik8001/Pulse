@@ -25,6 +25,8 @@ describe("getAiLimitConfig", () => {
     assert.equal(config.features["reword-suggestions"].requestLimit, 5);
     assert.equal(config.features["weekly-story"].period, "week");
     assert.equal(config.features["weekly-story"].requestLimit, 2);
+    assert.equal(config.features["identity-timeline"].period, "week");
+    assert.equal(config.features["identity-timeline"].tokenLimit, 35_000);
   });
 
   it("honors environment overrides", () => {
@@ -36,6 +38,8 @@ describe("getAiLimitConfig", () => {
       AI_PULSE_COACH_DAILY_TOKEN_LIMIT: "777",
       AI_WEEKLY_STORY_WEEKLY_REQUEST_LIMIT: "1",
       AI_WEEKLY_STORY_WEEKLY_TOKEN_LIMIT: "999",
+      AI_IDENTITY_TIMELINE_WEEKLY_REQUEST_LIMIT: "1",
+      AI_IDENTITY_TIMELINE_WEEKLY_TOKEN_LIMIT: "888",
     });
 
     assert.equal(config.enabled, false);
@@ -45,6 +49,8 @@ describe("getAiLimitConfig", () => {
     assert.equal(config.features["pulse-coach"].tokenLimit, 777);
     assert.equal(config.features["weekly-story"].requestLimit, 1);
     assert.equal(config.features["weekly-story"].tokenLimit, 999);
+    assert.equal(config.features["identity-timeline"].requestLimit, 1);
+    assert.equal(config.features["identity-timeline"].tokenLimit, 888);
   });
 });
 

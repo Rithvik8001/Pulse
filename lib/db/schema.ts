@@ -24,7 +24,8 @@ export type AiUsageFeature =
   | "pulse-coach"
   | "habit-agent"
   | "weekly-story"
-  | "reword-suggestions";
+  | "reword-suggestions"
+  | "identity-timeline";
 export type AiUsagePeriod = "day" | "week";
 export type AiUsageEventStatus =
   | "allowed"
@@ -304,6 +305,68 @@ export const journalEntries = pgTable(
   ],
 ).enableRLS();
 
+export const identitySnapshots = pgTable(
+  "identity_snapshots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id")
+      .notNull()
+      .references(() => characters.id, { onDelete: "cascade" }),
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
+    windowDays: integer("window_days").default(90).notNull(),
+    headline: text("headline").notNull(),
+    summary: text("summary").notNull(),
+    identityStatement: text("identity_statement").notNull(),
+    themeBullets: jsonb("theme_bullets").$type<string[]>().notNull(),
+    evidenceBullets: jsonb("evidence_bullets").$type<string[]>().notNull(),
+    nextIdentityMove: text("next_identity_move").notNull(),
+    modelId: text("model_id").notNull(),
+    sourceCheckInCount: integer("source_check_in_count").notNull(),
+    sourceJournalCount: integer("source_journal_count").notNull(),
+    sourceStoryCount: integer("source_story_count").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("identity_snapshots_user_id_idx").on(table.userId),
+    index("identity_snapshots_character_id_idx").on(table.characterId),
+    uniqueIndex("identity_snapshots_user_period_unique").on(
+      table.userId,
+      table.periodEnd,
+      table.windowDays,
+    ),
+    pgPolicy("identity_snapshots_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("identity_snapshots_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("identity_snapshots_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("identity_snapshots_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const emailPreferences = pgTable(
   "email_preferences",
   {
@@ -435,7 +498,7 @@ export const aiUsageBuckets = pgTable(
     ),
     check(
       "ai_usage_buckets_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline')`,
     ),
     check(
       "ai_usage_buckets_period_check",
@@ -490,7 +553,7 @@ export const aiUsageEvents = pgTable(
     index("ai_usage_events_period_idx").on(table.period, table.periodStart),
     check(
       "ai_usage_events_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline')`,
     ),
     check(
       "ai_usage_events_status_check",
@@ -547,6 +610,7 @@ export const charactersRelations = relations(characters, ({ many }) => ({
   quests: many(quests),
   weeklyStories: many(weeklyStories),
   journalEntries: many(journalEntries),
+  identitySnapshots: many(identitySnapshots),
   emailPreferences: many(emailPreferences),
   emailDeliveries: many(emailDeliveries),
   userSettings: many(userSettings),
@@ -583,6 +647,16 @@ export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
     references: [characters.id],
   }),
 }));
+
+export const identitySnapshotsRelations = relations(
+  identitySnapshots,
+  ({ one }) => ({
+    character: one(characters, {
+      fields: [identitySnapshots.characterId],
+      references: [characters.id],
+    }),
+  }),
+);
 
 export const emailPreferencesRelations = relations(
   emailPreferences,
@@ -633,6 +707,7 @@ export type Quest = typeof quests.$inferSelect;
 export type CheckIn = typeof checkIns.$inferSelect;
 export type WeeklyStory = typeof weeklyStories.$inferSelect;
 export type JournalEntry = typeof journalEntries.$inferSelect;
+export type IdentitySnapshot = typeof identitySnapshots.$inferSelect;
 export type EmailPreference = typeof emailPreferences.$inferSelect;
 export type EmailDelivery = typeof emailDeliveries.$inferSelect;
 export type AiUsageBucket = typeof aiUsageBuckets.$inferSelect;

@@ -8,7 +8,8 @@ export type AiFeature =
   | "pulse-coach"
   | "habit-agent"
   | "weekly-story"
-  | "reword-suggestions";
+  | "reword-suggestions"
+  | "identity-timeline";
 
 export type AiLimitPeriod = "day" | "week";
 
@@ -99,6 +100,14 @@ export const defaultAiLimitConfig: AiLimitConfig = {
       tokenLimit: 25_000,
       maxOutputTokens: 1200,
     },
+    "identity-timeline": {
+      feature: "identity-timeline",
+      label: "Identity Timeline",
+      period: "week",
+      requestLimit: 2,
+      tokenLimit: 35_000,
+      maxOutputTokens: 1200,
+    },
   },
 };
 
@@ -135,6 +144,11 @@ export function getAiLimitConfig(env: EnvLike = process.env): AiLimitConfig {
         defaultAiLimitConfig.features["weekly-story"],
         env.AI_WEEKLY_STORY_WEEKLY_REQUEST_LIMIT,
         env.AI_WEEKLY_STORY_WEEKLY_TOKEN_LIMIT,
+      ),
+      "identity-timeline": withEnvLimit(
+        defaultAiLimitConfig.features["identity-timeline"],
+        env.AI_IDENTITY_TIMELINE_WEEKLY_REQUEST_LIMIT,
+        env.AI_IDENTITY_TIMELINE_WEEKLY_TOKEN_LIMIT,
       ),
     },
   };

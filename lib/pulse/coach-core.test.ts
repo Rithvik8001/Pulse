@@ -92,6 +92,11 @@ function makeContext(): PulseCoachContext {
         nextQuest: "Open the work before opening messages.",
       },
     ],
+    latestIdentitySnapshot: {
+      periodEnd: "2026-06-07",
+      identityStatement:
+        "You are becoming someone who keeps returning to useful work.",
+    },
   };
 }
 
@@ -108,6 +113,7 @@ describe("buildPulseCoachSystemPrompt", () => {
     assert.match(prompt, /Ship one useful thing \[id:quest-1\]/);
     assert.match(prompt, /90-day Proof: 31 total, 22 Wins, 9 Passes/);
     assert.match(prompt, /Stats: 31 Proof in 12 weeks/);
+    assert.match(prompt, /Latest identity snapshot/);
     assert.match(prompt, /Momentum: 78\/100 \(On Fire\)/);
     assert.match(prompt, /Adaptive Suggestions/);
     assert.match(prompt, /Recent Journal/);

@@ -114,6 +114,10 @@ export type PulseCoachContext = {
     summary: string;
     nextQuest: string;
   }[];
+  latestIdentitySnapshot: {
+    periodEnd: string;
+    identityStatement: string;
+  } | null;
 };
 
 export function truncateCoachText(value: string | null | undefined) {
@@ -146,6 +150,14 @@ export function compressPulseCoachContext(
       summary: truncateCoachText(story.summary),
       nextQuest: truncateCoachText(story.nextQuest),
     })),
+    latestIdentitySnapshot: context.latestIdentitySnapshot
+      ? {
+          ...context.latestIdentitySnapshot,
+          identityStatement: truncateCoachText(
+            context.latestIdentitySnapshot.identityStatement,
+          ),
+        }
+      : null,
   };
 }
 
@@ -205,6 +217,9 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
     "",
     `90-day Proof: ${context.proofSummary.total} total, ${context.proofSummary.wins} Wins, ${context.proofSummary.passes} Passes, range ${context.proofSummary.rangeStart} to ${context.proofSummary.rangeEnd}, most-proven ${context.proofSummary.mostProvenQuest ?? "none"}.`,
     `Stats: ${context.statsSummary.totalProof} Proof in 12 weeks; win rate ${formatRate(context.statsSummary.overallWinRate)}; strongest ${context.statsSummary.strongestQuest ?? "none"}; needs attention ${context.statsSummary.needsAttentionQuest ?? "none"}; weekly trend ${context.statsSummary.weeklyTrend}.`,
+    context.latestIdentitySnapshot
+      ? `Latest identity snapshot: ${context.latestIdentitySnapshot.identityStatement} (through ${context.latestIdentitySnapshot.periodEnd}).`
+      : "Latest identity snapshot: none.",
     context.momentum
       ? `Momentum: ${context.momentum.score}/100 (${context.momentum.tier}); longest streak ${context.momentum.longestStreakEver}; ${context.momentum.atRiskCount} at risk.`
       : "Momentum: no active Quest signal yet.",
