@@ -95,7 +95,7 @@ export function JournalEditor({
   return (
     <section className="grid gap-4 lg:grid-cols-[1fr_0.42fr]">
       <div className="grid gap-4">
-        <Card className="rounded-lg">
+        <Card>
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -114,7 +114,7 @@ export function JournalEditor({
           <CardContent>
             <form action={action} className="grid gap-3">
               <input name="localDate" type="hidden" value={selectedDate} />
-              <div className="grid gap-2 rounded-md border bg-muted/20 p-3">
+              <div className="grid gap-2 rounded-xl border bg-muted/20 p-3">
                 <div className="flex flex-wrap gap-2">
                   {prompts.map((prompt) => (
                     <Badge key={prompt} variant="outline">
@@ -172,7 +172,7 @@ export function JournalEditor({
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg">
+        <Card>
           <CardHeader>
             <CardTitle>Proof from this day</CardTitle>
             <CardDescription>
@@ -185,7 +185,7 @@ export function JournalEditor({
                 {selectedProof.map((proof) => (
                   <div
                     key={proof.id}
-                    className="rounded-md border bg-muted/20 p-3"
+                    className="rounded-xl border bg-muted/20 p-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -220,7 +220,7 @@ export function JournalEditor({
                 ))}
               </div>
             ) : (
-              <Empty className="rounded-lg border border-dashed bg-muted/20">
+              <Empty className="rounded-2xl border border-dashed bg-muted/20">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <HugeiconsIcon
@@ -245,9 +245,9 @@ export function JournalEditor({
         </Card>
       </div>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
-          <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <HugeiconsIcon icon={NotebookIcon} size={16} strokeWidth={1.8} />
           </div>
           <CardTitle>Last 30 days</CardTitle>
@@ -266,7 +266,7 @@ export function JournalEditor({
                     key={entry.id}
                     href={`/dashboard/journal?date=${entry.localDate}`}
                     className={cn(
-                      "grid gap-1 rounded-md border bg-muted/20 px-3 py-2.5 text-sm transition-colors hover:bg-muted/40",
+                      "grid gap-1 rounded-xl border bg-muted/20 px-3 py-2.5 text-sm transition-colors hover:bg-muted/40",
                       isSelected && "border-primary/40 bg-primary/5",
                     )}
                   >
@@ -286,7 +286,7 @@ export function JournalEditor({
               })}
             </div>
           ) : (
-            <Empty className="rounded-lg border border-dashed bg-muted/20">
+            <Empty className="rounded-2xl border border-dashed bg-muted/20">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon

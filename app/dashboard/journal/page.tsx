@@ -8,6 +8,7 @@ import {
 
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
 import { JournalEditor } from "@/components/product/journal-editor";
+import { PageHeader } from "@/components/product/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,34 +61,26 @@ export default async function JournalPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Journal
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            Reflect with {data.character.name}.
-          </h1>
-          <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            Capture proof, drift, and one next move. Pulse uses current-week
-            Journal entries when writing your Weekly Story.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <Badge variant="outline">{journalHistoryDays}-day history</Badge>
-          <Button asChild variant="outline">
-            <Link href="/dashboard">
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                size={14}
-                strokeWidth={1.7}
-              />
-              Today&apos;s Check-ins
-            </Link>
-          </Button>
-        </div>
-      </section>
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 md:px-6">
+      <PageHeader
+        title={`Reflect with ${data.character.name}.`}
+        description="Capture proof, drift, and one next move. Pulse uses current-week Journal entries when writing your Weekly Story."
+        action={
+          <>
+            <Badge variant="outline">{journalHistoryDays}-day history</Badge>
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/dashboard">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={14}
+                  strokeWidth={1.7}
+                />
+                Today&apos;s Check-ins
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <JournalInfoCard
@@ -129,10 +122,10 @@ function JournalInfoCard({
   title: string;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader className="pb-2">
-        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <HugeiconsIcon icon={NotebookIcon} size={16} strokeWidth={1.8} />
+        <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <HugeiconsIcon icon={NotebookIcon} size={16} strokeWidth={1.7} />
         </div>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-base">{title}</CardTitle>

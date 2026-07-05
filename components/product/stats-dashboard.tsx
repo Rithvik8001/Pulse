@@ -217,7 +217,7 @@ export function StatsDashboard({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-        <Card className="rounded-lg">
+        <Card>
           <CardHeader>
             <CardTitle>Weekly win rate</CardTitle>
             <CardDescription>
@@ -283,7 +283,7 @@ export function StatsDashboard({
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg">
+        <Card>
           <CardHeader>
             <CardTitle>Action signals</CardTitle>
             <CardDescription>
@@ -305,7 +305,7 @@ export function StatsDashboard({
         </Card>
       </section>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <CardTitle>Per-Quest performance</CardTitle>
           <CardDescription>
@@ -377,7 +377,7 @@ function StatsControls({
   const questOptions = questStats.filter((quest) => quest.totalCount > 0);
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-3 rounded-2xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
       <Tabs
         value={range}
         onValueChange={(value) => setRange(value as RangeOption)}
@@ -416,7 +416,7 @@ function SummaryCard({
   value: string;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
         <CardTitle className="truncate text-2xl">{value}</CardTitle>
@@ -438,7 +438,7 @@ function InsightCard({
   quest: StatsSummary["strongestQuest"];
 }) {
   return (
-    <div className="rounded-md border bg-muted/20 p-3">
+    <div className="rounded-xl border bg-muted/20 p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <HugeiconsIcon
@@ -479,7 +479,7 @@ function StatsEmptyState({
   title: string;
 }) {
   return (
-    <Empty className="min-h-[220px] rounded-lg border border-dashed bg-muted/20">
+    <Empty className="min-h-[220px] rounded-2xl border border-dashed bg-muted/20">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <HugeiconsIcon icon={Target01Icon} size={18} strokeWidth={1.8} />

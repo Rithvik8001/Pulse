@@ -1,17 +1,7 @@
 "use client";
 
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Activity01Icon } from "@hugeicons/core-free-icons";
-
 import type { MomentumData, MomentumTier } from "@/lib/pulse/momentum-core";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 function tierBadgeVariant(
@@ -24,15 +14,7 @@ function tierBadgeVariant(
 
 export function MomentumCard({ momentum }: { momentum: MomentumData }) {
   return (
-    <Card className="rounded-lg">
-      <CardHeader>
-        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <HugeiconsIcon icon={Activity01Icon} size={17} strokeWidth={1.8} />
-        </div>
-        <CardTitle>Momentum</CardTitle>
-        <CardDescription>Your consistency score.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
+    <div className="grid gap-4 rounded-2xl border bg-card p-5">
         <div className="flex items-end gap-3">
           <div className="text-3xl font-semibold tracking-tight">
             {momentum.score}
@@ -97,7 +79,6 @@ export function MomentumCard({ momentum }: { momentum: MomentumData }) {
             — check in today to keep the streak.
           </p>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }

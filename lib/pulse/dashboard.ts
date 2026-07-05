@@ -81,6 +81,18 @@ export async function getDashboardData(): Promise<DashboardData> {
   return getDashboardDataForUser(userId, dateContext);
 }
 
+export async function getCharacterNameForUser(
+  userId: string,
+): Promise<string | null> {
+  const [character] = await db
+    .select({ name: characters.name })
+    .from(characters)
+    .where(eq(characters.userId, userId))
+    .limit(1);
+
+  return character?.name ?? null;
+}
+
 export async function getDashboardDataForUser(
   userId: string,
   dateContext: UserLocalDateContext,

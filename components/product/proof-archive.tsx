@@ -116,7 +116,7 @@ export function ProofArchive({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[0.38fr_1fr]">
-      <section className="rounded-lg border bg-card">
+      <section className="rounded-2xl border bg-card">
         <div className="border-b p-4">
           <div className="flex items-center gap-2">
             <HugeiconsIcon
@@ -136,7 +136,7 @@ export function ProofArchive({
         <ProofCalendar days={days} />
       </section>
 
-      <section className="rounded-lg border bg-card">
+      <section className="rounded-2xl border bg-card">
         <div className="grid gap-3 border-b p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -193,7 +193,7 @@ export function ProofArchive({
 
         <div className="grid gap-2 p-4">
           {!hasProof ? (
-            <Empty className="rounded-lg border border-dashed bg-muted/20">
+            <Empty className="rounded-2xl border border-dashed bg-muted/20">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon
@@ -219,7 +219,7 @@ export function ProofArchive({
               <ProofRow key={entry.id} entry={entry} />
             ))
           ) : (
-            <Empty className="rounded-lg border border-dashed bg-muted/20">
+            <Empty className="rounded-2xl border border-dashed bg-muted/20">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <HugeiconsIcon
@@ -308,7 +308,7 @@ function formatProofTooltip(day: ProofHistoryDay) {
 
 function ProofRow({ entry }: { entry: ProofEntry }) {
   return (
-    <div className="grid gap-3 rounded-md border bg-muted/20 p-3 md:grid-cols-[1fr_auto] md:items-center">
+    <div className="grid gap-3 rounded-xl border bg-muted/20 p-3 md:grid-cols-[1fr_auto] md:items-center">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium">{entry.questTitle}</span>

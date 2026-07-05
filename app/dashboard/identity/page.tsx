@@ -9,6 +9,7 @@ import {
 
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
 import { IdentityTimeline } from "@/components/product/identity-timeline";
+import { PageHeader } from "@/components/product/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,43 +55,35 @@ export default async function IdentityPage() {
   const hasEvidence = data.views["90d"].nodes.length > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Identity Timeline
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            You are becoming someone who...
-          </h1>
-          <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            Pulse turns Proof, Journal reflections, and Weekly Stories into an
-            evidence graph for {data.character.name}.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/dashboard">
-            <HugeiconsIcon
-              icon={CheckmarkCircle01Icon}
-              size={14}
-              strokeWidth={1.7}
-            />
-            Today&apos;s Check-ins
-          </Link>
-        </Button>
-      </section>
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 md:px-6">
+      <PageHeader
+        title="You are becoming someone who..."
+        description={`Pulse turns Proof, Journal reflections, and Weekly Stories into an evidence graph for ${data.character.name}.`}
+        action={
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link href="/dashboard">
+              <HugeiconsIcon
+                icon={CheckmarkCircle01Icon}
+                size={14}
+                strokeWidth={1.7}
+              />
+              Today&apos;s Check-ins
+            </Link>
+          </Button>
+        }
+      />
 
       {hasEvidence ? (
         <IdentityTimeline data={data} locale={dateContext.locale} />
       ) : (
         <section className="grid gap-4 lg:grid-cols-[0.36fr_1fr]">
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
-              <div className="mb-2 flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <HugeiconsIcon
                   icon={AiBrain01Icon}
                   size={18}
-                  strokeWidth={1.8}
+                  strokeWidth={1.7}
                 />
               </div>
               <CardTitle>Identity needs evidence</CardTitle>
@@ -99,7 +92,7 @@ export default async function IdentityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild>
+              <Button asChild className="rounded-xl">
                 <Link href="/dashboard">
                   <HugeiconsIcon
                     icon={Target01Icon}
@@ -111,7 +104,7 @@ export default async function IdentityPage() {
               </Button>
             </CardContent>
           </Card>
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
               <CardTitle>No identity graph yet</CardTitle>
               <CardDescription>

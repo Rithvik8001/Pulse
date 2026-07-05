@@ -63,9 +63,9 @@ export function DashboardSetupForm() {
 
   return (
     <section className="grid gap-4 lg:grid-cols-[0.86fr_1.14fr]">
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
-          <div className="mb-2 flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <HugeiconsIcon icon={Target01Icon} size={18} strokeWidth={1.8} />
           </div>
           <CardTitle>Create your Character</CardTitle>
@@ -92,7 +92,7 @@ export function DashboardSetupForm() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <div>

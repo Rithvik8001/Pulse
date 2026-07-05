@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ComponentProps } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
@@ -33,13 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SectionLabel } from "@/components/product/section-label";
 import type { QuestSuggestion } from "@/lib/pulse/suggestions";
 import { cn } from "@/lib/utils";
 
@@ -72,17 +66,11 @@ export function SuggestionList({
   }
 
   return (
-    <Card className="rounded-lg">
-      <CardHeader>
-        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <HugeiconsIcon icon={SparklesIcon} size={17} strokeWidth={1.8} />
-        </div>
-        <CardTitle>Suggestions</CardTitle>
-        <CardDescription>
-          Pulse noticed a few patterns worth your attention.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3">
+    <section className="grid gap-3">
+      <SectionLabel icon={SparklesIcon}>
+        Suggestions ({visible.length})
+      </SectionLabel>
+      <div className="grid gap-3">
         {visible.map((suggestion) => {
           if (suggestion.type === "archive") {
             return (
@@ -118,8 +106,8 @@ export function SuggestionList({
             />
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -138,6 +126,7 @@ function DismissButton({ onDismiss }: { onDismiss: () => void }) {
 
 function SuggestionRow({
   children,
+  icon,
   badge,
   questTitle,
   reason,
@@ -145,6 +134,7 @@ function SuggestionRow({
   badgeVariant,
 }: {
   children: React.ReactNode;
+  icon: ComponentProps<typeof HugeiconsIcon>["icon"];
   badge: string;
   questTitle: string;
   reason: string;
@@ -152,16 +142,25 @@ function SuggestionRow({
   badgeVariant: "destructive" | "secondary" | "outline";
 }) {
   return (
-    <div className="grid gap-3 rounded-md border bg-muted/25 p-3 text-sm">
+    <div className="grid gap-3 rounded-xl border bg-card p-4 text-sm">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 truncate font-medium">{questTitle}</span>
-            <Badge variant={badgeVariant} className="shrink-0">
-              {badge}
-            </Badge>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <HugeiconsIcon icon={icon} size={18} strokeWidth={1.7} />
           </div>
-          <p className="mt-1 text-xs/relaxed text-muted-foreground">{reason}</p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 truncate font-medium">
+                {questTitle}
+              </span>
+              <Badge variant={badgeVariant} className="shrink-0">
+                {badge}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs/relaxed text-muted-foreground">
+              {reason}
+            </p>
+          </div>
         </div>
         <DismissButton onDismiss={onDismiss} />
       </div>
@@ -179,6 +178,7 @@ function ArchiveSuggestion({
 }) {
   return (
     <SuggestionRow
+      icon={Delete02Icon}
       badge="Archive"
       badgeVariant="destructive"
       questTitle={suggestion.questTitle}
@@ -240,6 +240,7 @@ function RestoreSuggestion({
 
   return (
     <SuggestionRow
+      icon={RefreshIcon}
       badge="Restore"
       badgeVariant="outline"
       questTitle={suggestion.questTitle}
@@ -297,6 +298,7 @@ function RewordSuggestion({
 
   return (
     <SuggestionRow
+      icon={SparklesIcon}
       badge="Reword"
       badgeVariant="secondary"
       questTitle={suggestion.questTitle}

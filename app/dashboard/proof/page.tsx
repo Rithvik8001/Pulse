@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Calendar03Icon,
-  CheckmarkCircle01Icon,
-  NotebookIcon,
-} from "@hugeicons/core-free-icons";
+import { CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
+import { PageHeader } from "@/components/product/page-header";
 import { ProofArchive } from "@/components/product/proof-archive";
+import { SectionLabel } from "@/components/product/section-label";
+import {
+  StatGridCard,
+  type StatTile,
+} from "@/components/product/stat-grid-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { getProofArchiveDataForUser } from "@/lib/pulse/proof";
@@ -52,80 +47,60 @@ export default async function ProofPage() {
     );
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Proof archive
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            Review what {data.character.name} has proven.
-          </h1>
-          <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            A searchable 90-day record of saved Check-ins across active and
-            archived Quests.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <Badge variant="outline">
-            {formatShortDate(data.range.start, dateContext.locale)}-
-            {formatShortDate(data.range.end, dateContext.locale)}
-          </Badge>
-          <Button asChild variant="outline">
-            <Link href="/dashboard">
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                size={14}
-                strokeWidth={1.7}
-              />
-              Today&apos;s Check-ins
-            </Link>
-          </Button>
-        </div>
-      </section>
+  const statTiles: StatTile[] = [
+    {
+      label: "Total Proof",
+      value: data.stats.total.toString(),
+      dotClassName: "bg-primary",
+    },
+    {
+      label: "Wins",
+      value: data.stats.winCount.toString(),
+      dotClassName: "bg-emerald-500",
+    },
+    {
+      label: "Passes",
+      value: data.stats.passCount.toString(),
+      dotClassName: "bg-amber-500",
+    },
+    {
+      label: "Most-proven",
+      value: data.stats.mostProvenQuest?.title ?? "No Proof yet",
+      hint: data.stats.mostProvenQuest
+        ? `${data.stats.mostProvenQuest.proofCount} Check-ins`
+        : undefined,
+      dotClassName: "bg-sky-500",
+    },
+  ];
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <ProofStatCard
-          icon={NotebookIcon}
-          label="Total Proof"
-          value={data.stats.total.toString()}
-        />
-        <ProofStatCard
-          icon={CheckmarkCircle01Icon}
-          label="Wins"
-          value={data.stats.winCount.toString()}
-        />
-        <ProofStatCard
-          icon={Calendar03Icon}
-          label="Passes"
-          value={data.stats.passCount.toString()}
-        />
-        <Card className="rounded-lg">
-          <CardHeader className="pb-2">
-            <CardDescription>Most-proven Quest</CardDescription>
-            <CardTitle className="truncate text-base">
-              {data.stats.mostProvenQuest?.title ?? "No Proof yet"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              {data.stats.mostProvenQuest ? (
-                <>
-                  <span>
-                    {data.stats.mostProvenQuest.proofCount} Check-in
-                    {data.stats.mostProvenQuest.proofCount === 1 ? "" : "s"}
-                  </span>
-                  {data.stats.mostProvenQuest.status === "archived" ? (
-                    <Badge variant="outline">Archived</Badge>
-                  ) : null}
-                </>
-              ) : (
-                <span>Save a Check-in to start the archive.</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 md:px-6">
+      <PageHeader
+        title={`Review what ${data.character.name} has proven.`}
+        description="A searchable 90-day record of saved Check-ins across active and archived Quests."
+        action={
+          <>
+            <Badge variant="outline">
+              {formatShortDate(data.range.start, dateContext.locale)}-
+              {formatShortDate(data.range.end, dateContext.locale)}
+            </Badge>
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/dashboard">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={14}
+                  strokeWidth={1.7}
+                />
+                Today&apos;s Check-ins
+              </Link>
+            </Button>
+          </>
+        }
+      />
+
+      <section className="grid gap-3">
+        <SectionLabel icon={CheckmarkCircle01Icon}>Overview</SectionLabel>
+        <StatGridCard tiles={statTiles} />
       </section>
 
       <ProofArchive
@@ -134,28 +109,6 @@ export default async function ProofPage() {
         questOptions={data.questOptions}
       />
     </div>
-  );
-}
-
-function ProofStatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: typeof NotebookIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Card className="rounded-lg">
-      <CardHeader className="pb-2">
-        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <HugeiconsIcon icon={icon} size={16} strokeWidth={1.8} />
-        </div>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-2xl">{value}</CardTitle>
-      </CardHeader>
-    </Card>
   );
 }
 

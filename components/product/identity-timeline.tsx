@@ -158,7 +158,7 @@ function IdentitySummaryCard({
   view: IdentityComputedData;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -188,14 +188,14 @@ function IdentitySummaryCard({
         />
       </CardHeader>
       <CardContent className="grid gap-4 lg:grid-cols-[1fr_0.85fr]">
-        <div className="rounded-md border bg-primary/5 p-4">
+        <div className="rounded-xl border bg-primary/5 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
             <HugeiconsIcon icon={AiBrain01Icon} size={16} strokeWidth={1.8} />
             You are becoming someone who...
           </div>
           <p className="text-sm/relaxed">{snapshot.identityStatement}</p>
         </div>
-        <div className="grid gap-2 rounded-md border bg-muted/20 p-4">
+        <div className="grid gap-2 rounded-xl border bg-muted/20 p-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <HugeiconsIcon icon={Target01Icon} size={16} strokeWidth={1.8} />
             Next identity move
@@ -213,7 +213,7 @@ function IdentitySummaryCard({
 
 function EvidenceBullets({ bullets, title }: { bullets: string[]; title: string }) {
   return (
-    <div className="grid gap-2 rounded-md border bg-muted/20 p-4">
+    <div className="grid gap-2 rounded-xl border bg-muted/20 p-4">
       <div className="text-sm font-medium">{title}</div>
       {bullets.length > 0 ? (
         <div className="grid gap-2">
@@ -290,7 +290,7 @@ function IdentityControls({
   setRange: (range: IdentityTimelineViewKey) => void;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border bg-card p-3 md:flex-row md:items-center md:justify-between">
+    <section className="flex flex-col gap-3 rounded-2xl border bg-card p-3 md:flex-row md:items-center md:justify-between">
       <Tabs
         value={range}
         onValueChange={(value) => setRange(value as IdentityTimelineViewKey)}
@@ -329,7 +329,7 @@ function IdentityEvidenceGraph({
   view: IdentityComputedData;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Identity evidence graph</CardTitle>
         <CardDescription>
@@ -344,7 +344,7 @@ function IdentityEvidenceGraph({
             ))}
           </div>
         ) : (
-          <Empty className="min-h-[260px] rounded-lg border border-dashed bg-muted/20">
+          <Empty className="min-h-[260px] rounded-2xl border border-dashed bg-muted/20">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <HugeiconsIcon
@@ -375,7 +375,7 @@ function EvidenceNodeItem({
   node: IdentityEvidenceNode;
 }) {
   return (
-    <div className="relative grid gap-1 rounded-md border bg-card p-3 pl-5 shadow-xs">
+    <div className="relative grid gap-1 rounded-xl border bg-card p-3 pl-5">
       <span
         className={cn(
           "absolute -left-[0.46rem] top-4 size-3 rounded-full border-2 border-background",
@@ -416,7 +416,7 @@ function IdentityVolumeChart({
   }));
 
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Evidence volume</CardTitle>
         <CardDescription>
@@ -442,7 +442,7 @@ function IdentityVolumeChart({
             </BarChart>
           </ChartContainer>
         ) : (
-          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
             Evidence volume appears after your first saved item in this range.
           </div>
         )}
@@ -475,7 +475,7 @@ function VolumeTooltip({
 
 function IdentitySignalList({ signals }: { signals: IdentitySignal[] }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Identity signals</CardTitle>
         <CardDescription>
@@ -485,7 +485,7 @@ function IdentitySignalList({ signals }: { signals: IdentitySignal[] }) {
       <CardContent className="grid gap-2">
         {signals.length > 0 ? (
           signals.slice(0, 6).map((signal, index) => (
-            <div key={signal.questId} className="rounded-md border bg-muted/20 p-3">
+            <div key={signal.questId} className="rounded-xl border bg-muted/20 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center gap-2">
@@ -507,7 +507,7 @@ function IdentitySignalList({ signals }: { signals: IdentitySignal[] }) {
             </div>
           ))
         ) : (
-          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
             Save Proof on a Quest to reveal identity signals.
           </div>
         )}
@@ -518,7 +518,7 @@ function IdentitySignalList({ signals }: { signals: IdentitySignal[] }) {
 
 function RecurringThemes({ view }: { view: IdentityComputedData }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Recurring themes</CardTitle>
         <CardDescription>
@@ -530,14 +530,14 @@ function RecurringThemes({ view }: { view: IdentityComputedData }) {
           view.themes.map((theme) => (
             <div
               key={theme.label}
-              className="flex items-start justify-between gap-3 rounded-md border bg-muted/20 p-3 text-sm"
+              className="flex items-start justify-between gap-3 rounded-xl border bg-muted/20 p-3 text-sm"
             >
               <span className="min-w-0 text-muted-foreground">{theme.label}</span>
               <Badge variant="outline">{theme.count}</Badge>
             </div>
           ))
         ) : (
-          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
             Generate Weekly Stories to surface recurring themes here.
           </div>
         )}
@@ -554,7 +554,7 @@ function IdentityMilestoneList({
   view: IdentityComputedData;
 }) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Milestones</CardTitle>
         <CardDescription>
@@ -564,7 +564,7 @@ function IdentityMilestoneList({
       <CardContent className="grid gap-2">
         {view.milestones.length > 0 ? (
           view.milestones.slice(0, 8).map((milestone) => (
-            <div key={milestone.id} className="rounded-md border bg-muted/20 p-3">
+            <div key={milestone.id} className="rounded-xl border bg-muted/20 p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="truncate text-sm font-medium">
                   {milestone.title}
@@ -579,7 +579,7 @@ function IdentityMilestoneList({
             </div>
           ))
         ) : (
-          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
             Milestones appear as your Proof history grows.
           </div>
         )}

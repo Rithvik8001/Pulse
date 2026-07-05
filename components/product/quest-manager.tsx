@@ -56,7 +56,7 @@ export function QuestManager({
 
   return (
     <div className="grid gap-4">
-      <section className="rounded-lg border bg-card">
+      <section className="rounded-2xl border bg-card">
         <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -85,12 +85,12 @@ export function QuestManager({
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
               Add a Quest to start building proof again.
             </div>
           )}
           {isAtLimit ? (
-            <div className="rounded-md border bg-muted/25 px-3 py-2 text-xs/relaxed text-muted-foreground">
+            <div className="rounded-xl border bg-muted/25 px-3 py-2 text-xs/relaxed text-muted-foreground">
               You have reached the calm limit of {activeQuestLimit} active
               Quests. Archive one before adding or restoring another.
             </div>
@@ -98,7 +98,7 @@ export function QuestManager({
         </div>
       </section>
 
-      <section className="rounded-lg border bg-card">
+      <section className="rounded-2xl border bg-card">
         <div className="border-b p-4">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold tracking-tight">Archived</h2>
@@ -120,7 +120,7 @@ export function QuestManager({
               />
             ))
           ) : (
-            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
               Archived Quests will appear here.
             </div>
           )}
@@ -185,7 +185,7 @@ function QuestRow({
   const hasTitleChanged = cleanTitle !== quest.title;
 
   return (
-    <div className="grid gap-3 rounded-md border bg-muted/20 p-3">
+    <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
       <form action={action} className="grid gap-2 lg:grid-cols-[1fr_auto]">
         <input name="questId" type="hidden" value={quest.id} />
         <Input
@@ -319,7 +319,7 @@ function ArchivedQuestRow({
   quest: ManagedQuest;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-md border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="truncate text-sm font-medium">{quest.title}</div>
         <div className="mt-1 text-xs text-muted-foreground">

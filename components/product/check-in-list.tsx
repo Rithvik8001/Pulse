@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CheckmarkCircle01Icon,
   SentIcon,
+  Target01Icon,
   UnavailableIcon,
 } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
@@ -62,8 +63,8 @@ export function CheckInList({ quests }: CheckInListProps) {
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/25 p-3">
-        <div className="mr-1 text-xs font-medium text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3">
+        <div className="mr-1 font-mono text-[11px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
           Today&apos;s proof
         </div>
         {quests.map((quest) => {
@@ -178,26 +179,33 @@ function CheckInRow({
 
   return (
     <form
-      className="grid gap-3 rounded-md border bg-muted/25 p-3 text-sm"
+      className="grid gap-3 rounded-xl border bg-card p-4 text-sm"
       onSubmit={submitCheckIn}
     >
       <input name="questId" type="hidden" value={quest.id} />
       <input name="localDate" type="hidden" value={localDate} />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="min-w-0 truncate font-medium">{quest.title}</span>
-            {quest.todayCheckIn ? (
-              <Badge variant="outline" className="shrink-0">
-                {quest.todayCheckIn.outcome === "win" ? "Win" : "Pass"} saved
-              </Badge>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <HugeiconsIcon icon={Target01Icon} size={18} strokeWidth={1.7} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 truncate font-medium">
+                {quest.title}
+              </span>
+              {quest.todayCheckIn ? (
+                <Badge variant="outline" className="shrink-0">
+                  {quest.todayCheckIn.outcome === "win" ? "Win" : "Pass"} saved
+                </Badge>
+              ) : null}
+            </div>
+            {quest.todayCheckIn?.note ? (
+              <p className="mt-1 line-clamp-2 text-xs/relaxed text-muted-foreground">
+                {quest.todayCheckIn.note}
+              </p>
             ) : null}
           </div>
-          {quest.todayCheckIn?.note ? (
-            <p className="mt-1 line-clamp-2 text-xs/relaxed text-muted-foreground">
-              {quest.todayCheckIn.note}
-            </p>
-          ) : null}
         </div>
         <div className="flex shrink-0 gap-2">
           <Button

@@ -146,7 +146,7 @@ export function OnboardingForm() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_0.78fr] lg:items-stretch">
-            <Card className="rounded-lg">
+            <Card>
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>

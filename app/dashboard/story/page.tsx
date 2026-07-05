@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
+import { PageHeader } from "@/components/product/page-header";
 import { WeeklyStoryForm } from "@/components/product/weekly-story-form";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -75,7 +76,7 @@ function StoryLetter({
 }) {
   if (!story) {
     return (
-      <Empty className="min-h-[360px] rounded-lg border bg-muted/20">
+      <Empty className="min-h-[360px] rounded-2xl border bg-muted/20">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={NotebookIcon} size={18} strokeWidth={1.8} />
@@ -96,7 +97,7 @@ function StoryLetter({
     .filter(Boolean);
 
   return (
-    <article className="rounded-lg border bg-card p-5 shadow-sm">
+    <article className="rounded-2xl border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -126,7 +127,7 @@ function StoryLetter({
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-[1fr_0.78fr]">
-        <div className="rounded-md border bg-muted/25 p-3">
+        <div className="rounded-xl border bg-muted/25 p-3">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium">
             <HugeiconsIcon
               icon={CheckmarkCircle01Icon}
@@ -145,7 +146,7 @@ function StoryLetter({
             ))}
           </div>
         </div>
-        <div className="rounded-md border bg-primary/5 p-3">
+        <div className="rounded-xl border bg-primary/5 p-3">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
             <HugeiconsIcon icon={Target01Icon} size={15} strokeWidth={1.7} />
             Next week&apos;s one Quest
@@ -162,7 +163,7 @@ function StoryLetter({
 function ProofSourceList({ proof }: { proof: WeeklyProof[] }) {
   if (proof.length === 0) {
     return (
-      <Empty className="rounded-lg border bg-muted/20">
+      <Empty className="rounded-2xl border bg-muted/20">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HugeiconsIcon icon={Calendar03Icon} size={18} strokeWidth={1.8} />
@@ -185,7 +186,7 @@ function ProofSourceList({ proof }: { proof: WeeklyProof[] }) {
   return (
     <div className="grid gap-2">
       {proof.map((entry) => (
-        <div key={entry.id} className="rounded-md border bg-muted/25 p-3">
+        <div key={entry.id} className="rounded-xl border bg-muted/25 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">
@@ -216,7 +217,7 @@ function ProofSourceList({ proof }: { proof: WeeklyProof[] }) {
 function JournalSourceList({ journal }: { journal: WeeklyJournalReflection[] }) {
   if (journal.length === 0) {
     return (
-      <div className="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+      <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
         Journal entries from this week will appear here.
       </div>
     );
@@ -225,7 +226,7 @@ function JournalSourceList({ journal }: { journal: WeeklyJournalReflection[] }) 
   return (
     <div className="grid gap-2">
       {journal.map((entry) => (
-        <div key={entry.id} className="rounded-md border bg-muted/25 p-3">
+        <div key={entry.id} className="rounded-xl border bg-muted/25 p-3">
           <div className="text-xs text-muted-foreground">{entry.localDate}</div>
           <p className="mt-1 line-clamp-3 text-xs/relaxed text-muted-foreground">
             {entry.body}
@@ -249,7 +250,7 @@ function StoryHistoryItem({
     <Link
       href={`/dashboard/story?story=${story.id}`}
       className={cn(
-        "group grid min-w-0 gap-1 rounded-md border bg-muted/20 px-3 py-2.5 text-sm transition-colors hover:bg-muted/40",
+        "group grid min-w-0 gap-1 rounded-xl border bg-muted/20 px-3 py-2.5 text-sm transition-colors hover:bg-muted/40",
         isSelected && "border-primary/40 bg-primary/5",
       )}
     >
@@ -318,24 +319,16 @@ export default async function StoryPage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Weekly Story
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            What did {data.character.name} prove this week?
-          </h1>
-          <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            Pulse turns this week&apos;s Wins, Passes, proof notes, and Journal
-            reflections into a letter about who you are becoming.
-          </p>
-        </div>
-        <WeeklyStoryForm
-          disabled={!hasStorySource}
-          hasStory={Boolean(data.currentWeekStory)}
-        />
-      </section>
+      <PageHeader
+        title={`What did ${data.character.name} prove this week?`}
+        description="Pulse turns this week's Wins, Passes, proof notes, and Journal reflections into a letter about who you are becoming."
+        action={
+          <WeeklyStoryForm
+            disabled={!hasStorySource}
+            hasStory={Boolean(data.currentWeekStory)}
+          />
+        }
+      />
 
       <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid min-w-0 gap-4">
@@ -343,13 +336,13 @@ export default async function StoryPage({
         </div>
 
         <div className="grid min-w-0 content-start gap-4">
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
-              <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <HugeiconsIcon
                   icon={AiBrain01Icon}
-                  size={17}
-                  strokeWidth={1.8}
+                  size={18}
+                  strokeWidth={1.7}
                 />
               </div>
               <CardTitle>This week&apos;s source</CardTitle>
@@ -371,7 +364,7 @@ export default async function StoryPage({
             </CardContent>
           </Card>
 
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
               <CardTitle>Story history</CardTitle>
               <CardDescription>
@@ -393,7 +386,7 @@ export default async function StoryPage({
                   );
                 })
               ) : (
-                <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
                   Your saved Weekly Stories will appear here.
                 </div>
               )}

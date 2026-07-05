@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
+import { PageHeader } from "@/components/product/page-header";
 import { StatsDashboard } from "@/components/product/stats-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,37 +54,29 @@ export default async function StatsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Stats
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            Read the pattern for {data.character.name}.
-          </h1>
-          <p className="max-w-[62ch] text-sm/relaxed text-muted-foreground">
-            Weekly win rates, per-Quest performance, and action signals from
-            your saved Proof.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <Badge variant="outline">
-            {formatShortDate(data.range.start, dateContext.locale)}-
-            {formatShortDate(data.range.end, dateContext.locale)}
-          </Badge>
-          <Button asChild variant="outline">
-            <Link href="/dashboard">
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                size={14}
-                strokeWidth={1.7}
-              />
-              Today&apos;s Check-ins
-            </Link>
-          </Button>
-        </div>
-      </section>
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 md:px-6">
+      <PageHeader
+        title={`Read the pattern for ${data.character.name}.`}
+        description="Weekly win rates, per-Quest performance, and action signals from your saved Proof."
+        action={
+          <>
+            <Badge variant="outline">
+              {formatShortDate(data.range.start, dateContext.locale)}-
+              {formatShortDate(data.range.end, dateContext.locale)}
+            </Badge>
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/dashboard">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={14}
+                  strokeWidth={1.7}
+                />
+                Today&apos;s Check-ins
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {data.summary.totalProof > 0 ? (
         <StatsDashboard
@@ -93,13 +86,13 @@ export default async function StatsPage() {
         />
       ) : (
         <section className="grid gap-4 lg:grid-cols-[0.34fr_1fr]">
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
-              <div className="mb-2 flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <HugeiconsIcon
                   icon={ChartLineData01Icon}
                   size={18}
-                  strokeWidth={1.8}
+                  strokeWidth={1.7}
                 />
               </div>
               <CardTitle>Analytics need Proof</CardTitle>
@@ -125,7 +118,7 @@ export default async function StatsPage() {
               ))}
             </CardContent>
           </Card>
-          <Card className="rounded-lg">
+          <Card>
             <CardHeader>
               <CardTitle>No Stats yet</CardTitle>
               <CardDescription>
@@ -134,7 +127,7 @@ export default async function StatsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild>
+              <Button asChild className="rounded-xl">
                 <Link href="/dashboard">
                   <HugeiconsIcon
                     icon={CheckmarkCircle01Icon}

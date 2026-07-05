@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Lora } from "next/font/google";
+import { Geist, Geist_Mono, Lora } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { MascotDefs } from "@/components/landing/mascot-defs";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const geistHeading = Geist({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["500", "600", "700"],
+});
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const lora = Lora({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 
@@ -33,13 +39,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full",
-        "antialiased",
+        "h-full antialiased font-sans",
         geistSans.variable,
         geistMono.variable,
-        "font-sans",
-        inter.variable,
         lora.variable,
+        geist.variable,
+        geistHeading.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

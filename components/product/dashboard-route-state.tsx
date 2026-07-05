@@ -31,7 +31,7 @@ export function DashboardPageSkeleton({
           </Card>
         ))}
       </section>
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-3 w-56" />
@@ -56,7 +56,7 @@ export function DashboardRouteError({
 }) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-4 px-4 py-12 md:px-6">
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <Skeleton className="size-8 bg-destructive/20" />
           <h1 className="font-heading text-xl font-semibold">

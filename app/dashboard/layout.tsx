@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AiBrain01Icon, Logout03Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowUpDownIcon,
+  Logout03Icon,
+  Target01Icon,
+} from "@hugeicons/core-free-icons";
 
 import { signOutAction } from "@/app/(auth)/auth/actions";
 import { Mascot } from "@/components/landing/mascot";
@@ -14,13 +18,11 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { syncEmailPreference } from "@/lib/email/preferences";
+import { getCharacterNameForUser } from "@/lib/pulse/dashboard";
 import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
@@ -45,47 +47,57 @@ export default async function DashboardLayout({
     await syncEmailPreference(userId, data.claims.email);
   }
   const settings = userId ? await getUserSettingsForUser(userId) : null;
+  const characterName = userId ? await getCharacterNameForUser(userId) : null;
 
   const sidebarLinkClassName = cn(
-    "peer/menu-button group/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-[calc(var(--radius-sm)+2px)] p-2 text-left text-xs ring-sidebar-ring outline-hidden transition-[width,height,padding]",
-    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground",
-    "group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+    "peer/menu-button group/menu-button flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-lg px-2.5 text-left text-[13px] font-medium text-muted-foreground ring-sidebar-ring outline-hidden transition-colors",
+    "hover:bg-card hover:text-foreground focus-visible:ring-2",
+    "group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! [&_svg]:size-[18px] [&_svg]:shrink-0 [&>span:last-child]:truncate",
   );
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <Link
-                href="/dashboard"
-                aria-label="Pulse dashboard"
-                title="Dashboard"
-                data-slot="sidebar-menu-button"
-                data-sidebar="menu-button"
-                data-size="default"
-                data-active="false"
-                className={cn(sidebarLinkClassName, "h-10")}
-              >
-                <Mascot width={32} height={32} />
-              </Link>
-            </SidebarMenuItem>
-          </SidebarMenu>
+      <Sidebar collapsible="none">
+        <SidebarHeader className="gap-3 px-3 pt-4 pb-2">
+          <Link
+            href="/dashboard"
+            aria-label="Pulse dashboard"
+            className="flex items-center gap-2 px-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          >
+            <Mascot width={26} height={26} />
+            <span className="font-heading text-[15px] font-semibold tracking-[0.14em] uppercase group-data-[collapsible=icon]:hidden">
+              Pulse
+            </span>
+          </Link>
+          {characterName ? (
+            <div className="flex items-center gap-2.5 rounded-xl border bg-card px-3 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <HugeiconsIcon icon={Target01Icon} size={14} strokeWidth={1.9} />
+              </div>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium group-data-[collapsible=icon]:hidden">
+                {characterName}
+              </span>
+              <HugeiconsIcon
+                icon={ArrowUpDownIcon}
+                size={14}
+                strokeWidth={1.7}
+                className="shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden"
+              />
+            </div>
+          ) : null}
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="px-1 pt-2">
           <DashboardSidebarNav linkClassName={sidebarLinkClassName} />
         </SidebarContent>
-        <SidebarFooter>
-          <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-            <HugeiconsIcon icon={AiBrain01Icon} size={14} strokeWidth={1.7} />
+        <SidebarFooter className="px-3 pb-4">
+          <div className="flex min-w-0 items-center gap-2 px-1.5 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <span className="truncate group-data-[collapsible=icon]:hidden">
               {email}
             </span>
           </div>
           <form action={signOutAction}>
             <Button
-              className="w-full justify-start"
+              className="w-full justify-start rounded-lg"
               variant="outline"
               size="sm"
               type="submit"
@@ -97,7 +109,6 @@ export default async function DashboardLayout({
             </Button>
           </form>
         </SidebarFooter>
-        <SidebarRail />
       </Sidebar>
       <SidebarInset>
         {settings ? (
