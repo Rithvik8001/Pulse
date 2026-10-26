@@ -1,10 +1,22 @@
 import { OnboardingForm } from "@/components/product/onboarding-form";
+import { PublicHeader } from "@/components/product/public-header";
 
 export const metadata = {
-  title: "Onboarding · Pulse",
-  description: "Create your first Pulse character.",
+  title: "Try Pulse · Pulse",
+  description: "Set up a character and a few quests. Nothing is saved.",
 };
 
 export default function OnboardingPage() {
-  return <OnboardingForm />;
+  return (
+    <>
+      <PublicHeader cta="sign-up" />
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-page flex-1 px-5 py-10 outline-none max-sm:px-4"
+      >
+        <OnboardingForm />
+      </main>
+    </>
+  );
 }

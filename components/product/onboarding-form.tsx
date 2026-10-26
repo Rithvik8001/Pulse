@@ -1,49 +1,56 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
-import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowRight01Icon,
-  Calendar03Icon,
-  CheckmarkCircle01Icon,
-  Delete02Icon,
-  EnergyIcon,
-  PlusSignIcon,
-  Target01Icon,
-} from "@hugeicons/core-free-icons";
+import { X } from "@phosphor-icons/react";
 
-import { Mascot } from "@/components/landing/mascot";
-import { Badge } from "@/components/ui/badge";
+import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
+import { ProofOutcome } from "@/components/product/proof-outcome";
 import { Button } from "@/components/ui/button";
+import { FeatureChip } from "@/components/ui/feature-chip";
+import { Field, Input } from "@/components/ui/field";
+import { IconButton } from "@/components/ui/icon-button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+  HowItWorks,
+  Page,
+  PageHeader,
+  PageLead,
+  PageTitle,
+  RelatedLinks,
+  Statement,
+} from "@/components/ui/page";
+import { ActionRow, NavRow, RowList } from "@/components/ui/row";
+import { Section } from "@/components/ui/section";
+import { SummaryBar } from "@/components/ui/summary-bar";
+import type { ProofHistoryDay } from "@/lib/pulse/dashboard";
 
+const placeholders = ["Write 500 words", "Morning walk", "Read 10 pages"];
+
+function demoDays(proofToday: number): ProofHistoryDay[] {
+  const days: ProofHistoryDay[] = [];
+  const today = new Date();
+  for (let i = 55; i >= 0; i -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const count = i === 0 ? proofToday : 0;
+    const winCount = Math.max(0, count - (count > 1 ? 1 : 0));
+    days.push({ localDate, winCount, passCount: count - winCount, totalCount: count });
+  }
+  return days;
+}
+
+/** A public demo of the setup. Nothing is saved, in a database or in the browser. */
 export function OnboardingForm() {
   const [character, setCharacter] = useState("");
-  const [quests, setQuests] = useState(["", "", ""]);
+  const [quests, setQuests] = useState([""]);
   const [submitted, setSubmitted] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
 
-  const cleanQuests = useMemo(
-    () => quests.map((quest) => quest.trim()).filter(Boolean),
-    [quests],
-  );
+  const cleanQuests = useMemo(() => quests.map((q) => q.trim()).filter(Boolean), [quests]);
   const canSubmit = character.trim().length > 0 && cleanQuests.length > 0;
 
   function updateQuest(index: number, value: string) {
-    setQuests((current) =>
-      current.map((quest, questIndex) =>
-        questIndex === index ? value : quest,
-      ),
-    );
+    setQuests((current) => current.map((q, i) => (i === index ? value : q)));
     setDemoReady(false);
   }
 
@@ -54,7 +61,7 @@ export function OnboardingForm() {
 
   function removeQuest(index: number) {
     setQuests((current) => {
-      const next = current.filter((_, questIndex) => questIndex !== index);
+      const next = current.filter((_, i) => i !== index);
       return next.length === 0 ? [""] : next;
     });
     setDemoReady(false);
@@ -62,7 +69,7 @@ export function OnboardingForm() {
 
   function resetDemo() {
     setCharacter("");
-    setQuests(["", "", ""]);
+    setQuests([""]);
     setSubmitted(false);
     setDemoReady(false);
   }
@@ -70,296 +77,125 @@ export function OnboardingForm() {
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-
-    if (!canSubmit) {
-      return;
-    }
-
+    if (!canSubmit) return;
     setDemoReady(true);
   }
 
+  const previewQuests = cleanQuests.length > 0 ? cleanQuests : placeholders;
+  const previewName = character.trim() || "writer";
+
   return (
-    <main className="min-h-svh bg-background text-foreground">
-      <div className="mx-auto flex min-h-svh w-full max-w-6xl flex-col px-4 py-5 md:px-6 lg:px-8">
-        <header className="flex items-center justify-between gap-3">
-          <Link
-            href="/"
-            aria-label="Pulse home"
-            className="flex size-9 items-center justify-center rounded-md"
-          >
-            <Mascot width={30} height={30} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/sign-in">Sign in</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/sign-up">Sign up</Link>
-            </Button>
-          </div>
-        </header>
+    <Page>
+      <PageHeader>
+        <PageTitle>Try Pulse</PageTitle>
+        <PageLead>Set up a character and a few quests. Nothing is saved.</PageLead>
+      </PageHeader>
 
-        <section className="grid flex-1 gap-6 py-8 md:py-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-          <div className="space-y-6">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 rounded-md border bg-card px-2.5 py-1 text-xs text-muted-foreground">
-                <HugeiconsIcon
-                  icon={Target01Icon}
-                  size={14}
-                  strokeWidth={1.7}
-                />
-                Interactive demo
-              </div>
-              <h1 className="mt-4 max-w-xl text-4xl font-semibold tracking-tight md:text-5xl">
-                Build a character in under a minute.
-              </h1>
-              <p className="mt-4 max-w-lg text-sm/relaxed text-muted-foreground">
-                Try the core Pulse setup with no account, no database, and no
-                saved browser state. Pick a character, choose a few quests, and
-                preview how your proof starts to take shape.
-              </p>
-            </div>
+      <form onSubmit={onSubmit} className="grid gap-8">
+        <Field
+          label="I am a"
+          error={submitted && character.trim().length === 0 ? "Add a character to continue." : undefined}
+          hint="One word or a short phrase, like writer or early riser."
+        >
+          <Input
+            value={character}
+            placeholder="writer"
+            autoComplete="off"
+            maxLength={48}
+            onChange={(event) => {
+              setCharacter(event.target.value);
+              setDemoReady(false);
+            }}
+          />
+        </Field>
 
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              {[
-                ["One character", "Name who you are becoming."],
-                ["Three quests max", "Keep the demo focused and small."],
-                ["Nothing saved", "This page never writes localStorage."],
-              ].map(([title, description]) => (
-                <div
-                  key={title}
-                  className="rounded-lg border bg-card px-3 py-3 text-xs"
+        <Section
+          title="Quests that prove it"
+          action={
+            quests.length < 3 ? (
+              <Button variant="text" size="sm" onClick={addQuest}>
+                Add another quest
+              </Button>
+            ) : null
+          }
+        >
+          <ul className="grid list-none gap-4 p-0">
+            {quests.map((quest, index) => (
+              <li key={index} className="flex items-end gap-2">
+                <Field
+                  label={`Quest ${index + 1}`}
+                  className="flex-1"
+                  error={
+                    submitted && cleanQuests.length === 0 && index === quests.length - 1
+                      ? "Add at least one quest to continue."
+                      : undefined
+                  }
                 >
-                  <div className="flex items-center gap-2 font-medium">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      strokeWidth={1.7}
-                      className="text-primary"
-                    />
-                    {title}
-                  </div>
-                  <p className="mt-1 text-muted-foreground">{description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.78fr] lg:items-stretch">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>Try the setup</CardTitle>
-                    <CardDescription>
-                      Keep it specific and light enough to check in every day.
-                    </CardDescription>
-                  </div>
-                  {demoReady ? (
-                    <Badge variant="outline" className="shrink-0">
-                      Demo ready
-                    </Badge>
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-5" onSubmit={onSubmit}>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium" htmlFor="character">
-                      I am a
-                    </label>
-                    <Input
-                      id="character"
-                      value={character}
-                      placeholder="writer"
-                      onChange={(event) => {
-                        setCharacter(event.target.value);
-                        setDemoReady(false);
-                      }}
-                      aria-invalid={submitted && character.trim().length === 0}
-                      className="h-10 text-sm"
-                    />
-                    {submitted && character.trim().length === 0 ? (
-                      <p className="text-xs text-destructive">
-                        Add a character before continuing.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-medium">
-                          Quests that prove it
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Add 1-3 small actions.
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addQuest}
-                        disabled={quests.length >= 3}
-                      >
-                        <HugeiconsIcon
-                          icon={PlusSignIcon}
-                          size={14}
-                          strokeWidth={1.7}
-                        />
-                        Add
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {quests.map((quest, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            value={quest}
-                            placeholder={
-                              index === 0
-                                ? "Write 500 words"
-                                : index === 1
-                                  ? "Morning walk"
-                                  : "Read 10 pages"
-                            }
-                            onChange={(event) =>
-                              updateQuest(index, event.target.value)
-                            }
-                            className="h-10 text-sm"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-lg"
-                            aria-label="Remove quest"
-                            onClick={() => removeQuest(index)}
-                            disabled={quests.length === 1}
-                          >
-                            <HugeiconsIcon
-                              icon={Delete02Icon}
-                              size={16}
-                              strokeWidth={1.7}
-                            />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {submitted && cleanQuests.length === 0 ? (
-                      <p className="text-xs text-destructive">
-                        Add at least one quest before continuing.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                    <Button type="submit" size="lg" className="w-full">
-                      Preview demo
-                      <HugeiconsIcon
-                        icon={ArrowRight01Icon}
-                        size={16}
-                        strokeWidth={1.7}
-                      />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      onClick={resetDemo}
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden rounded-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <HugeiconsIcon
-                    icon={EnergyIcon}
-                    size={17}
-                    strokeWidth={1.7}
-                    className="text-primary"
+                  <Input
+                    value={quest}
+                    placeholder={placeholders[index]}
+                    autoComplete="off"
+                    maxLength={96}
+                    onChange={(event) => updateQuest(index, event.target.value)}
                   />
-                  Proof preview
-                </CardTitle>
-                <CardDescription>
-                  A sample of what your first check-in could look like.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="text-xs text-muted-foreground">Character</div>
-                  <div className="mt-1 truncate text-xl font-semibold tracking-tight">
-                    {character.trim()
-                      ? `You're a ${character.trim()}.`
-                      : "You're a writer."}
-                  </div>
-                </div>
+                </Field>
+                {quests.length > 1 ? (
+                  <IconButton
+                    label={`Remove quest ${index + 1}`}
+                    icon={X}
+                    onClick={() => removeQuest(index)}
+                    className="mb-1"
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Section>
 
-                <div className="space-y-2">
-                  {(cleanQuests.length > 0
-                    ? cleanQuests
-                    : ["Write 500 words", "Morning walk", "Read 10 pages"]
-                  ).map((quest, index) => (
-                    <div
-                      key={`${quest}-${index}`}
-                      className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2.5 text-sm"
-                    >
-                      <span className="min-w-0 truncate">{quest}</span>
-                      <Badge
-                        variant={index === 1 ? "secondary" : "outline"}
-                        className="shrink-0"
-                      >
-                        {index === 1 ? "Pass" : "Win"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+        <SummaryBar caption={`${cleanQuests.length} of 3 quests`}>
+          {demoReady ? (
+            <Button variant="text" onClick={resetDemo}>
+              Reset
+            </Button>
+          ) : null}
+          <Button type="submit" variant="primary">
+            Preview
+          </Button>
+        </SummaryBar>
+      </form>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg border bg-background p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <HugeiconsIcon
-                        icon={Calendar03Icon}
-                        size={13}
-                        strokeWidth={1.7}
-                      />
-                      Proof days
-                    </div>
-                    <div className="mt-2 text-2xl font-semibold">
-                      {demoReady ? "1" : "0"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border bg-background p-3">
-                    <div className="text-xs text-muted-foreground">
-                      Momentum
-                    </div>
-                    <div className="mt-2 text-2xl font-semibold">
-                      {demoReady ? "62" : "0"}
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        /100
-                      </span>
-                    </div>
-                  </div>
-                </div>
+      <Section title="Preview">
+        <Statement>I am a {previewName}.</Statement>
+        <ProofHistoryGrid days={demoDays(demoReady ? previewQuests.length : 0)} />
+        <RowList>
+          {previewQuests.map((quest, index) => (
+            <ActionRow
+              key={`${quest}-${index}`}
+              leading={<FeatureChip feature="quests" />}
+              title={quest}
+              caption={demoReady ? "Checked in today" : "Not checked in yet"}
+              actions={demoReady ? <ProofOutcome outcome={index === 1 ? "pass" : "win"} /> : null}
+            />
+          ))}
+        </RowList>
+        <p className="type-small text-fg-2">
+          {demoReady
+            ? "This is what your first day of proof looks like. Nothing was saved."
+            : "Press Preview to see a first day of proof."}
+        </p>
+      </Section>
 
-                <div className="rounded-lg border border-dashed p-3 text-xs/relaxed text-muted-foreground">
-                  {demoReady
-                    ? "Demo ready. Nothing was saved, and your browser state stayed untouched."
-                    : "Submit the demo to preview a first day of proof without saving anything."}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-      </div>
-    </main>
+      <HowItWorks
+        steps={[
+          { title: "Choose your character", body: "One sentence about who you are becoming." },
+          { title: "Check in with wins", body: "Each day, mark each quest as a win or a pass." },
+          { title: "Watch your proof grow", body: "Weeks of check-ins become evidence." },
+        ]}
+      />
+
+      <RelatedLinks>
+        <NavRow href="/sign-up" feature="today" title="Create an account" caption="Keep your proof for real." />
+      </RelatedLinks>
+    </Page>
   );
 }

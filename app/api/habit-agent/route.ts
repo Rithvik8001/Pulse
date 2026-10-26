@@ -19,6 +19,7 @@ import {
   reserveAiUsage,
   validateAndTrimAiChatMessages,
 } from "@/lib/pulse/ai-limits";
+import { aiModel, hasAiKey, missingAiKeyMessage } from "@/lib/pulse/ai-provider";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
@@ -26,9 +27,7 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const requestId = createRequestId(request.headers);
-  const apiKey = process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN;
-
-  if (!apiKey) {
+  if (!hasAiKey()) {
     logError({
       event: "ai_missing_gateway_key",
       message: "Habit Agent request missing AI Gateway key.",
@@ -38,8 +37,7 @@ export async function POST(request: Request) {
     });
     return Response.json(
       {
-        error:
-          "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment before using Habit Agent.",
+        error: missingAiKeyMessage,
       },
       { status: 500 },
     );
@@ -130,7 +128,7 @@ export async function POST(request: Request) {
   });
 
   const result = streamText({
-    model: habitAgentModel,
+    model: aiModel(habitAgentModel),
     system: promptAndTools.system,
     messages: modelMessages,
     tools: promptAndTools.tools,

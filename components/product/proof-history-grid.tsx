@@ -1,70 +1,64 @@
 "use client";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tip } from "@/components/ui/tooltip";
 import type { ProofHistoryDay } from "@/lib/pulse/dashboard";
 import { cn } from "@/lib/utils";
 
-function formatProofTooltip(day: ProofHistoryDay) {
-  const proofLabel = `${day.totalCount} Proof`;
-  const winLabel = `${day.winCount} Win${day.winCount === 1 ? "" : "s"}`;
-  const passLabel = `${day.passCount} Pass${day.passCount === 1 ? "" : "es"}`;
-
-  return `${day.localDate}: ${proofLabel}, ${winLabel}, ${passLabel}`;
+function formatDay(localDate: string) {
+  const [y, m, d] = localDate.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC", // design-ok: a code value, not copy
+  });
 }
 
-export function ProofHistoryGrid({ days }: { days: ProofHistoryDay[] }) {
-  const winDays = days.filter((day) => day.winCount > 0).length;
+function describe(day: ProofHistoryDay) {
+  if (day.totalCount === 0) return `${formatDay(day.localDate)}: no check-ins`;
+  const parts = [];
+  if (day.winCount) parts.push(`${day.winCount} ${day.winCount === 1 ? "win" : "wins"}`);
+  if (day.passCount) parts.push(`${day.passCount} ${day.passCount === 1 ? "pass" : "passes"}`);
+  return `${formatDay(day.localDate)}: ${parts.join(", ")}`;
+}
 
+/**
+ * Weeks as columns, days as rows. Wins deepen the green, passes are the rule
+ * grey, empty days the fill. The last day carries an ink ring.
+ */
+export function ProofHistoryGrid({
+  days,
+  cellClassName,
+}: {
+  days: ProofHistoryDay[];
+  cellClassName?: string;
+}) {
+  const last = days[days.length - 1]?.localDate;
   return (
-    <div className="rounded-md border bg-muted/25 p-3">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-sm font-medium">Proof history</div>
-          <div className="text-xs text-muted-foreground">
-            {winDays} win {winDays === 1 ? "day" : "days"} in the last 8 weeks
-          </div>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span>Less</span>
-          <span className="size-3 rounded-[3px] border bg-background" />
-          <span className="size-3 rounded-[3px] border border-primary/20 bg-primary/25" />
-          <span className="size-3 rounded-[3px] border border-primary/30 bg-primary/55" />
-          <span className="size-3 rounded-[3px] border border-primary bg-primary" />
-          <span>More</span>
-        </div>
-      </div>
-      <TooltipProvider>
-        <div className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1">
-          {days.map((day) => (
-            <Tooltip key={day.localDate}>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={formatProofTooltip(day)}
-                  className={cn(
-                    "size-3 rounded-[3px] border outline-none transition-[box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                    day.winCount >= 3 && "border-primary bg-primary",
-                    day.winCount === 2 && "border-primary/30 bg-primary/55",
-                    day.winCount === 1 && "border-primary/20 bg-primary/25",
-                    day.winCount === 0 &&
-                      day.passCount > 0 &&
-                      "border-muted-foreground/30 bg-muted-foreground/25",
-                    day.totalCount === 0 && "border-border bg-background",
-                  )}
-                  type="button"
-                />
-              </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={6}>
-                {formatProofTooltip(day)}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-      </TooltipProvider>
+    <div
+      role="img"
+      aria-label={`Check-ins by day over the last ${Math.ceil(days.length / 7)} weeks`}
+      className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1"
+    >
+      {days.map((day) => (
+        <Tip key={day.localDate} label={describe(day)} side="top">
+          <button
+            type="button"
+            aria-label={describe(day)}
+            className={cn(
+              "size-4 rounded-cell outline-none transition-[outline-color] duration-(--dur-1) focus-visible:outline-brand-fg",
+              day.winCount >= 3 && "bg-ok",
+              day.winCount === 2 && "bg-ok opacity-(--soft)",
+              day.winCount === 1 && "bg-ok opacity-(--muted)",
+              day.winCount === 0 && day.passCount > 0 && "bg-rule",
+              day.totalCount === 0 && "bg-fill-2",
+              day.localDate === last && "outline-1 -outline-offset-1 outline-ink",
+              cellClassName,
+            )}
+          />
+        </Tip>
+      ))}
     </div>
   );
 }

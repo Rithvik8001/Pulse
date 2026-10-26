@@ -14,6 +14,7 @@ import {
   failAiUsage,
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
+import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import {
   offsetLocalDate,
@@ -65,7 +66,7 @@ export type SuggestionsRawData = {
 export class MissingAiKeyError extends Error {
   constructor() {
     super(
-      "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment to generate reword suggestions.",
+      "Add OPENAI_API_KEY to your environment to generate reword suggestions.",
     );
     this.name = "MissingAiKeyError";
   }
@@ -228,7 +229,7 @@ const rewordSchema = z.object({
 });
 
 export async function getRewordOptions(questId: string): Promise<string[]> {
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  if (!hasAiKey()) {
     throw new MissingAiKeyError();
   }
 
@@ -285,7 +286,7 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
 
   try {
     const { output, totalUsage, finishReason } = await generateText({
-      model: "openai/gpt-5.4-nano",
+      model: aiModel("openai/gpt-5.4-nano"),
       output: Output.object({ schema: rewordSchema }),
       system,
       prompt,

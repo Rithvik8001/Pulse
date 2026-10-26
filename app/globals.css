@@ -1,131 +1,673 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+  Quiet Keycap design system.
+  Tokens are the only place raw values live. Components use roles.
+  Dark mode is a token swap under [data-theme='dark'].
+*/
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif);
-  --font-heading: var(--font-heading);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
+/* tokens:start */
 :root {
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.496 0.265 301.924);
-  --primary-foreground: oklch(0.977 0.014 308.299);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
-  --radius: 0.625rem;
-  --sidebar: #fafafa;
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.558 0.288 302.321);
-  --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: #fafafa;
-  --foreground: oklch(0.145 0 0);
+  /* surfaces and text: warm greys */
+  --bg: #ffffff;
+  --ink: #1a1917;
+  --fg-2: #5f5e5a;
+  --fg-3: #737270;
+  --fill: #f7f7f5;
+  --fill-2: #efefec;
+  --line: #e9e9e6;
+  --rule: #d9d9d5;
+  --scrim: rgb(20 20 20 / 0.35);
+  --tray: #f4f4f2;
+  --tray-rim: #dadad6;
+  --card-rim: #e4e4e1;
+  --field-bg: #ffffff;
+  --field-rim: #e4e4e1;
+  --knob: #ffffff;
+  --on-ink: var(--bg);
+
+  /* brand: actions and selection only */
+  --brand: #6d3cf5;
+  --brand-hover: #5b2fd9;
+  --brand-fg: #6d3cf5;
+  --brand-tint: #f0eaff;
+  --on-brand: #ffffff;
+
+  /* states */
+  --ok: #087a58;
+  --ok-bg: #e1f6ee;
+  --bad: #c41e4a;
+  --bad-bg: #ffe9ec;
+  --warn: #8a5f00;
+  --warn-bg: #fbf2dc;
+
+  /* tints: one per feature */
+  --t-violet: #6d28d9;
+  --t-violet-bg: #f1eaff;
+  --t-blue: #0b5ed7;
+  --t-blue-bg: #e6f0ff;
+  --t-orange: #a84b00;
+  --t-orange-bg: #fff0e0;
+  --t-red: #c41e4a;
+  --t-red-bg: #ffe9ec;
+  --t-green: #087a58;
+  --t-green-bg: #e1f6ee;
+  --t-pink: #b0239f;
+  --t-pink-bg: #fce8fa;
+  --t-amber: #8a5f00;
+  --t-amber-bg: #fbf2dc;
+  --t-cyan: #067087;
+  --t-cyan-bg: #e2f5f8;
+  --t-indigo: #3b46c4;
+  --t-indigo-bg: #e8ecff;
+
+  /* mascot: the only illustration */
+  --mascot-body: var(--brand);
+  --mascot-face: var(--brand-tint);
+  --mascot-eye: #2a1458;
+
+  /* the hand-drawn row divider: a wavy 1.25px stroke, tiled */
+  --scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4' viewBox='0 0 240 4'%3E%3Cpath d='M0 2Q5 .9 11 2.1Q17 3.3 25 2.2Q31 1 37 1.5Q44 3.2 49 2.5Q55 .8 62 1.7Q67 3 74 2.6Q79 1.2 86 1.3Q91 3.3 98 2.3Q103 .7 109 1.6Q116 3.1 121 2.7Q127 1.1 134 1.3Q139 3.2 146 2Q151 .8 157 1.9Q164 3.3 169 2.4Q175 1 182 1.5Q187 3 194 2.8Q199 1.1 206 1.4Q211 3.2 218 2.2Q223 .9 230 1.7Q235 3 240 2' fill='none' stroke='%23dddcd8' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* keycaps: the only gradients in the system */
+  --keycap: linear-gradient(180deg, #8b66fb 0%, #6d3cf5 60%, #6534ee 100%);
+  --keycap-hover: linear-gradient(180deg, #9677fc 0%, #7748f7 60%, #6d3cf5 100%);
+  --keycap-2: linear-gradient(180deg, #ffffff 0%, #f6f6f4 100%);
+  --keycap-2-hover: linear-gradient(180deg, #ffffff 0%, #efefec 100%);
+
+  /* depth */
+  --shadow-card: 0 1px 2px rgb(26 25 23 / 0.05);
+  --shadow-tray: 0 1px 2px rgb(26 25 23 / 0.04), 0 8px 24px rgb(26 25 23 / 0.08);
+  --shadow-knob: 0 0 0 1px var(--card-rim), 0 1px 2px rgb(26 25 23 / 0.08), 0 2px 6px rgb(26 25 23 / 0.06);
+  --shadow-track: inset 0 0 0 1px var(--tray-rim);
+  --shadow-keycap: 0 0 0 1px #4f24c7, inset 0 1px 0 rgb(255 255 255 / 0.32), inset 0 -2px 0 rgb(30 0 90 / 0.14), 0 2px 4px rgb(79 36 199 / 0.22), 0 6px 16px rgb(109 60 245 / 0.24);
+  --shadow-keycap-2: 0 0 0 1px #e2e2df, inset 0 1px 0 #ffffff, inset 0 -2px 0 rgb(26 25 23 / 0.05), 0 1px 2px rgb(26 25 23 / 0.06), 0 4px 10px rgb(26 25 23 / 0.05);
+  --shadow-field: 0 1px 2px rgb(26 25 23 / 0.05), 0 0 0 4px var(--tray), 0 0 0 5px var(--tray-rim);
+  --shadow-field-focus: 0 0 0 4px var(--brand-tint), 0 0 0 5px var(--brand);
+  --shadow-field-error: 0 0 0 4px var(--bad-bg), 0 0 0 5px var(--bad);
+
+  /* type: Inter variable, features cv11 ss01 tnum */
+  --font-sans: var(--font-inter), 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-features: 'cv11', 'ss01', 'tnum';
+
+  /* sizes */
+  --field-h: 3rem;
+  --control: 2.75rem;
+  --control-sm: 2.25rem;
+  --control-xs: 1.75rem;
+  --icon-button: 2.5rem;
+  --header-h: 4rem;
+  --switch-w: 2.75rem;
+  --switch-h: 1.625rem;
+  --switch-knob: 1.25rem;
+  --check: 1.375rem;
+  --swatch-dot: 1.75rem;
+  --ring: 2px;
+  --ring-offset: 2px;
+  --hairline: 1px;
+  --scribble-h: 4px;
+  --scrim-blur: 6px;
+  --page-max: 47.5rem;
+  --page-wide: 60rem;
+  --measure: 52ch;
+  --measure-lead: 36ch;
+  --tray-max: 27.5rem;
+  --tray-wide: 34rem;
+  --menu-min: 11.25rem;
+
+  /* radii: nested shapes stay concentric (inner = outer - padding) */
+  --radius-pill: 999rem;
+  --radius-tray: 1.75rem;
+  --radius-card: 1.375rem;
+  --radius-notice: 1.25rem;
+  --radius-menu: 1.25rem;
+  --radius-row: 1rem;
+  --radius-control: 0.875rem;
+  --radius-item: 0.75rem;
+  --radius-inner: 0.625rem;
+  --radius-key: 0.5rem;
+  --radius-bone: 0.375rem;
+  --radius-cell: 0.3125rem;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-1: 150ms;
+  --dur-2: 220ms;
+  --dur-3: 300ms;
+  --dur-badge: 460ms;
+  --press: 0.98;
+  --settle: 0.96;
+  --tray-rise: 0.5rem;
+  --toast-rise: 0.875rem;
+
+  /* opacity steps */
+  --soft: 0.7;
+  --muted: 0.45;
+  --ghost: 0.4;
+  --faint: 0.25;
+
+  /* layers */
+  --z-bar: 20;
+  --z-tray: 40;
+  --z-toast: 50;
+
+  color-scheme: light;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.438 0.218 303.724);
-  --primary-foreground: oklch(0.977 0.014 308.299);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.627 0.265 303.9);
-  --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+[data-theme='dark'] {
+  --bg: #000000;
+  --ink: #f2f1ee;
+  --fg-2: #a9a9a5;
+  --fg-3: #8b8b88;
+  --fill: #111111;
+  --fill-2: #1a1a1a;
+  --line: #1f1f1f;
+  --rule: #2e2e2e;
+  --scrim: rgb(0 0 0 / 0.6);
+  --tray: #0e0e0e;
+  --tray-rim: #262626;
+  --card-rim: #222222;
+  --field-bg: #000000;
+  --field-rim: #2a2a2a;
+  --knob: #222222;
+  --brand: #7f4cff;
+  --brand-hover: #7342f0;
+  --brand-fg: #9d75ff;
+  --brand-tint: #2a1e4a;
+  --ok: #3fd9a8;
+  --ok-bg: #0f3328;
+  --bad: #ff7a8f;
+  --bad-bg: #3f1a22;
+  --warn: #f2c200;
+  --warn-bg: #3b2f05;
+  --t-violet: #b98cff;
+  --t-violet-bg: #2a1e4a;
+  --t-blue: #5aa9ff;
+  --t-blue-bg: #12284a;
+  --t-orange: #ffa640;
+  --t-orange-bg: #3d2606;
+  --t-red: #ff7a8f;
+  --t-red-bg: #3f1a22;
+  --t-green: #3fd9a8;
+  --t-green-bg: #0f3328;
+  --t-pink: #f07ae6;
+  --t-pink-bg: #3e1a3a;
+  --t-amber: #f2c200;
+  --t-amber-bg: #3b2f05;
+  --t-cyan: #3fd3ee;
+  --t-cyan-bg: #0f3038;
+  --t-indigo: #8a93ff;
+  --t-indigo-bg: #1b2049;
+  --mascot-body: var(--brand);
+  --mascot-face: var(--brand-tint);
+  --mascot-eye: #e9ddff;
+  --scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4' viewBox='0 0 240 4'%3E%3Cpath d='M0 2Q5 .9 11 2.1Q17 3.3 25 2.2Q31 1 37 1.5Q44 3.2 49 2.5Q55 .8 62 1.7Q67 3 74 2.6Q79 1.2 86 1.3Q91 3.3 98 2.3Q103 .7 109 1.6Q116 3.1 121 2.7Q127 1.1 134 1.3Q139 3.2 146 2Q151 .8 157 1.9Q164 3.3 169 2.4Q175 1 182 1.5Q187 3 194 2.8Q199 1.1 206 1.4Q211 3.2 218 2.2Q223 .9 230 1.7Q235 3 240 2' fill='none' stroke='%232c2c2c' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --keycap: linear-gradient(180deg, #9470ff 0%, #7f4cff 60%, #7342f0 100%);
+  --keycap-hover: linear-gradient(180deg, #8d66ff 0%, #7645f2 60%, #6c3be8 100%);
+  --keycap-2: linear-gradient(180deg, #232323 0%, #171717 100%);
+  --keycap-2-hover: linear-gradient(180deg, #2a2a2a 0%, #1c1c1c 100%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-tray: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-knob: 0 0 0 1px #2e2e2e, 0 1px 2px rgb(0 0 0 / 0.6);
+  --shadow-keycap: 0 0 0 1px #5a2fd0, inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -2px 0 rgb(20 0 60 / 0.25), 0 2px 4px rgb(0 0 0 / 0.5), 0 6px 16px rgb(109 60 245 / 0.3);
+  --shadow-keycap-2: 0 0 0 1px #2e2e2e, inset 0 1px 0 rgb(255 255 255 / 0.07), inset 0 -2px 0 rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.5);
+  --shadow-field: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 4px var(--tray), 0 0 0 5px var(--tray-rim);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 1ms;
+    --dur-2: 1ms;
+    --dur-3: 1ms;
+    --dur-badge: 1ms;
+  }
+}
+/* tokens:end */
+
+@custom-variant can-hover (@media (hover: hover));
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+/*
+  Tailwind sees only the system. Defaults are wiped so off-system classes
+  (text-sm, rounded-lg, bg-red-500, dark:) do not exist.
+*/
+@theme inline {
+  --*: initial;
+
+  --spacing: 0.25rem;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+
+  --font-sans: var(--font-sans);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --default-transition-duration: var(--dur-1);
+  --default-transition-timing-function: var(--ease);
+  --default-font-family: var(--font-sans);
+
+  /* Quiet Keycap namespace */
+  --font-sans: var(--font-sans);
+
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-fill: var(--fill);
+  --color-fill-2: var(--fill-2);
+  --color-line: var(--line);
+  --color-rule: var(--rule);
+  --color-scrim: var(--scrim);
+  --color-tray: var(--tray);
+  --color-tray-rim: var(--tray-rim);
+  --color-card-rim: var(--card-rim);
+  --color-field-bg: var(--field-bg);
+  --color-field-rim: var(--field-rim);
+  --color-knob: var(--knob);
+  --color-on-ink: var(--on-ink);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-tint: var(--brand-tint);
+  --color-on-brand: var(--on-brand);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-t-violet: var(--t-violet);
+  --color-t-violet-bg: var(--t-violet-bg);
+  --color-t-blue: var(--t-blue);
+  --color-t-blue-bg: var(--t-blue-bg);
+  --color-t-orange: var(--t-orange);
+  --color-t-orange-bg: var(--t-orange-bg);
+  --color-t-red: var(--t-red);
+  --color-t-red-bg: var(--t-red-bg);
+  --color-t-green: var(--t-green);
+  --color-t-green-bg: var(--t-green-bg);
+  --color-t-pink: var(--t-pink);
+  --color-t-pink-bg: var(--t-pink-bg);
+  --color-t-amber: var(--t-amber);
+  --color-t-amber-bg: var(--t-amber-bg);
+  --color-t-cyan: var(--t-cyan);
+  --color-t-cyan-bg: var(--t-cyan-bg);
+  --color-t-indigo: var(--t-indigo);
+  --color-t-indigo-bg: var(--t-indigo-bg);
+  --color-mascot-body: var(--mascot-body);
+  --color-mascot-face: var(--mascot-face);
+  --color-mascot-eye: var(--mascot-eye);
+
+  --radius-pill: var(--radius-pill);
+  --radius-tray: var(--radius-tray);
+  --radius-card: var(--radius-card);
+  --radius-notice: var(--radius-notice);
+  --radius-menu: var(--radius-menu);
+  --radius-row: var(--radius-row);
+  --radius-control: var(--radius-control);
+  --radius-item: var(--radius-item);
+  --radius-inner: var(--radius-inner);
+  --radius-key: var(--radius-key);
+  --radius-bone: var(--radius-bone);
+  --radius-cell: var(--radius-cell);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-tray: var(--shadow-tray);
+  --shadow-knob: var(--shadow-knob);
+  --shadow-track: var(--shadow-track);
+  --shadow-keycap: var(--shadow-keycap);
+  --shadow-keycap-2: var(--shadow-keycap-2);
+  --shadow-field: var(--shadow-field);
+  --shadow-field-focus: var(--shadow-field-focus);
+  --shadow-field-error: var(--shadow-field-error);
+
+  --spacing-field: var(--field-h);
+  --spacing-control: var(--control);
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-xs: var(--control-xs);
+  --spacing-icon-button: var(--icon-button);
+  --spacing-header: var(--header-h);
+  --spacing-check: var(--check);
+  --spacing-switch-w: var(--switch-w);
+  --spacing-switch-h: var(--switch-h);
+  --spacing-switch-knob: var(--switch-knob);
+  --spacing-swatch: var(--swatch-dot);
+
+  --container-page: var(--page-max);
+  --container-page-wide: var(--page-wide);
+  --container-measure: var(--measure);
+  --container-lead: var(--measure-lead);
+  --container-tray: var(--tray-max);
+  --container-tray-wide: var(--tray-wide);
+  --container-menu: var(--menu-min);
+
+  --ease-settle: var(--ease);
+  --ease-spring: var(--ease-spring);
+
+  --animate-pop-in: pop-in var(--dur-3) var(--ease) both;
+  --animate-fade-in: fade-in var(--dur-3) var(--ease) both;
+  --animate-badge-pop: badge-pop var(--dur-badge) var(--ease-spring) both;
+  --animate-rise: rise var(--dur-3) var(--ease) both;
+  --animate-toast-rise: toast-rise var(--dur-3) var(--ease) both;
+  --animate-sweep: sweep 1.2s var(--ease) infinite;
+  --animate-fade-out: fade-out var(--dur-2) var(--ease) both;
+  --animate-wipe: wipe var(--dur-3) var(--ease) both;
+  --animate-sink: sink var(--dur-2) var(--ease) both;
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(var(--settle)); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes badge-pop {
+    0% { transform: scale(0.4); }
+    70% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(var(--tray-rise)); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-rise {
+    from { opacity: 0; transform: translateY(var(--toast-rise)) scale(var(--settle)); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes wipe {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes sink {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(var(--tray-rise)); }
+  }
+  @keyframes sweep {
+    from { background-position: -40% 0; }
+    to { background-position: 140% 0; }
+  }
+}
+
+/* type roles */
+@utility type-display {
+  font-size: clamp(2.125rem, 6vw, 2.75rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+@utility type-title {
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@utility type-heading {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+@utility type-subhead {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+@utility type-statement {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+@utility type-body {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility type-field {
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility type-label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+@utility type-caption {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility type-small {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+@utility type-section {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--fg-3);
+}
+@utility type-micro {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+@utility type-key {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* surfaces */
+@utility keycap {
+  background: var(--keycap);
+  box-shadow: var(--shadow-keycap);
+  color: var(--on-brand);
+  @media (hover: hover) {
+    &:hover { background: var(--keycap-hover); }
+  }
+}
+@utility keycap-2 {
+  background: var(--keycap-2);
+  box-shadow: var(--shadow-keycap-2);
+  color: var(--ink);
+  @media (hover: hover) {
+    &:hover { background: var(--keycap-2-hover); }
+  }
+}
+@utility track {
+  background: var(--tray);
+  box-shadow: var(--shadow-track);
+}
+@utility knob {
+  background: var(--knob);
+  box-shadow: var(--shadow-knob);
+}
+@utility field {
+  height: var(--field-h);
+  width: 100%;
+  border: var(--hairline) solid var(--field-rim);
+  border-radius: var(--radius-control);
+  background: var(--field-bg);
+  color: var(--ink);
+  box-shadow: var(--shadow-field);
+  padding-inline: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  &::placeholder { color: var(--fg-3); }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: var(--shadow-field-focus);
+  }
+  &[aria-invalid='true'] {
+    border-color: var(--bad);
+    box-shadow: var(--shadow-field-error);
+  }
+}
+@utility inset-rule {
+  box-shadow: inset 0 0 0 var(--hairline) var(--rule);
+}
+@utility scrim {
+  background: var(--scrim);
+  backdrop-filter: blur(var(--scrim-blur));
+}
+/* the home headline's hand-drawn underline, wiping in once */
+@utility underline-wipe {
+  display: inline-block;
+  &::after {
+    content: '';
+    display: block;
+    height: var(--scribble-h);
+    margin-top: 0.125rem;
+    background: var(--scribble) repeat-x 0 0;
+    transform-origin: left;
+    animation: var(--animate-wipe);
+    animation-delay: 200ms;
+  }
+}
+@utility hairline {
+  border-top: var(--scribble-h) solid transparent;
+  border-image: var(--scribble) 4 0 0 0 / var(--scribble-h) 0 0 0 / 0 repeat;
+}
+
+/* motion: only where the user touches */
+@utility press {
+  transition: transform var(--dur-1) var(--ease);
+  &:active { transform: scale(var(--press)); }
+}
+@utility settle {
+  transform: scale(var(--settle));
+}
+@utility pop-in {
+  animation: var(--animate-pop-in);
+}
+@utility fade-in {
+  animation: var(--animate-fade-in);
+}
+@utility badge-pop {
+  animation: var(--animate-badge-pop);
+}
+
+@layer components {
+  /* charts: axis and grid colours come from tokens, never from recharts defaults */
+  [data-chart] .recharts-cartesian-axis-tick text {
+    fill: var(--fg-3);
+    font-size: 0.8125rem;
+  }
+  [data-chart] .recharts-cartesian-grid line {
+    stroke: var(--line);
+  }
+  [data-chart] .recharts-surface,
+  [data-chart] .recharts-layer,
+  [data-chart] .recharts-wrapper {
+    outline: none;
+  }
+
+  /* pending buttons: the label changes to the step and a 2px line sweeps inside the button */
+  [data-slot='button'][data-pending]::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0.75rem;
+    bottom: 0.375rem;
+    height: var(--ring);
+    border-radius: calc(var(--ring) / 2);
+    background: linear-gradient(90deg, transparent, var(--sweep, var(--brand)), transparent);
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: var(--animate-sweep);
+  }
+  [data-slot='button'][data-pending].keycap {
+    --sweep: var(--on-brand);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot='button'][data-pending]::after {
+      animation: none;
+      background: var(--sweep, var(--brand));
+      opacity: var(--muted);
+    }
+  }
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
   }
   html {
-    @apply font-sans;
+    font-family: var(--font-sans);
+    font-feature-settings: var(--font-features);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  /* selected text is brand, like everything you act on */
+  ::selection {
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  :focus-visible {
+    outline: var(--ring) solid var(--brand-fg);
+    outline-offset: var(--ring-offset);
+  }
+  /* everything you can press shows a pointer */
+  a[href],
+  button:not(:disabled),
+  label[for],
+  select,
+  summary,
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='date'],
+  [role='button']:not([aria-disabled='true']),
+  [role='menuitem'],
+  [role='option'],
+  [role='radio']:not([data-disabled]),
+  [role='switch']:not([data-disabled]),
+  [role='checkbox']:not([data-disabled]),
+  [cmdk-item] {
+    cursor: pointer;
+  }
+  button[aria-disabled='true'],
+  button:disabled {
+    cursor: default;
+  }
+  .keycap:focus-visible {
+    outline-color: var(--ink);
+  }
+  @media (forced-colors: active) {
+    :focus-visible { outline-color: Highlight; }
+    .keycap, .keycap-2, .knob { border: var(--hairline) solid ButtonText; }
+    .track { border: var(--hairline) solid CanvasText; }
   }
 }

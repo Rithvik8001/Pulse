@@ -1,5 +1,7 @@
 import "server-only";
 
+import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
+
 import { generateText, Output } from "ai";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
@@ -87,7 +89,7 @@ export class MissingIdentityEvidenceError extends Error {
 export class MissingIdentityAiGatewayKeyError extends Error {
   constructor() {
     super(
-      "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment before generating.",
+      "Add OPENAI_API_KEY to your environment before generating.",
     );
     this.name = "MissingIdentityAiGatewayKeyError";
   }
@@ -389,7 +391,7 @@ export async function generateIdentitySnapshotForUser(
 
   try {
     const result = await generateText({
-      model: identitySnapshotModel,
+      model: aiModel(identitySnapshotModel),
       output: Output.object({
         schema: identitySnapshotSchema,
       }),
@@ -557,5 +559,5 @@ function toIdentitySnapshot(
 }
 
 function hasIdentityAiGatewayKey() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
+  return hasAiKey();
 }

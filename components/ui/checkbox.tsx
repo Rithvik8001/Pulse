@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Checkbox as CheckboxPrimitive } from "radix-ui"
+import * as React from "react";
+import { Check } from "@phosphor-icons/react";
+import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
-import { cn } from "@/lib/utils"
-import { CheckIcon } from "lucide-react"
+import { cn } from "@/lib/utils";
 
-function Checkbox({
+/** 22px. Checked is brand with a white bold check. For picking items in a list. */
+export function Checkbox({
   className,
   ...props
 }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
@@ -14,20 +15,38 @@ function Checkbox({
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[5px] border border-transparent bg-input/90 transition-shadow outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
-        className
+        "inline-flex size-check shrink-0 items-center justify-center rounded-key border border-rule bg-field-bg outline-none press transition-colors duration-(--dur-1) data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-on-brand disabled:opacity-(--muted)",
+        className,
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon
-        />
+      <CheckboxPrimitive.Indicator>
+        <Check size={14} weight="bold" aria-hidden />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
-  )
+  );
 }
 
-export { Checkbox }
+/** A checkbox with its visible label on the right. */
+export function CheckboxField({
+  label,
+  caption,
+  id,
+  className,
+  ...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root> & {
+  label: React.ReactNode;
+  caption?: React.ReactNode;
+}) {
+  const autoId = React.useId();
+  const checkboxId = id ?? autoId;
+  return (
+    <div className={cn("flex items-start gap-3", className)}>
+      <Checkbox id={checkboxId} className="mt-0.5" {...props} />
+      <label htmlFor={checkboxId} className="grid gap-0.5">
+        <span className="type-body font-medium">{label}</span>
+        {caption ? <span className="type-caption text-fg-2">{caption}</span> : null}
+      </label>
+    </div>
+  );
+}

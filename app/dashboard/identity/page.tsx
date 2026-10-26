@@ -1,30 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  AiBrain01Icon,
-  CheckmarkCircle01Icon,
-  Target01Icon,
-} from "@hugeicons/core-free-icons";
 
-import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
 import { IdentityTimeline } from "@/components/product/identity-timeline";
-import { PageHeader } from "@/components/product/page-header";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SetupGate } from "@/components/product/setup-gate";
+import { Notice } from "@/components/ui/notice";
+import { Breadcrumb, Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
 import { getIdentityTimelineDataForUser } from "@/lib/pulse/identity";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Identity · Pulse",
-  description: "Review the evidence for who you are becoming.",
+  description: "Evidence of who you are becoming.",
 };
 
 export default async function IdentityPage() {
@@ -33,88 +19,29 @@ export default async function IdentityPage() {
   const data = await getIdentityTimelineDataForUser(userId, dateContext);
 
   if (!data.isSetupComplete) {
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-        <section className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Identity setup
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            Create your Character before Pulse can map identity evidence.
-          </h1>
-          <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
-            Identity is built from saved Proof, Journal reflections, and Weekly
-            Stories.
-          </p>
-        </section>
-        <DashboardSetupForm />
-      </div>
-    );
+    return <SetupGate isSetupComplete={false}>{null}</SetupGate>;
   }
 
   const hasEvidence = data.views["90d"].nodes.length > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 md:px-6">
-      <PageHeader
-        title="You are becoming someone who..."
-        description={`Pulse turns Proof, Journal reflections, and Weekly Stories into an evidence graph for ${data.character.name}.`}
-        action={
-          <Button asChild variant="outline" className="rounded-xl">
-            <Link href="/dashboard">
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                size={14}
-                strokeWidth={1.7}
-              />
-              Today&apos;s Check-ins
-            </Link>
-          </Button>
-        }
-      />
+    <Page>
+      <PageHeader>
+        <Breadcrumb items={[{ href: "/dashboard", label: "Today" }]} />
+        <PageTitle>Identity</PageTitle>
+        <PageLead>
+          Proof, journal entries and stories, read as evidence of who {data.character.name}{" "}
+          is becoming.
+        </PageLead>
+      </PageHeader>
 
       {hasEvidence ? (
         <IdentityTimeline data={data} locale={dateContext.locale} />
       ) : (
-        <section className="grid gap-4 lg:grid-cols-[0.36fr_1fr]">
-          <Card>
-            <CardHeader>
-              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <HugeiconsIcon
-                  icon={AiBrain01Icon}
-                  size={18}
-                  strokeWidth={1.7}
-                />
-              </div>
-              <CardTitle>Identity needs evidence</CardTitle>
-              <CardDescription>
-                Save one Check-in or Journal entry to start the timeline.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild className="rounded-xl">
-                <Link href="/dashboard">
-                  <HugeiconsIcon
-                    icon={Target01Icon}
-                    size={14}
-                    strokeWidth={1.7}
-                  />
-                  Build today&apos;s Proof
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>No identity graph yet</CardTitle>
-              <CardDescription>
-                Pulse will map milestones, strongest signals, recurring themes,
-                and AI snapshots once evidence exists.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </section>
+        <Notice action={{ label: "Go to today", href: "/dashboard" }}>
+          Save one check-in or journal entry to start the timeline.
+        </Notice>
       )}
-    </div>
+    </Page>
   );
 }

@@ -1,26 +1,25 @@
 "use client";
 
+import * as React from "react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete02Icon, RefreshIcon, SentIcon } from "@hugeicons/core-free-icons";
-import { toast } from "sonner";
+import type { Icon } from "@phosphor-icons/react";
 
 import { AssistantMessage } from "@/components/product/assistant/assistant-message";
 import {
   type ConfirmationState,
+  isToolPart,
   type ParsedProposal,
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { FeatureChip } from "@/components/ui/feature-chip";
+import type { Feature } from "@/components/ui/features";
+import { Field, Textarea } from "@/components/ui/field";
+import { Notice } from "@/components/ui/notice";
+import { toast } from "@/components/ui/toast";
 
 export type AssistantSession = {
   clearError: () => void;
@@ -43,15 +42,15 @@ export type AssistantSession = {
 
 export type AssistantPaneConfig = {
   api: string;
+  feature: Feature;
   emptyDescription: string;
-  emptyIcon: React.ComponentProps<typeof HugeiconsIcon>["icon"];
+  emptyIcon: Icon;
   emptyTitle: string;
   inputPlaceholder: string;
   label: string;
   mutationNotice: string;
   parseProposal: (output: unknown) => ParsedProposal | null;
   proposalPendingText: string;
-  starterIcon?: React.ComponentProps<typeof HugeiconsIcon>["icon"];
   starterPrompts: string[];
   streamingText: string;
 };
@@ -108,6 +107,24 @@ export function AssistantPane({
 }) {
   const router = useRouter();
   const hasMessages = session.messages.length > 0;
+  const logRef = React.useRef<HTMLDivElement>(null);
+
+  // A proposal waiting on the user takes the primary slot from Send.
+  const awaitingConfirmation = session.messages.some((message) =>
+    message.parts.some(
+      (part) =>
+        isToolPart(part) &&
+        part.state === "output-available" &&
+        !session.confirmations[part.toolCallId],
+    ),
+  );
+
+  // Keep the latest message in view, but leave the empty state at the top.
+  React.useEffect(() => {
+    const el = logRef.current;
+    if (!el || !hasMessages) return;
+    el.scrollTop = el.scrollHeight;
+  }, [hasMessages, session.messages, session.isStreaming]);
 
   function submitPrompt(prompt: string) {
     void session.sendMessage({ text: prompt });
@@ -116,11 +133,7 @@ export function AssistantPane({
   function submitMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = session.input.trim();
-
-    if (!text || session.isStreaming) {
-      return;
-    }
-
+    if (!text || session.isStreaming) return;
     session.setInput("");
     void session.sendMessage({ text });
   }
@@ -141,12 +154,9 @@ export function AssistantPane({
             message: result.message,
           },
         }));
-
         if (result.status === "success") {
           toast.success(result.message);
           router.refresh();
-        } else {
-          toast.error(result.message);
         }
       });
     });
@@ -157,80 +167,58 @@ export function AssistantPane({
       ...current,
       [toolCallId]: {
         status: "canceled",
-        message: "Canceled. Pulse was not changed.",
+        message: "Cancelled. Nothing was changed.",
       },
     }));
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <div className="text-xs font-medium text-muted-foreground">
-          {config.label}
-        </div>
-        {hasMessages ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label={`Clear ${config.label} chat`}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-                onClick={clearChat}
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={1.8} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Clear chat</TooltipContent>
-          </Tooltip>
-        ) : null}
-      </div>
-      <div className="flex-1 overflow-y-auto p-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div
+        ref={logRef}
+        role="log"
+        aria-live="polite"
+        aria-label={`${config.label} conversation`}
+        className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"
+      >
         {!hasMessages ? (
-          <div className="grid min-h-full content-center gap-4 py-8 text-center">
-            <div className="mx-auto flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <HugeiconsIcon
-                icon={config.emptyIcon}
-                size={22}
-                strokeWidth={1.7}
-              />
+          <div className="grid gap-4 py-1">
+            <div className="grid justify-items-center gap-3 text-center">
+              <FeatureChip feature={config.feature} size="lg" />
+              <div className="grid gap-1">
+                <h3 className="type-subhead">{config.emptyTitle}</h3>
+                <p className="mx-auto max-w-lead type-caption text-fg-2">
+                  {config.emptyDescription}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-heading text-base font-semibold">
-                {config.emptyTitle}
-              </h3>
-              <p className="mx-auto mt-1 max-w-[34ch] text-xs/relaxed text-muted-foreground">
-                {config.emptyDescription}
-              </p>
-            </div>
-            <div className="grid gap-2">
+            <ul className="grid list-none p-0 [&>*+*]:hairline">
               {config.starterPrompts.map((prompt) => (
-                <Button
-                  key={prompt}
-                  type="button"
-                  variant="outline"
-                  className="h-auto justify-start whitespace-normal px-3 py-2 text-left"
-                  onClick={() => submitPrompt(prompt)}
-                >
-                  {config.starterIcon ? (
-                    <HugeiconsIcon
-                      icon={config.starterIcon}
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-                  ) : null}
-                  {prompt}
-                </Button>
+                <li key={prompt}>
+                  <button
+                    type="button"
+                    onClick={() => submitPrompt(prompt)}
+                    className="-mx-3 flex min-h-control w-[calc(100%+1.5rem)] items-center rounded-row px-3 py-2.5 text-left type-body font-medium outline-none transition-colors duration-(--dur-1) hover:bg-fill"
+                  >
+                    {prompt}
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-4 py-1">
+            <div className="flex justify-end">
+              <Button variant="text" size="xs" onClick={clearChat}>
+                Clear conversation
+              </Button>
+            </div>
             {session.messages.map((message) => (
               <AssistantMessage
                 key={message.id}
                 confirmations={session.confirmations}
                 disabled={session.disabled}
+                feature={config.feature}
                 message={message}
                 parseProposal={config.parseProposal}
                 proposalPendingText={config.proposalPendingText}
@@ -239,65 +227,57 @@ export function AssistantPane({
               />
             ))}
             {session.isStreaming ? (
-              <div className="justify-self-start rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              <p className="type-small text-fg-3" aria-live="polite">
                 {config.streamingText}
-              </div>
+              </p>
             ) : null}
           </div>
         )}
       </div>
 
       {session.error ? (
-        <div className="border-t bg-destructive/5 px-3 py-2 text-xs text-destructive">
-          {session.error.message || `${config.label} could not respond.`}
-        </div>
+        <Notice
+          tone="bad"
+          action={{ label: "Try again", onClick: () => void session.regenerate() }}
+        >
+          {session.error.message || `The ${config.label.toLowerCase()} could not respond.`}
+        </Notice>
       ) : null}
 
-      <form className="grid gap-2 border-t p-3" onSubmit={submitMessage}>
-        <Textarea
-          aria-label={`Message ${config.label}`}
-          className="max-h-28 min-h-16 resize-none text-sm"
-          disabled={session.isStreaming}
-          placeholder={config.inputPlaceholder}
-          value={session.input}
-          onChange={(event) => session.setInput(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-        />
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground">
-            {config.mutationNotice}
-          </div>
-          <div className="flex gap-2">
+      <form className="grid gap-3" onSubmit={submitMessage}>
+        <Field label={`Message ${config.label.toLowerCase()}`} labelHidden>
+          <Textarea
+            autoGrow
+            rows={2}
+            className="max-h-40"
+            disabled={session.isStreaming}
+            placeholder={config.inputPlaceholder}
+            value={session.input}
+            onChange={(event) => session.setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+        </Field>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="type-small text-fg-3">{config.mutationNotice}</p>
+          <div className="flex items-center gap-2">
             {session.isStreaming ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void session.stop()}
-              >
+              <Button variant="secondary" size="sm" onClick={() => void session.stop()}>
                 Stop
               </Button>
-            ) : hasMessages ? (
+            ) : (
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => void session.regenerate()}
+                type="submit"
+                variant={awaitingConfirmation ? "secondary" : "primary"}
+                size="sm"
               >
-                <HugeiconsIcon icon={RefreshIcon} size={13} strokeWidth={1.7} />
-                Retry
+                Send
               </Button>
-            ) : null}
-            <Button
-              disabled={!session.input.trim() || session.isStreaming}
-              type="submit"
-            >
-              <HugeiconsIcon icon={SentIcon} size={13} strokeWidth={1.7} />
-              Send
-            </Button>
+            )}
           </div>
         </div>
       </form>

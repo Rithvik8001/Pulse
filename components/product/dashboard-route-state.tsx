@@ -1,78 +1,66 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
+import { Bone } from "@/components/ui/skeleton";
 
+/** Bones in page anatomy: breadcrumb, title, lead, then rows. */
 export function DashboardPageSkeleton({
-  cards = 3,
   chart = false,
   listRows = 4,
 }: {
+  /** Kept for callers; the skeleton no longer draws cards. */
   cards?: number;
   chart?: boolean;
   listRows?: number;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <section className="grid gap-2">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-9 w-full max-w-md" />
-        <Skeleton className="h-4 w-full max-w-xl" />
-      </section>
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: cards }).map((_, index) => (
-          <Card key={index} className="rounded-lg">
-            <CardHeader>
-              <Skeleton className="mb-2 size-8" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-3 w-32" />
-            </CardHeader>
-          </Card>
-        ))}
-      </section>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-3 w-56" />
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          {chart ? <Skeleton className="h-64 w-full" /> : null}
+    <Page aria-busy aria-label="Loading">
+      <div className="grid gap-3">
+        <Bone className="h-5 w-16" />
+        <Bone className="h-8 w-56" />
+        <Bone className="h-5 w-full max-w-lead" />
+      </div>
+      {chart ? <Bone className="h-64 w-full" /> : null}
+      <div className="grid gap-3">
+        <Bone className="h-4 w-20" />
+        <ul className="grid list-none p-0 [&>*+*]:hairline">
           {Array.from({ length: listRows }).map((_, index) => (
-            <Skeleton key={index} className="h-14 w-full" />
+            <li key={index} className="flex items-center gap-4 py-3.5">
+              <Bone className="size-10" />
+              <div className="grid flex-1 gap-2">
+                <Bone className="h-4 w-1/2" />
+                <Bone className="h-3.5 w-1/3" />
+              </div>
+            </li>
           ))}
-        </CardContent>
-      </Card>
-    </div>
+        </ul>
+      </div>
+    </Page>
   );
 }
 
 export function DashboardRouteError({
-  message = "Something went wrong while loading this dashboard view.",
+  message = "Check your connection, then try again.",
   reset,
 }: {
   message?: string;
   reset: () => void;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-4 px-4 py-12 md:px-6">
-      <Card>
-        <CardHeader>
-          <Skeleton className="size-8 bg-destructive/20" />
-          <h1 className="font-heading text-xl font-semibold">
-            Could not load this view
-          </h1>
-          <p className="text-sm/relaxed text-muted-foreground">{message}</p>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button type="button" onClick={reset}>
-            Try again
-          </Button>
-          <Button asChild type="button" variant="outline">
-            <Link href="/dashboard">Back to dashboard</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+    <Page>
+      <PageHeader>
+        <PageTitle>This page didn&apos;t load</PageTitle>
+        <PageLead>{message}</PageLead>
+      </PageHeader>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="secondary" onClick={reset}>
+          Try again
+        </Button>
+        <Button variant="text" asChild>
+          <Link href="/dashboard">Go to today</Link>
+        </Button>
+      </div>
+    </Page>
   );
 }

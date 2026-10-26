@@ -12,11 +12,13 @@ import {
   type ProposalAction,
   redactPrivateIdentifiers,
 } from "@/components/product/assistant/assistant-proposals";
+import type { Feature } from "@/components/ui/features";
 import { cn } from "@/lib/utils";
 
 export function AssistantMessage({
   confirmations,
   disabled,
+  feature,
   message,
   onCancel,
   onConfirm,
@@ -25,6 +27,7 @@ export function AssistantMessage({
 }: {
   confirmations: Record<string, ConfirmationState>;
   disabled: boolean;
+  feature: Feature;
   message: UIMessage;
   onCancel: (toolCallId: string) => void;
   onConfirm: (toolCallId: string, action: ProposalAction) => void;
@@ -34,25 +37,21 @@ export function AssistantMessage({
   const isUser = message.role === "user";
 
   return (
-    <div
-      className={cn(
-        "grid gap-2",
-        isUser ? "justify-items-end" : "justify-items-start",
-      )}
-    >
+    <div className={cn("grid gap-2", isUser ? "justify-items-end" : "justify-items-start")}>
       {message.parts.map((part, index) => {
         if (part.type === "text" && part.text.trim()) {
-          return (
+          return isUser ? (
             <div
               key={`${message.id}-${index}`}
-              className={cn(
-                "max-w-[88%] rounded-lg px-3 py-2 text-sm/relaxed",
-                isUser
-                  ? "whitespace-pre-wrap bg-primary text-primary-foreground"
-                  : "border bg-muted/30",
-              )}
+              className="max-w-[88%] rounded-row bg-fill-2 px-4 py-2.5 type-body whitespace-pre-wrap"
             >
-              {isUser ? part.text : <AssistantMarkdown text={part.text} />}
+              <span className="sr-only">You said </span>
+              {part.text}
+            </div>
+          ) : (
+            <div key={`${message.id}-${index}`} className="max-w-measure type-body">
+              <span className="sr-only">Assistant said </span>
+              <AssistantMarkdown text={part.text} />
             </div>
           );
         }
@@ -63,6 +62,7 @@ export function AssistantMessage({
               key={`${message.id}-${index}`}
               confirmation={confirmations[part.toolCallId]}
               disabled={disabled}
+              feature={feature}
               parseProposal={parseProposal}
               part={part}
               pendingText={proposalPendingText}
@@ -83,50 +83,32 @@ function AssistantMarkdown({ text }: { text: string }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        h1: ({ children }) => (
-          <h3 className="mb-2 font-heading text-lg font-semibold leading-tight">
-            {children}
-          </h3>
-        ),
+        h1: ({ children }) => <h3 className="mb-2 type-heading">{children}</h3>,
         h2: ({ children }) => (
-          <h3 className="mb-2 mt-3 font-heading text-base font-semibold leading-tight first:mt-0">
-            {children}
-          </h3>
+          <h3 className="mt-3 mb-2 type-subhead first:mt-0">{children}</h3>
         ),
         h3: ({ children }) => (
-          <h4 className="mb-1.5 mt-3 font-heading text-sm font-semibold leading-tight first:mt-0">
-            {children}
-          </h4>
+          <h4 className="mt-3 mb-1.5 type-body font-semibold first:mt-0">{children}</h4>
         ),
-        p: ({ children }) => (
-          <p className="my-2 first:mt-0 last:mb-0">{children}</p>
-        ),
-        strong: ({ children }) => (
-          <strong className="font-semibold text-foreground">{children}</strong>
-        ),
-        em: ({ children }) => (
-          <em className="text-muted-foreground">{children}</em>
-        ),
-        ul: ({ children }) => (
-          <ul className="my-2 ml-4 list-disc space-y-1">{children}</ul>
-        ),
+        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        em: ({ children }) => <em className="not-italic text-fg-2">{children}</em>,
+        ul: ({ children }) => <ul className="my-2 ml-5 list-disc space-y-1">{children}</ul>,
         ol: ({ children }) => (
-          <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>
+          <ol className="my-2 ml-5 list-decimal space-y-1 tabular-nums">{children}</ol>
         ),
         li: ({ children }) => <li className="pl-1">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="my-2 border-l-2 border-primary/40 pl-3 text-muted-foreground">
+          <blockquote className="my-2 border-l-2 border-rule pl-3 text-fg-2">
             {children}
           </blockquote>
         ),
         code: ({ children }) => (
-          <code className="rounded bg-background px-1 py-0.5 text-[0.85em]">
-            {children}
-          </code>
+          <code className="rounded-key bg-fill px-1 py-0.5 type-small">{children}</code>
         ),
         a: ({ children, href }) => (
           <a
-            className="font-medium text-primary underline-offset-2 hover:underline"
+            className="font-medium text-brand-fg underline-offset-4 hover:underline"
             href={href}
             rel="noreferrer"
             target="_blank"

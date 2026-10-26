@@ -1,57 +1,32 @@
 "use client";
 
 import { useActionState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { AiBrain01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 
-import {
-  generateWeeklyStoryAction,
-  type WeeklyStoryFormState,
-} from "@/app/dashboard/story/actions";
-import { Button } from "@/components/ui/button";
-
-type WeeklyStoryFormProps = {
-  disabled?: boolean;
-  hasStory: boolean;
-};
+import { generateWeeklyStoryAction, type WeeklyStoryFormState } from "@/app/dashboard/story/actions";
+import { Notice } from "@/components/ui/notice";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { SummaryBar } from "@/components/ui/summary-bar";
 
 export function WeeklyStoryForm({
   disabled = false,
   hasStory,
-}: WeeklyStoryFormProps) {
-  const initialState: WeeklyStoryFormState = {
-    status: "idle",
-  };
-  const [state, action, pending] = useActionState(
-    generateWeeklyStoryAction,
-    initialState,
-  );
+  caption,
+}: {
+  disabled?: boolean;
+  hasStory: boolean;
+  caption: string;
+}) {
+  const initialState: WeeklyStoryFormState = { status: "idle" };
+  const [state, action] = useActionState(generateWeeklyStoryAction, initialState);
 
   return (
-    <form action={action} className="grid gap-2">
-      <Button type="submit" disabled={disabled || pending}>
-        <HugeiconsIcon
-          icon={hasStory ? RefreshIcon : AiBrain01Icon}
-          size={15}
-          strokeWidth={1.8}
-        />
-        {pending
-          ? "Writing Story"
-          : hasStory
-            ? "Regenerate Story"
-            : "Generate Story"}
-      </Button>
-      {state.message ? (
-        <p
-          className={
-            state.status === "error"
-              ? "text-xs text-destructive"
-              : "text-xs text-primary"
-          }
-        >
-          {state.message}
-        </p>
-      ) : null}
+    <form id="write" action={action} className="grid gap-3 scroll-mt-24">
+      {state.status === "error" ? <Notice tone="bad">{state.message}</Notice> : null}
+      <SummaryBar caption={caption}>
+        <SubmitButton variant="primary" disabled={disabled} pendingLabel="Writing story">
+          {hasStory ? "Rewrite story" : "Write this week's story"}
+        </SubmitButton>
+      </SummaryBar>
     </form>
   );
 }

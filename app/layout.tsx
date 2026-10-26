@@ -1,33 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lora } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { MascotDefs } from "@/components/landing/mascot-defs";
-import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ToastViewport } from "@/components/ui/toast";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-const geistHeading = Geist({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  weight: ["500", "600", "700"],
-});
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
-
-const lora = Lora({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const inter = localFont({
+  src: "./fonts/InterVariable.woff2",
+  weight: "100 900",
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Pulse",
-  description: "Stop Counting Streaks. Start Building Character.",
+  description: "Stop counting streaks. Start building character.",
 };
 
 export default function RootLayout({
@@ -38,19 +26,22 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        "h-full antialiased font-sans",
-        geistSans.variable,
-        geistMono.variable,
-        lora.variable,
-        geist.variable,
-        geistHeading.variable,
-      )}
+      suppressHydrationWarning
+      className={cn("h-full font-sans", inter.variable)}
     >
       <body className="min-h-full flex flex-col">
-        <MascotDefs />
-        {children}
-        <Toaster richColors />
+        <ThemeProvider>
+          <TooltipProvider>
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-(--z-toast) focus:rounded-control focus:bg-ink focus:px-4 focus:py-3 focus:type-label focus:text-on-ink"
+            >
+              Skip to content
+            </a>
+            {children}
+            <ToastViewport />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

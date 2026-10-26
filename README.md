@@ -21,7 +21,7 @@ Pulse lets users define a **Character**, manage a small set of repeatable **Ques
 - Tailwind CSS v4, shadcn/ui, Hugeicons, Recharts
 - Supabase Auth + Supabase Postgres
 - Drizzle ORM + SQL migrations
-- AI SDK with OpenAI and Vercel AI Gateway
+- AI SDK with OpenAI
 - Resend + React Email
 - Vercel Cron for scheduled weekly digests
 
@@ -46,7 +46,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-AI_GATEWAY_API_KEY=
+OPENAI_API_KEY=
 
 AI_LIMITS_ENABLED=true
 AI_GLOBAL_DAILY_REQUEST_LIMIT=50

@@ -1,278 +1,56 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  AiBrain01Icon,
-  Calendar03Icon,
-  CheckmarkCircle01Icon,
-  NotebookIcon,
-  Target01Icon,
-} from "@hugeicons/core-free-icons";
 
-import { DashboardSetupForm } from "@/components/product/dashboard-setup-form";
-import { PageHeader } from "@/components/product/page-header";
+import { ProofOutcome } from "@/components/product/proof-outcome";
+import { SetupGate } from "@/components/product/setup-gate";
 import { WeeklyStoryForm } from "@/components/product/weekly-story-form";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  getWeeklyStoryDataForUser,
-  type WeeklyJournalReflection,
-  type WeeklyProof,
-  type WeeklyStory,
-} from "@/lib/pulse/story";
+import { FeatureChip } from "@/components/ui/feature-chip";
+import { Notice } from "@/components/ui/notice";
+import { Breadcrumb, Page, PageHeader, PageLead, PageTitle, Prose, Statement } from "@/components/ui/page";
+import { ActionRow, DetailRow, NavRow, RowList } from "@/components/ui/row";
+import { Section } from "@/components/ui/section";
+import { getWeeklyStoryDataForUser, type WeeklyStory } from "@/lib/pulse/story";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Story · Pulse",
-  description: "Generate and revisit your Pulse Weekly Stories.",
+  description: "Your week, written up.",
 };
 
-function formatDate(date: string, locale: string) {
-  return formatLocalDateForLocale(date, locale, {
-    month: "short",
-    day: "numeric",
-  });
+function weekLabel(range: { weekStart: string; weekEnd: string } | { start: string; end: string }, locale: string) {
+  const start = "weekStart" in range ? range.weekStart : range.start;
+  const end = "weekEnd" in range ? range.weekEnd : range.end;
+  const f = (d: string) => formatLocalDateForLocale(d, locale, { month: "short", day: "numeric" });
+  return `${f(start)} to ${f(end)}`;
 }
 
-function formatDateTime(date: Date, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function weekLabel(
-  story: Pick<WeeklyStory, "weekStart" | "weekEnd">,
-  locale: string,
-) {
-  return `${formatDate(story.weekStart, locale)}-${formatDate(story.weekEnd, locale)}`;
-}
-
-function StoryLetter({
-  locale,
-  story,
-}: {
-  locale: string;
-  story: WeeklyStory | null;
-}) {
-  if (!story) {
-    return (
-      <Empty className="min-h-[360px] rounded-2xl border bg-muted/20">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HugeiconsIcon icon={NotebookIcon} size={18} strokeWidth={1.8} />
-          </EmptyMedia>
-          <EmptyTitle>No Weekly Story yet</EmptyTitle>
-          <EmptyDescription>
-            Generate a Story once this week has at least one Check-in or
-            Journal entry.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
-
+function StoryLetter({ story }: { story: WeeklyStory }) {
   const paragraphs = story.letterBody
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 
   return (
-    <article className="rounded-2xl border bg-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{weekLabel(story, locale)}</Badge>
-            <span className="text-xs text-muted-foreground">
-              {story.sourceCheckInCount} source Check-in
-              {story.sourceCheckInCount === 1 ? "" : "s"}
-            </span>
-          </div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
-            {story.title}
-          </h2>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {formatDateTime(story.updatedAt, locale)}
-        </div>
-      </div>
-
-      <p className="mt-4 max-w-[72ch] text-sm/relaxed text-muted-foreground">
-        {story.summary}
-      </p>
-
-      <div className="mt-5 space-y-3 text-sm/relaxed">
+    <article className="grid gap-6">
+      <h2 className="type-heading text-balance">{story.title}</h2>
+      <Statement>{story.summary}</Statement>
+      <Prose>
         {paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-[1fr_0.78fr]">
-        <div className="rounded-xl border bg-muted/25 p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-            <HugeiconsIcon
-              icon={CheckmarkCircle01Icon}
-              size={15}
-              strokeWidth={1.7}
-              className="text-primary"
-            />
-            Patterns Pulse noticed
-          </div>
-          <div className="grid gap-2 text-xs/relaxed text-muted-foreground">
-            {story.patternBullets.map((pattern) => (
-              <div key={pattern} className="flex gap-2">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                <span>{pattern}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-xl border bg-primary/5 p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-            <HugeiconsIcon icon={Target01Icon} size={15} strokeWidth={1.7} />
-            Next week&apos;s one Quest
-          </div>
-          <p className="text-xs/relaxed text-muted-foreground">
-            {story.nextQuest}
-          </p>
-        </div>
-      </div>
+      </Prose>
+      <Section title="Patterns">
+        <RowList>
+          {story.patternBullets.map((pattern) => (
+            <DetailRow key={pattern} label={pattern} />
+          ))}
+        </RowList>
+      </Section>
+      <Section title="Next week's one quest">
+        <Statement>{story.nextQuest}</Statement>
+      </Section>
     </article>
-  );
-}
-
-function ProofSourceList({ proof }: { proof: WeeklyProof[] }) {
-  if (proof.length === 0) {
-    return (
-      <Empty className="rounded-2xl border bg-muted/20">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <HugeiconsIcon icon={Calendar03Icon} size={18} strokeWidth={1.8} />
-          </EmptyMedia>
-          <EmptyTitle>No proof this week</EmptyTitle>
-          <EmptyDescription>
-            Check in on a Quest before asking Pulse to write this week&apos;s
-            Story.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Link className="font-medium text-primary" href="/dashboard">
-            Go to today&apos;s Check-ins
-          </Link>
-        </EmptyContent>
-      </Empty>
-    );
-  }
-
-  return (
-    <div className="grid gap-2">
-      {proof.map((entry) => (
-        <div key={entry.id} className="rounded-xl border bg-muted/25 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium">
-                {entry.questTitle}
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                {entry.localDate}
-              </div>
-            </div>
-            <Badge
-              variant={entry.outcome === "win" ? "default" : "secondary"}
-              className="shrink-0"
-            >
-              {entry.outcome === "win" ? "Win" : "Pass"}
-            </Badge>
-          </div>
-          {entry.note ? (
-            <p className="mt-2 line-clamp-2 text-xs/relaxed text-muted-foreground">
-              {entry.note}
-            </p>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function JournalSourceList({ journal }: { journal: WeeklyJournalReflection[] }) {
-  if (journal.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-        Journal entries from this week will appear here.
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-2">
-      {journal.map((entry) => (
-        <div key={entry.id} className="rounded-xl border bg-muted/25 p-3">
-          <div className="text-xs text-muted-foreground">{entry.localDate}</div>
-          <p className="mt-1 line-clamp-3 text-xs/relaxed text-muted-foreground">
-            {entry.body}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function StoryHistoryItem({
-  isSelected,
-  locale,
-  story,
-}: {
-  isSelected: boolean;
-  locale: string;
-  story: WeeklyStory;
-}) {
-  return (
-    <Link
-      href={`/dashboard/story?story=${story.id}`}
-      className={cn(
-        "group grid min-w-0 gap-1 rounded-xl border bg-muted/20 px-3 py-2.5 text-sm transition-colors hover:bg-muted/40",
-        isSelected && "border-primary/40 bg-primary/5",
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <span
-          className={cn(
-            "size-2 shrink-0 rounded-full bg-muted-foreground/35",
-            isSelected && "bg-primary",
-          )}
-        />
-        <span className="min-w-0 flex-1 truncate font-medium">
-          {story.title}
-        </span>
-      </div>
-      <div className="pl-4 text-[11px] leading-5 text-muted-foreground">
-        {weekLabel(story, locale)} · {story.sourceCheckInCount} Check-in
-        {story.sourceCheckInCount === 1 ? "" : "s"}
-      </div>
-      <p className="line-clamp-2 min-w-0 pl-4 text-xs/relaxed text-muted-foreground">
-        {story.summary}
-      </p>
-    </Link>
   );
 }
 
@@ -282,118 +60,96 @@ export default async function StoryPage({
   searchParams: Promise<{ story?: string | string[] }>;
 }) {
   const params = await searchParams;
-  const selectedStoryId = Array.isArray(params.story)
-    ? params.story[0]
-    : params.story;
+  const selectedStoryId = Array.isArray(params.story) ? params.story[0] : params.story;
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const data = await getWeeklyStoryDataForUser(
-    userId,
-    dateContext,
-    selectedStoryId,
-  );
+  const data = await getWeeklyStoryDataForUser(userId, dateContext, selectedStoryId);
 
   if (!data.isSetupComplete) {
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-        <section className="grid gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
-            Story setup
-          </p>
-          <h1 className="max-w-2xl font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            Create your Character before Pulse can write your Story.
-          </h1>
-          <p className="max-w-[58ch] text-sm/relaxed text-muted-foreground">
-            Weekly Stories are built from your saved Character, Quests, and
-            Check-ins.
-          </p>
-        </section>
-        <DashboardSetupForm />
-      </div>
-    );
+    return <SetupGate isSetupComplete={false}>{null}</SetupGate>;
   }
 
-  const hasProof = data.currentWeekProof.length > 0;
-  const hasJournal = data.currentWeekJournal.length > 0;
-  const hasStorySource = hasProof || hasJournal;
+  const locale = dateContext.locale;
+  const hasSource = data.currentWeekProof.length > 0 || data.currentWeekJournal.length > 0;
+  const story = data.selectedStory;
+  const writtenCaption = data.currentWeekStory
+    ? `Written ${new Intl.DateTimeFormat(locale, { weekday: "long", hour: "numeric", minute: "2-digit" }).format(data.currentWeekStory.updatedAt)}.`
+    : hasSource
+      ? "Nothing written for this week yet."
+      : "Check in or write an entry this week first.";
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-6">
-      <PageHeader
-        title={`What did ${data.character.name} prove this week?`}
-        description="Pulse turns this week's Wins, Passes, proof notes, and Journal reflections into a letter about who you are becoming."
-        action={
-          <WeeklyStoryForm
-            disabled={!hasStorySource}
-            hasStory={Boolean(data.currentWeekStory)}
-          />
-        }
+    <Page>
+      <PageHeader>
+        <Breadcrumb items={[{ href: "/dashboard", label: "Today" }]} />
+        <PageTitle>Weekly story</PageTitle>
+        <PageLead>{story ? weekLabel(story, locale) : weekLabel(data.week, locale)}</PageLead>
+      </PageHeader>
+
+      {story ? (
+        <StoryLetter story={story} />
+      ) : (
+        <Notice>
+          {hasSource
+            ? "This week's story has not been written yet."
+            : "Once this week has a check-in or a journal entry, Pulse can write its story."}
+        </Notice>
+      )}
+
+      <WeeklyStoryForm
+        disabled={!hasSource}
+        hasStory={Boolean(data.currentWeekStory)}
+        caption={writtenCaption}
       />
 
-      <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="grid min-w-0 gap-4">
-          <StoryLetter locale={dateContext.locale} story={data.selectedStory} />
-        </div>
+      <Section title="This week's source">
+        <RowList>
+          <DetailRow
+            label="Week"
+            control={<span className="type-body text-fg-2">{weekLabel(data.week, locale)}</span>}
+          />
+          <DetailRow
+            label="Check-ins"
+            control={<span className="type-body text-fg-2 tabular-nums">{data.currentWeekProof.length}</span>}
+          />
+          <DetailRow
+            label="Journal entries"
+            control={<span className="type-body text-fg-2 tabular-nums">{data.currentWeekJournal.length}</span>}
+          />
+        </RowList>
+        {data.currentWeekProof.length > 0 ? (
+          <RowList>
+            {data.currentWeekProof.map((entry) => (
+              <ActionRow
+                key={entry.id}
+                leading={<FeatureChip feature="proof" />}
+                title={entry.questTitle}
+                caption={entry.note ? `${entry.localDate}: ${entry.note}` : entry.localDate}
+                actions={<ProofOutcome outcome={entry.outcome} />}
+              />
+            ))}
+          </RowList>
+        ) : null}
+      </Section>
 
-        <div className="grid min-w-0 content-start gap-4">
-          <Card>
-            <CardHeader>
-              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <HugeiconsIcon
-                  icon={AiBrain01Icon}
-                  size={18}
-                  strokeWidth={1.7}
-                />
-              </div>
-              <CardTitle>This week&apos;s source</CardTitle>
-              <CardDescription>
-                {formatDate(data.week.start, dateContext.locale)}-
-                {formatDate(data.week.end, dateContext.locale)} ·{" "}
-                {data.currentWeekProof.length} Check-in
-                {data.currentWeekProof.length === 1 ? "" : "s"} ·{" "}
-                {data.currentWeekJournal.length} Journal entr
-                {data.currentWeekJournal.length === 1 ? "y" : "ies"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <ProofSourceList proof={data.currentWeekProof} />
-              <div className="grid gap-2">
-                <div className="text-sm font-medium">Journal reflections</div>
-                <JournalSourceList journal={data.currentWeekJournal} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Story history</CardTitle>
-              <CardDescription>
-                Revisit the letters Pulse has already saved.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {data.stories.length > 0 ? (
-                data.stories.map((story) => {
-                  const isSelected = data.selectedStory?.id === story.id;
-
-                  return (
-                    <StoryHistoryItem
-                      key={story.id}
-                      isSelected={isSelected}
-                      locale={dateContext.locale}
-                      story={story}
-                    />
-                  );
-                })
-              ) : (
-                <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-                  Your saved Weekly Stories will appear here.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-    </div>
+      <Section title="Past stories">
+        {data.stories.length > 0 ? (
+          <RowList>
+            {data.stories.map((item) => (
+              <NavRow
+                key={item.id}
+                href={`/dashboard/story?story=${item.id}`}
+                feature="story"
+                title={item.title}
+                caption={weekLabel(item, locale)}
+                current={story?.id === item.id}
+              />
+            ))}
+          </RowList>
+        ) : (
+          <Notice>Stories you write will be kept here.</Notice>
+        )}
+      </Section>
+    </Page>
   );
 }

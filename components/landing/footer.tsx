@@ -1,55 +1,34 @@
-import { Mascot } from "./mascot";
+import Link from "next/link";
+import { GithubLogo } from "@phosphor-icons/react/dist/ssr";
+
+import { Mascot } from "@/components/landing/mascot";
 
 export function Footer() {
   return (
-    <footer className="pl-footer">
-      <div className="pl-foot-in">
-        <div className="pl-foot-brand">
-          <a className="pl-brand" href="#hero">
-            <Mascot width={28} height={28} />
-            Pulse
-          </a>
-          <p>
-            The playful habit tracker for people who&apos;d rather build character
-            than chase a streak.
-          </p>
-          <div className="pl-foot-social">
-            <a
-              href="https://github.com/Rithvik8001"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .3.3.6.9.6 1.8v2.7c0 .3.2.6.7.5A10 10 0 0 0 12 2Z" />
-              </svg>
-            </a>
-          </div>
+    <footer className="border-t border-line">
+      <div className="mx-auto flex w-full max-w-page-wide flex-wrap items-center justify-between gap-4 px-5 py-8 max-sm:px-4">
+        <div className="flex items-center gap-2 type-label font-semibold">
+          <Mascot width={24} />
+          Pulse
         </div>
-        <nav className="pl-foot-col" aria-label="Sections">
-          <h5>Explore</h5>
-          <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#insights">Journal magic</a>
-          <a href="#dashboard">Dashboard</a>
-        </nav>
-      </div>
-      <div className="pl-foot-bottom">
-        <span className="pl-made">
-          Made with <span className="pl-heart">&hearts;</span> by{" "}
+        <nav aria-label="Footer" className="flex flex-wrap items-center gap-1">
+          <Link href="/sign-in" className="rounded-inner px-3 py-2 type-label text-fg-2 outline-none hover:text-ink">
+            Sign in
+          </Link>
+          <Link href="/sign-up" className="rounded-inner px-3 py-2 type-label text-fg-2 outline-none hover:text-ink">
+            Create an account
+          </Link>
           <a
             href="https://github.com/Rithvik8001"
             target="_blank"
             rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-inner px-3 py-2 type-label text-fg-2 outline-none hover:text-ink"
           >
-            Rithvik
+            <GithubLogo size={16} aria-hidden />
+            GitHub
           </a>
-        </span>
+        </nav>
+        <p className="w-full type-small text-fg-3">Made by Rithvik.</p>
       </div>
     </footer>
   );

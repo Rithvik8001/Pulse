@@ -1,15 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  Delete02Icon,
-  PlusSignIcon,
-  RefreshIcon,
-  Target01Icon,
-} from "@hugeicons/core-free-icons";
+import { useActionState, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, DotsThree, PencilSimple, Trash, TrayArrowDown } from "@phosphor-icons/react";
 
 import {
   createQuestAction,
@@ -19,326 +11,279 @@ import {
   updateQuestTitleAction,
   type QuestFormState,
 } from "@/app/dashboard/quests/actions";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { useShell } from "@/components/product/shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ConfirmTray } from "@/components/ui/confirm-tray";
+import { FeatureChip } from "@/components/ui/feature-chip";
+import { Field, Input } from "@/components/ui/field";
+import { IconButton } from "@/components/ui/icon-button";
+import { Menu, MenuItem, MenuSeparator } from "@/components/ui/menu";
+import { Notice } from "@/components/ui/notice";
+import { Row, RowList } from "@/components/ui/row";
+import { Section } from "@/components/ui/section";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { SummaryBar } from "@/components/ui/summary-bar";
+import { toast } from "@/components/ui/toast";
 import type { ManagedQuest } from "@/lib/pulse/quests";
+import { cn } from "@/lib/utils";
 
-type QuestManagerProps = {
-  activeQuestLimit: number;
-  activeQuests: ManagedQuest[];
-  archivedQuests: ManagedQuest[];
-};
+const initialFormState: QuestFormState = { status: "idle" };
 
-const initialFormState: QuestFormState = {
-  status: "idle",
-};
+function proofCount(n: number) {
+  return `${n} ${n === 1 ? "proof" : "proof"}`;
+}
 
 export function QuestManager({
   activeQuestLimit,
   activeQuests,
   archivedQuests,
-}: QuestManagerProps) {
+}: {
+  activeQuestLimit: number;
+  activeQuests: ManagedQuest[];
+  archivedQuests: ManagedQuest[];
+}) {
   const activeCount = activeQuests.length;
   const isAtLimit = activeCount >= activeQuestLimit;
+  const [deleting, setDeleting] = useState<ManagedQuest | null>(null);
 
   return (
-    <div className="grid gap-4">
-      <section className="rounded-2xl border bg-card">
-        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold tracking-tight">
-                Active Quests
-              </h2>
-              <Badge variant={isAtLimit ? "secondary" : "outline"}>
-                {activeCount}/{activeQuestLimit} active
-              </Badge>
-            </div>
-            <p className="mt-1 text-sm/relaxed text-muted-foreground">
-              These are the Quests that appear in today&apos;s Check-ins.
-            </p>
-          </div>
-          <CreateQuestForm disabled={isAtLimit} />
-        </div>
+    <div className="grid gap-10">
+      <CreateQuestForm activeCount={activeCount} limit={activeQuestLimit} disabled={isAtLimit} />
 
-        <div className="grid gap-2 p-4">
-          {activeQuests.length > 0 ? (
-            activeQuests.map((quest, index) => (
+      <Section title="Active" count={activeCount}>
+        {activeQuests.length > 0 ? (
+          <RowList>
+            {activeQuests.map((quest, index) => (
               <QuestRow
                 key={quest.id}
-                canMoveDown={index < activeQuests.length - 1}
+                quest={quest}
                 canMoveUp={index > 0}
-                quest={quest}
+                canMoveDown={index < activeQuests.length - 1}
+                onDelete={() => setDeleting(quest)}
               />
-            ))
-          ) : (
-            <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-              Add a Quest to start building proof again.
-            </div>
-          )}
-          {isAtLimit ? (
-            <div className="rounded-xl border bg-muted/25 px-3 py-2 text-xs/relaxed text-muted-foreground">
-              You have reached the calm limit of {activeQuestLimit} active
-              Quests. Archive one before adding or restoring another.
-            </div>
-          ) : null}
-        </div>
-      </section>
+            ))}
+          </RowList>
+        ) : (
+          <Notice>Add a quest above to start building proof again.</Notice>
+        )}
+      </Section>
 
-      <section className="rounded-2xl border bg-card">
-        <div className="border-b p-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold tracking-tight">Archived</h2>
-            <Badge variant="outline">{archivedQuests.length}</Badge>
-          </div>
-          <p className="mt-1 text-sm/relaxed text-muted-foreground">
-            Archived Quests stay in your Proof history, but leave daily
-            Check-ins.
+      <Section title="Archived" count={archivedQuests.length}>
+        {archivedQuests.length > 0 ? (
+          <RowList>
+            {archivedQuests.map((quest) => (
+              <Row key={quest.id} className="flex-wrap">
+                <FeatureChip feature="quests" className="opacity-(--soft)" />
+                <div className="grid min-w-0 flex-1 gap-0.5">
+                  <div className="truncate type-body font-medium">{quest.title}</div>
+                  <div className="type-caption text-fg-2">{proofCount(quest.checkInCount)}</div>
+                </div>
+                <form action={restoreQuestAction}>
+                  <input type="hidden" name="questId" value={quest.id} />
+                  <SubmitButton variant="text" size="sm" disabled={isAtLimit} pendingLabel="Restoring">
+                    Restore
+                  </SubmitButton>
+                </form>
+              </Row>
+            ))}
+          </RowList>
+        ) : (
+          <Notice>Archived quests will appear here, with their proof kept.</Notice>
+        )}
+        {archivedQuests.length > 0 && isAtLimit ? (
+          <p className="type-small text-fg-2">
+            Archive an active quest before restoring one.
           </p>
-        </div>
+        ) : null}
+      </Section>
 
-        <div className="grid gap-2 p-4">
-          {archivedQuests.length > 0 ? (
-            archivedQuests.map((quest) => (
-              <ArchivedQuestRow
-                key={quest.id}
-                canRestore={!isAtLimit}
-                quest={quest}
-              />
-            ))
-          ) : (
-            <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-              Archived Quests will appear here.
-            </div>
-          )}
-        </div>
-      </section>
+      <ConfirmTray
+        open={deleting !== null}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={`Delete ${deleting?.title ?? "this quest"}?`}
+        body="It has no proof yet, so it is removed for good."
+        confirmLabel="Delete quest"
+        pendingLabel="Deleting"
+        formAction={removeQuestAction}
+        hidden={{ questId: deleting?.id ?? "" }}
+      />
     </div>
   );
 }
 
-function CreateQuestForm({ disabled }: { disabled: boolean }) {
-  const [state, action, pending] = useActionState(
-    createQuestAction,
-    initialFormState,
-  );
+function CreateQuestForm({
+  activeCount,
+  limit,
+  disabled,
+}: {
+  activeCount: number;
+  limit: number;
+  disabled: boolean;
+}) {
+  const [state, action] = useActionState(createQuestAction, initialFormState);
+  const [formKey, setFormKey] = useState(0);
+  const [handled, setHandled] = useState(state);
+  if (handled !== state) {
+    setHandled(state);
+    // Remount the form so the field clears after a successful add.
+    if (state.status === "success") setFormKey((k) => k + 1);
+  }
 
   return (
-    <form action={action} className="grid w-full gap-2 sm:w-[min(100%,320px)]">
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-        <Input
-          name="title"
-          placeholder="Add a Quest"
-          maxLength={96}
-          disabled={disabled || pending}
-          className="h-9 text-sm"
-        />
-        <Button type="submit" disabled={disabled || pending}>
-          <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={1.7} />
-          Add
-        </Button>
-      </div>
-      {state.message ? (
-        <p
-          className={
-            state.status === "error"
-              ? "text-xs text-destructive"
-              : "text-xs text-primary"
-          }
-        >
-          {state.message}
-        </p>
+    <form key={formKey} action={action} className="grid gap-4">
+      <Field
+        id="new-quest"
+        label="New quest"
+        error={state.status === "error" ? state.message : undefined}
+        hint={disabled ? undefined : "One small, repeatable action."}
+      >
+        <Input name="title" placeholder="Write 500 words" maxLength={96} disabled={disabled} autoComplete="off" />
+      </Field>
+      {disabled ? (
+        <Notice>
+          You have {limit} active quests. Archive one to add another.
+        </Notice>
       ) : null}
+      <SummaryBar caption={`${activeCount} of ${limit} active`}>
+        <SubmitButton variant="primary" disabled={disabled} pendingLabel="Adding">
+          Add quest
+        </SubmitButton>
+      </SummaryBar>
     </form>
   );
 }
 
 function QuestRow({
-  canMoveDown,
-  canMoveUp,
   quest,
+  canMoveUp,
+  canMoveDown,
+  onDelete,
 }: {
-  canMoveDown: boolean;
-  canMoveUp: boolean;
   quest: ManagedQuest;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onDelete: () => void;
 }) {
-  const [title, setTitle] = useState(quest.title);
-  const [state, action, pending] = useActionState(
-    updateQuestTitleAction,
-    initialFormState,
-  );
-  const removeVerb = quest.checkInCount > 0 ? "Archive" : "Delete";
-  const cleanTitle = title.trim().replace(/\s+/g, " ");
-  const hasTitleChanged = cleanTitle !== quest.title;
+  const [editing, setEditing] = useState(false);
+  const [, startTransition] = useTransition();
+  const { announce } = useShell();
+
+  function archive() {
+    const fd = new FormData();
+    fd.set("questId", quest.id);
+    startTransition(async () => {
+      await removeQuestAction(fd);
+      announce(`${quest.title} archived`);
+      toast.show("Quest archived", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const undo = new FormData();
+            undo.set("questId", quest.id);
+            startTransition(async () => {
+              await restoreQuestAction(undo);
+              announce(`${quest.title} restored`);
+            });
+          },
+        },
+      });
+    });
+  }
 
   return (
-    <div className="grid gap-3 rounded-xl border bg-muted/20 p-3">
-      <form action={action} className="grid gap-2 lg:grid-cols-[1fr_auto]">
-        <input name="questId" type="hidden" value={quest.id} />
-        <Input
-          name="title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          maxLength={96}
-          className="h-9 text-sm"
-        />
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={pending || !hasTitleChanged}
-        >
-          Save
-        </Button>
-      </form>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">#{quest.position}</Badge>
-          <span>
-            {quest.checkInCount} Check-in
-            {quest.checkInCount === 1 ? "" : "s"}
-          </span>
-          {state.message ? (
-            <span
-              className={
-                state.status === "error" ? "text-destructive" : "text-primary"
-              }
-            >
-              {state.message}
-            </span>
-          ) : null}
+    <Row className="min-h-16 flex-wrap">
+      <FeatureChip feature="quests" />
+      {editing ? (
+        <RenameForm quest={quest} onDone={() => setEditing(false)} />
+      ) : (
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <div className="truncate type-body font-medium">{quest.title}</div>
+          <div className="type-caption text-fg-2">{proofCount(quest.checkInCount)}</div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <MoveQuestButton
-            direction="up"
-            disabled={!canMoveUp}
-            questId={quest.id}
-          />
-          <MoveQuestButton
-            direction="down"
-            disabled={!canMoveDown}
-            questId={quest.id}
-          />
-          <RemoveQuestDialog quest={quest} removeVerb={removeVerb} />
+      )}
+      {!editing ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <MoveButton direction="up" questId={quest.id} visible={canMoveUp} />
+          <MoveButton direction="down" questId={quest.id} visible={canMoveDown} />
+          <Menu trigger={<IconButton label={`More actions for ${quest.title}`} icon={DotsThree} size="sm" />}>
+            <MenuItem icon={PencilSimple} onSelect={() => setEditing(true)}>
+              Rename
+            </MenuItem>
+            <MenuSeparator />
+            {quest.checkInCount > 0 ? (
+              <MenuItem icon={TrayArrowDown} onSelect={archive}>
+                Archive
+              </MenuItem>
+            ) : (
+              <MenuItem icon={Trash} destructive onSelect={onDelete}>
+                Delete
+              </MenuItem>
+            )}
+          </Menu>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </Row>
   );
 }
 
-function MoveQuestButton({
+function MoveButton({
   direction,
-  disabled,
   questId,
+  visible,
 }: {
   direction: "up" | "down";
-  disabled: boolean;
   questId: string;
+  visible: boolean;
 }) {
+  // The slot stays reserved so rows never shift.
+  if (!visible) return <span aria-hidden className="size-control-sm" />;
   return (
-    <form action={moveQuestAction}>
-      <input name="questId" type="hidden" value={questId} />
-      <input name="direction" type="hidden" value={direction} />
-      <Button
-        aria-label={`Move Quest ${direction}`}
-        disabled={disabled}
-        size="sm"
+    <form action={moveQuestAction} className="contents">
+      <input type="hidden" name="questId" value={questId} />
+      <input type="hidden" name="direction" value={direction} />
+      <IconButton
         type="submit"
-        variant="outline"
-      >
-        <HugeiconsIcon
-          icon={direction === "up" ? ArrowUp01Icon : ArrowDown01Icon}
-          size={13}
-          strokeWidth={1.8}
-        />
-        {direction === "up" ? "Up" : "Down"}
-      </Button>
+        label={direction === "up" ? "Move up" : "Move down"}
+        icon={direction === "up" ? ArrowUp : ArrowDown}
+        size="sm"
+      />
     </form>
   );
 }
 
-function RemoveQuestDialog({
-  quest,
-  removeVerb,
-}: {
-  quest: ManagedQuest;
-  removeVerb: string;
-}) {
+function RenameForm({ quest, onDone }: { quest: ManagedQuest; onDone: () => void }) {
+  const [state, action] = useActionState(updateQuestTitleAction, initialFormState);
+  const [handled, setHandled] = useState(state);
+  if (handled !== state) {
+    setHandled(state);
+    if (state.status === "success") onDone();
+  }
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button size="sm" type="button" variant="destructive">
-          <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={1.8} />
-          {removeVerb}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogMedia>
-            <HugeiconsIcon icon={Target01Icon} size={16} strokeWidth={1.8} />
-          </AlertDialogMedia>
-          <AlertDialogTitle>{removeVerb} Quest?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {quest.checkInCount > 0
-              ? "This Quest has Proof, so Pulse will archive it and keep the history intact."
-              : "This Quest has no Proof yet, so Pulse will delete it permanently."}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <form action={removeQuestAction}>
-            <input name="questId" type="hidden" value={quest.id} />
-            <AlertDialogAction type="submit" variant="destructive">
-              {removeVerb} Quest
-            </AlertDialogAction>
-          </form>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-function ArchivedQuestRow({
-  canRestore,
-  quest,
-}: {
-  canRestore: boolean;
-  quest: ManagedQuest;
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <div className="truncate text-sm font-medium">{quest.title}</div>
-        <div className="mt-1 text-xs text-muted-foreground">
-          {quest.checkInCount} saved Check-in
-          {quest.checkInCount === 1 ? "" : "s"}
-        </div>
-      </div>
-      <form action={restoreQuestAction}>
-        <input name="questId" type="hidden" value={quest.id} />
-        <Button
-          disabled={!canRestore}
-          size="sm"
-          type="submit"
-          variant="outline"
-        >
-          <HugeiconsIcon icon={RefreshIcon} size={13} strokeWidth={1.8} />
-          Restore
-        </Button>
-      </form>
-    </div>
+    <form action={action} className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
+      <input type="hidden" name="questId" value={quest.id} />
+      <Field
+        label="Quest name"
+        labelHidden
+        className="min-w-0 flex-1"
+        error={state.status === "error" ? state.message : undefined}
+      >
+        <Input
+          name="title"
+          defaultValue={quest.title}
+          maxLength={96}
+          autoFocus
+          className={cn("h-control-sm")}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") onDone();
+          }}
+        />
+      </Field>
+      <SubmitButton variant="secondary" size="sm" pendingLabel="Saving">
+        Save
+      </SubmitButton>
+      <Button variant="text" size="sm" onClick={onDone}>
+        Cancel
+      </Button>
+    </form>
   );
 }

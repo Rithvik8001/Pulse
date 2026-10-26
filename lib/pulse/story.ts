@@ -1,5 +1,7 @@
 import "server-only";
 
+import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
+
 import { generateText, Output } from "ai";
 import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
@@ -109,7 +111,7 @@ export class MissingWeeklyProofError extends Error {
 export class MissingAiGatewayKeyError extends Error {
   constructor() {
     super(
-      "Add AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to your environment before generating.",
+      "Add OPENAI_API_KEY to your environment before generating.",
     );
     this.name = "MissingAiGatewayKeyError";
   }
@@ -185,7 +187,7 @@ export async function getWeeklyStoryDataForUser(
 }
 
 export async function generateAndSaveWeeklyStory() {
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  if (!hasAiKey()) {
     throw new MissingAiGatewayKeyError();
   }
 
@@ -260,7 +262,7 @@ export async function generateAndSaveWeeklyStory() {
 
   try {
     const result = await generateText({
-      model: weeklyStoryModel,
+      model: aiModel(weeklyStoryModel),
       output: Output.object({
         schema: weeklyStorySchema,
       }),

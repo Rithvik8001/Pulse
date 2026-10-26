@@ -1,108 +1,57 @@
 "use client";
 
-import { useCallback, useRef, useState, useTransition } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  CheckmarkCircle01Icon,
-  SentIcon,
-  Target01Icon,
-  UnavailableIcon,
-} from "@hugeicons/core-free-icons";
-import { toast } from "sonner";
+import { useCallback, useState, useTransition } from "react";
 
-import {
-  type CheckInFormState,
-  upsertCheckInAction,
-} from "@/app/dashboard/actions";
-import { Badge } from "@/components/ui/badge";
+import { type CheckInFormState, upsertCheckInAction } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { FeatureChip } from "@/components/ui/feature-chip";
+import { Field, Input } from "@/components/ui/field";
+import { Notice } from "@/components/ui/notice";
+import { RowList } from "@/components/ui/row";
+import { Segmented } from "@/components/ui/segmented";
+import { toast } from "@/components/ui/toast";
 import type { DashboardQuest } from "@/lib/pulse/dashboard";
 
-type CheckInListProps = {
-  quests: DashboardQuest[];
-};
+type Outcome = "win" | "pass";
 
 function getBrowserLocalDate() {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
-export function CheckInList({ quests }: CheckInListProps) {
+export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
   const [localDate] = useState(() => getBrowserLocalDate());
-  const [outcomes, setOutcomes] = useState<Record<string, "win" | "pass">>(
-    () =>
-      Object.fromEntries(
-        quests
-          .filter((quest) => quest.todayCheckIn)
-          .map((quest) => [quest.id, quest.todayCheckIn?.outcome ?? "win"]),
-      ),
+  const [outcomes, setOutcomes] = useState<Record<string, Outcome>>(() =>
+    Object.fromEntries(
+      quests
+        .filter((quest) => quest.todayCheckIn)
+        .map((quest) => [quest.id, quest.todayCheckIn?.outcome ?? "win"]),
+    ),
   );
-  const setQuestOutcome = useCallback(
-    (questId: string, outcome: "win" | "pass" | null) => {
-      setOutcomes((current) => {
-        if (outcome) {
-          return {
-            ...current,
-            [questId]: outcome,
-          };
-        }
-
-        const next = { ...current };
-        delete next[questId];
-        return next;
-      });
-    },
-    [],
-  );
+  const setQuestOutcome = useCallback((questId: string, outcome: Outcome | null) => {
+    setOutcomes((current) => {
+      if (outcome) return { ...current, [questId]: outcome };
+      const next = { ...current };
+      delete next[questId];
+      return next;
+    });
+  }, []);
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3">
-        <div className="mr-1 font-mono text-[11px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
-          Today&apos;s proof
-        </div>
-        {quests.map((quest) => {
-          const outcome = outcomes[quest.id];
-
-          return (
-            <div
-              key={quest.id}
-              title={`${quest.title}: ${
-                outcome ? (outcome === "win" ? "Win" : "Pass") : "Not checked in"
-              }`}
-              aria-label={`${quest.title}: ${
-                outcome ? (outcome === "win" ? "Win" : "Pass") : "Not checked in"
-              }`}
-              className={cn(
-                "size-4 rounded-[3px] border transition-colors",
-                outcome === "win" &&
-                  "border-primary bg-primary shadow-[inset_0_0_0_1px_rgb(255_255_255/0.25)]",
-                outcome === "pass" &&
-                  "border-muted-foreground/30 bg-muted-foreground/25",
-                !outcome && "border-border bg-background",
-              )}
-            />
-          );
-        })}
-      </div>
-      <div className="grid gap-3">
-        {quests.map((quest) => (
-          <CheckInRow
-            key={quest.id}
-            activeOutcome={outcomes[quest.id] ?? null}
-            localDate={localDate}
-            quest={quest}
-            setQuestOutcome={setQuestOutcome}
-          />
-        ))}
-      </div>
-    </div>
+    <RowList>
+      {quests.map((quest) => (
+        <CheckInRow
+          key={quest.id}
+          activeOutcome={outcomes[quest.id] ?? null}
+          localDate={localDate}
+          quest={quest}
+          setQuestOutcome={setQuestOutcome}
+        />
+      ))}
+    </RowList>
   );
 }
 
@@ -112,171 +61,115 @@ function CheckInRow({
   quest,
   setQuestOutcome,
 }: {
-  activeOutcome: "win" | "pass" | null;
+  activeOutcome: Outcome | null;
   localDate: string;
   quest: DashboardQuest;
-  setQuestOutcome: (questId: string, outcome: "win" | "pass" | null) => void;
+  setQuestOutcome: (questId: string, outcome: Outcome | null) => void;
 }) {
-  const initialState: CheckInFormState = {
-    status: "idle",
-  };
+  const initialState: CheckInFormState = { status: "idle" };
   const [state, setState] = useState<CheckInFormState>(initialState);
   const [pending, startTransition] = useTransition();
   const savedOutcome = quest.todayCheckIn?.outcome ?? null;
   const currentOutcome = activeOutcome ?? savedOutcome;
   const [note, setNote] = useState(quest.todayCheckIn?.note ?? "");
   const [savedNote, setSavedNote] = useState(quest.todayCheckIn?.note ?? "");
-  const rollbackOutcomeRef = useRef<"win" | "pass" | null | undefined>(
-    undefined,
-  );
-  const submittedOutcomeRef = useRef<"win" | "pass" | null>(null);
+  const [noteOpen, setNoteOpen] = useState(Boolean(quest.todayCheckIn?.note));
   const isDirty = note !== savedNote;
-  const canSaveNote = Boolean(currentOutcome);
 
-  function rememberOutcomeSubmit(outcome: "win" | "pass") {
-    rollbackOutcomeRef.current = currentOutcome;
-    submittedOutcomeRef.current = outcome;
-    setQuestOutcome(quest.id, outcome);
-  }
+  function submit(outcome: Outcome, nextNote: string, optimistic: boolean) {
+    const previous = currentOutcome;
+    if (optimistic) setQuestOutcome(quest.id, outcome);
 
-  function rememberNoteSubmit() {
-    rollbackOutcomeRef.current = undefined;
-    submittedOutcomeRef.current = currentOutcome;
-  }
-
-  function submitCheckIn(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const submitter = (
-      event.nativeEvent as SubmitEvent
-    ).submitter as HTMLButtonElement | null;
-
-    if (submitter?.name) {
-      formData.set(submitter.name, submitter.value);
-    }
+    const formData = new FormData();
+    formData.set("questId", quest.id);
+    formData.set("localDate", localDate);
+    formData.set("outcome", outcome);
+    formData.set("note", nextNote);
 
     startTransition(async () => {
       const result = await upsertCheckInAction(initialState, formData);
-      setState(result);
-
       if (result.status === "success") {
-        if (submittedOutcomeRef.current) {
-          setQuestOutcome(quest.id, submittedOutcomeRef.current);
-        }
-        setSavedNote(note);
-        toast.success(result.message ?? "Proof saved.");
+        setState(initialState);
+        setQuestOutcome(quest.id, outcome);
+        setSavedNote(nextNote);
+        toast.success("Proof saved");
       } else {
-        if (rollbackOutcomeRef.current !== undefined) {
-          setQuestOutcome(quest.id, rollbackOutcomeRef.current);
-        }
-        toast.error(result.message ?? "Proof could not be saved.");
+        setState(result);
+        if (optimistic) setQuestOutcome(quest.id, previous);
       }
-
-      rollbackOutcomeRef.current = undefined;
-      submittedOutcomeRef.current = null;
     });
   }
 
+  const caption = quest.todayCheckIn
+    ? `Saved as a ${quest.todayCheckIn.outcome}${quest.todayCheckIn.note ? `: ${quest.todayCheckIn.note}` : ""}`
+    : "Not checked in yet";
+
   return (
-    <form
-      className="grid gap-3 rounded-xl border bg-card p-4 text-sm"
-      onSubmit={submitCheckIn}
-    >
-      <input name="questId" type="hidden" value={quest.id} />
-      <input name="localDate" type="hidden" value={localDate} />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <HugeiconsIcon icon={Target01Icon} size={18} strokeWidth={1.7} />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="min-w-0 truncate font-medium">
-                {quest.title}
-              </span>
-              {quest.todayCheckIn ? (
-                <Badge variant="outline" className="shrink-0">
-                  {quest.todayCheckIn.outcome === "win" ? "Win" : "Pass"} saved
-                </Badge>
-              ) : null}
-            </div>
-            {quest.todayCheckIn?.note ? (
-              <p className="mt-1 line-clamp-2 text-xs/relaxed text-muted-foreground">
-                {quest.todayCheckIn.note}
-              </p>
-            ) : null}
-          </div>
+    <li className="grid gap-3 py-3.5">
+      <div className="flex flex-wrap items-center gap-4">
+        <FeatureChip feature="quests" />
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <div className="truncate type-body font-medium">{quest.title}</div>
+          <div className="truncate type-caption text-fg-2">{caption}</div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            name="outcome"
-            value="win"
-            type="submit"
+        <div className="w-full sm:w-44">
+          <Segmented
+            label={`Outcome for ${quest.title}`}
             size="sm"
-            variant={currentOutcome === "win" ? "default" : "outline"}
+            value={currentOutcome ?? ""}
             disabled={pending}
-            onClick={() => rememberOutcomeSubmit("win")}
-          >
-            <HugeiconsIcon
-              icon={CheckmarkCircle01Icon}
-              size={14}
-              strokeWidth={1.7}
-            />
-            Win
-          </Button>
-          <Button
-            name="outcome"
-            value="pass"
-            type="submit"
-            size="sm"
-            variant={currentOutcome === "pass" ? "default" : "outline"}
-            disabled={pending}
-            onClick={() => rememberOutcomeSubmit("pass")}
-          >
-            <HugeiconsIcon icon={UnavailableIcon} size={14} strokeWidth={1.7} />
-            Pass
-          </Button>
+            onValueChange={(value) => submit(value as Outcome, note, true)}
+            options={[
+              { value: "win", label: "Win" },
+              { value: "pass", label: "Pass" },
+            ]}
+          />
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-        <Input
-          name="note"
-          placeholder="Proof note, optional"
-          value={note}
-          maxLength={240}
-          className="h-9 text-sm"
-          onChange={(event) => setNote(event.target.value)}
-        />
-        <Button
-          name="outcome"
-          value={currentOutcome ?? ""}
-          type="submit"
-          size="sm"
-          variant="ghost"
-          disabled={pending || !canSaveNote || !isDirty}
-          className="h-9 justify-center sm:px-3"
-          onClick={rememberNoteSubmit}
-        >
-          <HugeiconsIcon icon={SentIcon} size={14} strokeWidth={1.7} />
-          {!canSaveNote || isDirty ? "Save note" : "Saved"}
-        </Button>
-      </div>
-      {!canSaveNote ? (
-        <p className="text-xs text-muted-foreground">
-          Choose Win or Pass before saving a proof note.
-        </p>
+
+      {currentOutcome ? (
+        noteOpen ? (
+          <form
+            className="flex flex-wrap items-end gap-2 sm:pl-14"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (isDirty) submit(currentOutcome, note, false);
+            }}
+          >
+            <Field label="Note" labelHidden className="min-w-0 flex-1">
+              <Input
+                placeholder="What happened?"
+                value={note}
+                maxLength={240}
+                className="h-control-sm"
+                onChange={(event) => setNote(event.target.value)}
+              />
+            </Field>
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              disabled={!isDirty}
+              pending={pending && isDirty}
+              pendingLabel="Saving"
+            >
+              Save note
+            </Button>
+          </form>
+        ) : (
+          <div className="sm:pl-14">
+            <Button variant="text" size="xs" onClick={() => setNoteOpen(true)}>
+              Add a note
+            </Button>
+          </div>
+        )
       ) : null}
-      {state.message ? (
-        <p
-          className={
-            state.status === "error"
-              ? "text-xs text-destructive"
-              : "text-xs text-primary"
-          }
-        >
-          {state.message}
-        </p>
+
+      {state.status === "error" ? (
+        <Notice tone="bad" className="sm:ml-14">
+          {state.message ?? "Proof could not be saved. Check your connection and try again."}
+        </Notice>
       ) : null}
-    </form>
+    </li>
   );
 }
