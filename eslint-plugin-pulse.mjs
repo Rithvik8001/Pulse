@@ -69,7 +69,7 @@ function walkStrings(context, node, seen) {
       for (const e of node.expressions) walkStrings(context, e, seen);
       return;
     case "CallExpression":
-      // nested cn()/cva() calls are reported by the CallExpression visitor
+
       if (
         node.callee.type === "Identifier" &&
         CLASS_CALLEES.has(node.callee.name)

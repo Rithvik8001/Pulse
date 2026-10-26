@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** Keyboard keys. Hidden on devices that cannot hover (touch). */
 export function Kbd({
   keys,
   className,

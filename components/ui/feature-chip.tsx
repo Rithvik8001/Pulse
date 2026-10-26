@@ -2,7 +2,6 @@ import { features, tintClassName, type Feature, type Tint } from "@/components/u
 import { Icon, type IconComponent } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-/** An icon on a tinted rounded square. Identifies a feature; never decorative alone. */
 export function FeatureChip({
   feature,
   tint,
@@ -11,7 +10,7 @@ export function FeatureChip({
   className,
 }: {
   feature?: Feature;
-  /** Override the tint, for things that are not a feature (evidence kinds). */
+
   tint?: Tint;
   icon?: IconComponent;
   size?: "sm" | "md" | "lg";

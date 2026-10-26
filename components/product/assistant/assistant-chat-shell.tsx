@@ -18,7 +18,6 @@ import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { toast } from "@/components/ui/toast";
 
-/** API routes answer errors as JSON; show only the message. */
 function errorText(error: Error) {
   const raw = error.message?.trim();
   if (!raw) return "The assistant could not answer. Try again.";
@@ -27,7 +26,6 @@ function errorText(error: Error) {
       const parsed = JSON.parse(raw) as { error?: unknown };
       if (typeof parsed.error === "string" && parsed.error) return parsed.error;
     } catch {
-      // fall through
     }
   }
   return raw;
@@ -99,7 +97,6 @@ export function AssistantPane({
   const hasMessages = session.messages.length > 0;
   const logRef = React.useRef<HTMLDivElement>(null);
 
-  // A proposal waiting on the person takes the primary slot from Send.
   const awaitingConfirmation = session.messages.some((message) =>
     message.parts.some(
       (part) =>
@@ -107,7 +104,6 @@ export function AssistantPane({
     ),
   );
 
-  // Keep the latest message in view, but leave the empty state at the top.
   React.useEffect(() => {
     const el = logRef.current;
     if (!el || !hasMessages) return;

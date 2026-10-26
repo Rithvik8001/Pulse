@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** A fill-2 block at the bone radius. Never shimmers. */
 function Bone({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -12,7 +11,6 @@ function Bone({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-/** Legacy name; same component. */
 const Skeleton = Bone;
 
 export { Bone, Skeleton };

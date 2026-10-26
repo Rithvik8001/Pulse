@@ -40,7 +40,6 @@ const copy = {
   },
 } as const;
 
-/** A centred, flat column for the auth screens. No card, no backdrop. */
 export function AuthFrame({
   title,
   lead,
@@ -75,7 +74,6 @@ export function AuthFrame({
   );
 }
 
-/** The "email sent" state shared by sign-up and password reset. */
 export function AuthDone({ message, email }: { message?: string; email: string }) {
   return (
     <AuthFrame>

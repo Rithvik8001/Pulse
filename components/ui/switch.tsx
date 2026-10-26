@@ -5,7 +5,6 @@ import { Switch as SwitchPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-/** 44x26 track, 20px knob sliding 18px. Checked uses the keycap gradient. For settings. */
 export function Switch({
   className,
   ...props

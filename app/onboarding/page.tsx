@@ -2,7 +2,7 @@ import { OnboardingForm } from "@/components/product/onboarding-form";
 import { PublicHeader } from "@/components/product/public-header";
 
 export const metadata = {
-  title: "Try Pulse · Pulse",
+  title: "Try Pulse",
   description: "Pick who you are becoming and a few habits. Nothing is saved.",
 };
 

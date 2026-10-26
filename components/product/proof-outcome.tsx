@@ -2,7 +2,6 @@ import { Check, Minus } from "@phosphor-icons/react/dist/ssr";
 
 import { cn } from "@/lib/utils";
 
-/** Done is ok with a bold check. Skipped is a neutral, honest choice, never a failure. */
 export function ProofOutcome({
   outcome,
   className,

@@ -7,10 +7,6 @@ import type { Feature, Tint } from "@/components/ui/features";
 import type { IconComponent } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-/**
- * Lists are rows separated by the scribble hairline. Group with space and
- * dividers, never boxes.
- */
 export function RowList({
   as = "ul",
   className,
@@ -40,7 +36,6 @@ export function Row({
   });
 }
 
-/** Label plus optional caption on the left, a control on the right. */
 export function DetailRow({
   label,
   caption,
@@ -60,12 +55,11 @@ export function DetailRow({
         <div className="type-body font-medium">{label}</div>
         {caption ? <div className="type-caption text-fg-2">{caption}</div> : null}
       </div>
-      {control ? <div className="flex shrink-0 items-center gap-2">{control}</div> : null}
+      {control ? <div className="flex shrink-0 items-center gap-3">{control}</div> : null}
     </Row>
   );
 }
 
-/** Leading chip, title plus caption, actions on the right. */
 export function ActionRow({
   leading,
   title,
@@ -90,13 +84,12 @@ export function ActionRow({
         <div className="truncate type-body font-medium">{title}</div>
         {caption ? <div className="type-caption text-fg-2">{caption}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
       {children}
     </Row>
   );
 }
 
-/** A navigation row: tinted chip, title plus caption, chevron right. */
 export function NavRow({
   href,
   feature,

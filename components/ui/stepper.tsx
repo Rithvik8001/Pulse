@@ -5,7 +5,6 @@ import { Minus, Plus } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
-/** A track with raised 44px minus and plus knobs and a tabular value between. */
 export function Stepper({
   label,
   value,

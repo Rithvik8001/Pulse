@@ -14,7 +14,6 @@ import { FeatureChip } from "@/components/ui/feature-chip";
 import type { Feature } from "@/components/ui/features";
 import { cn } from "@/lib/utils";
 
-/** A proposed change. Nothing happens until the user confirms it. */
 export function AssistantProposalCard({
   confirmation,
   disabled,
@@ -96,7 +95,7 @@ export function AssistantProposalCard({
       ) : null}
 
       {!isFinal || isError ? (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-3">
           <Button disabled={disabled} size="sm" variant="text" onClick={() => onCancel(part.toolCallId)}>
             Cancel
           </Button>

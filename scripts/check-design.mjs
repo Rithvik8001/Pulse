@@ -1,29 +1,22 @@
 #!/usr/bin/env node
-/**
- * Design-system check that ESLint cannot express: CSS files, string
- * literals outside JSX, and the token region of globals.css.
- *
- * Prints file:line: message. Exits 1 only in strict mode
- * (DESIGN_STRICT=1), which the final phase of the rewrite turns on.
- */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
 const STRICT = process.env.DESIGN_STRICT === "1";
 const SCAN_DIRS = ["app", "components"];
-// Copy rules only (no hex or px checks) for server text and email templates.
 const COPY_DIRS = ["lib/pulse", "emails"];
-const SKIP_DIRS = new Set(["node_modules", ".next", "(dev)"]);
+const SKIP_DIRS = new Set(["node_modules", ".next"]);
 const EXT = /\.(ts|tsx|css)$/;
+const TOKEN_LINE = /^\s*--[\w-]+:/;
 
 const RULES = [
   { re: /#[0-9a-f]{3,8}\b/i, msg: "raw hex colour outside tokens", css: true, tsx: true, copy: false },
   { re: /font-size:\s*\d+px/, msg: "px font size", css: true, tsx: false },
   { re: /(?<![\w-])\d+px\b/, msg: "px value outside tokens", css: true, tsx: false },
-  { re: /[—→←❤✍♥]/u, msg: "em dash, arrow or glyph in copy", css: false, tsx: true },
-  { re: /\p{Extended_Pictographic}/u, msg: "emoji in copy", css: false, tsx: true },
-  { re: /[A-Za-z]!["'`]/, msg: "exclamation mark in copy", css: false, tsx: true },
+  { re: /[—→←❤✍♥]/u, msg: "em dash, arrow or glyph in copy", css: false, tsx: true, copy: true },
+  { re: /\p{Extended_Pictographic}/u, msg: "emoji in copy", css: false, tsx: true, copy: true },
+  { re: /[A-Za-z]!["'`]/, msg: "exclamation mark in copy", css: false, tsx: true, copy: true },
   { re: /"[A-Z]{3,}"/, msg: "ALL CAPS string literal", css: false, tsx: true },
 ];
 
@@ -42,18 +35,13 @@ let findings = 0;
 for (const dir of [...SCAN_DIRS, ...COPY_DIRS]) {
   const copyOnly = COPY_DIRS.includes(dir);
   for (const file of files(join(ROOT, dir))) {
-    if (copyOnly && (file.endsWith(".test.ts") || !/\.(ts|tsx)$/.test(file))) continue;
+    if (copyOnly && !/\.(ts|tsx)$/.test(file)) continue;
     if (!copyOnly && file.endsWith(".ts")) continue;
     const rel = relative(ROOT, file);
     const isCss = file.endsWith(".css");
     const lines = readFileSync(file, "utf8").split("\n");
-    let inTokens = false;
     lines.forEach((line, i) => {
-      if (line.includes("tokens:start")) inTokens = true;
-      if (line.includes("tokens:end")) inTokens = false;
-      if (inTokens) return;
-      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
-      if (line.includes("design-ok")) return;
+      if (isCss && TOKEN_LINE.test(line)) return;
       for (const rule of RULES) {
         if (isCss ? !rule.css : !rule.tsx) continue;
         if (copyOnly && !rule.copy) continue;

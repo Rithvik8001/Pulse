@@ -3,7 +3,6 @@ import * as React from "react";
 import { CountBadge } from "@/components/ui/count-badge";
 import { cn } from "@/lib/utils";
 
-/** A quiet section label with optional count and action. No box. */
 export function Section({
   title,
   count,

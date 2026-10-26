@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** A 4px fill-2 track with a brand fill. Progress is brand. */
 export function ProgressTrack({
   value,
   max = 100,

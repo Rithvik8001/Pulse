@@ -61,7 +61,6 @@ export async function generateWeeklyStoryAction(): Promise<WeeklyStoryFormState>
   }
 }
 
-
 export type IdentitySnapshotFormState = {
   status: "idle" | "success" | "error";
   message?: string;

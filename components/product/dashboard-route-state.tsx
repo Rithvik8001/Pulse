@@ -4,12 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
 import { Bone } from "@/components/ui/skeleton";
 
-/** Bones in page anatomy: breadcrumb, title, lead, then rows. */
 export function DashboardPageSkeleton({
   chart = false,
   listRows = 4,
 }: {
-  /** Kept for callers; the skeleton no longer draws cards. */
   cards?: number;
   chart?: boolean;
   listRows?: number;

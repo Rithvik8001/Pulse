@@ -5,11 +5,6 @@ import { Toast as ToastPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Toasts confirm actions; they never carry errors. Deletions use an Undo
- * toast, never a confirm dialog. A pill at the bottom centre that rises once.
- */
-
 type ToastItem = {
   id: number;
   title: React.ReactNode;
@@ -46,10 +41,7 @@ export const toast = {
   show,
   success: (title: React.ReactNode, options?: { action?: ToastItem["action"] }) =>
     show(title, options),
-  /**
-   * Transitional: errors belong inline in a Notice, not in a toast.
-   * Removed once the last caller moves its error inline.
-   */
+
   error: (title: React.ReactNode) => show(title, { duration: 8000 }),
   dismiss,
 };

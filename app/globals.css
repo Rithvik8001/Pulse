@@ -1,14 +1,6 @@
 @import "tailwindcss";
 
-/*
-  Quiet Keycap design system.
-  Tokens are the only place raw values live. Components use roles.
-  Dark mode is a token swap under [data-theme='dark'].
-*/
-
-/* tokens:start */
 :root {
-  /* surfaces and text: warm greys */
   --bg: #ffffff;
   --ink: #1a1917;
   --fg-2: #5f5e5a;
@@ -26,14 +18,12 @@
   --knob: #ffffff;
   --on-ink: var(--bg);
 
-  /* brand: actions and selection only */
   --brand: #6d3cf5;
   --brand-hover: #5b2fd9;
   --brand-fg: #6d3cf5;
   --brand-tint: #f0eaff;
   --on-brand: #ffffff;
 
-  /* states */
   --ok: #087a58;
   --ok-bg: #e1f6ee;
   --bad: #c41e4a;
@@ -41,7 +31,6 @@
   --warn: #8a5f00;
   --warn-bg: #fbf2dc;
 
-  /* tints: one per feature */
   --t-violet: #6d28d9;
   --t-violet-bg: #f1eaff;
   --t-blue: #0b5ed7;
@@ -61,21 +50,17 @@
   --t-indigo: #3b46c4;
   --t-indigo-bg: #e8ecff;
 
-  /* mascot: the only illustration */
   --mascot-body: var(--brand);
   --mascot-face: var(--brand-tint);
   --mascot-eye: #2a1458;
 
-  /* the hand-drawn row divider: a wavy 1.25px stroke, tiled */
   --scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4' viewBox='0 0 240 4'%3E%3Cpath d='M0 2Q5 .9 11 2.1Q17 3.3 25 2.2Q31 1 37 1.5Q44 3.2 49 2.5Q55 .8 62 1.7Q67 3 74 2.6Q79 1.2 86 1.3Q91 3.3 98 2.3Q103 .7 109 1.6Q116 3.1 121 2.7Q127 1.1 134 1.3Q139 3.2 146 2Q151 .8 157 1.9Q164 3.3 169 2.4Q175 1 182 1.5Q187 3 194 2.8Q199 1.1 206 1.4Q211 3.2 218 2.2Q223 .9 230 1.7Q235 3 240 2' fill='none' stroke='%23dddcd8' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-  /* keycaps: the only gradients in the system */
   --keycap: linear-gradient(180deg, #8b66fb 0%, #6d3cf5 60%, #6534ee 100%);
   --keycap-hover: linear-gradient(180deg, #9677fc 0%, #7748f7 60%, #6d3cf5 100%);
   --keycap-2: linear-gradient(180deg, #ffffff 0%, #f6f6f4 100%);
   --keycap-2-hover: linear-gradient(180deg, #ffffff 0%, #efefec 100%);
 
-  /* depth */
   --shadow-card: 0 1px 2px rgb(26 25 23 / 0.05);
   --shadow-tray: 0 1px 2px rgb(26 25 23 / 0.04), 0 8px 24px rgb(26 25 23 / 0.08);
   --shadow-knob: 0 0 0 1px var(--card-rim), 0 1px 2px rgb(26 25 23 / 0.08), 0 2px 6px rgb(26 25 23 / 0.06);
@@ -86,11 +71,9 @@
   --shadow-field-focus: 0 0 0 4px var(--brand-tint), 0 0 0 5px var(--brand);
   --shadow-field-error: 0 0 0 4px var(--bad-bg), 0 0 0 5px var(--bad);
 
-  /* type: Inter variable, features cv11 ss01 tnum */
   --font-sans: var(--font-inter), 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-features: 'cv11', 'ss01', 'tnum';
 
-  /* sizes */
   --field-h: 3rem;
   --control: 2.75rem;
   --control-sm: 2.25rem;
@@ -115,7 +98,6 @@
   --tray-wide: 34rem;
   --menu-min: 11.25rem;
 
-  /* radii: nested shapes stay concentric (inner = outer - padding) */
   --radius-pill: 999rem;
   --radius-tray: 1.75rem;
   --radius-card: 1.375rem;
@@ -129,7 +111,6 @@
   --radius-bone: 0.375rem;
   --radius-cell: 0.3125rem;
 
-  /* motion */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-1: 150ms;
@@ -141,13 +122,11 @@
   --tray-rise: 0.5rem;
   --toast-rise: 0.875rem;
 
-  /* opacity steps */
   --soft: 0.7;
   --muted: 0.45;
   --ghost: 0.4;
   --faint: 0.25;
 
-  /* layers */
   --z-bar: 20;
   --z-tray: 40;
   --z-toast: 50;
@@ -224,7 +203,6 @@
     --dur-badge: 1ms;
   }
 }
-/* tokens:end */
 
 @custom-variant can-hover (@media (hover: hover));
 @custom-variant hover {
@@ -235,10 +213,6 @@
   }
 }
 
-/*
-  Tailwind sees only the system. Defaults are wiped so off-system classes
-  (text-sm, rounded-lg, bg-red-500, dark:) do not exist.
-*/
 @theme inline {
   --*: initial;
 
@@ -256,7 +230,6 @@
   --default-transition-timing-function: var(--ease);
   --default-font-family: var(--font-sans);
 
-  /* Quiet Keycap namespace */
   --font-sans: var(--font-sans);
 
   --color-bg: var(--bg);
@@ -403,7 +376,6 @@
   }
 }
 
-/* type roles */
 @utility type-display {
   font-size: clamp(2.125rem, 6vw, 2.75rem);
   line-height: 1.1;
@@ -484,7 +456,6 @@
   letter-spacing: 0;
 }
 
-/* surfaces */
 @utility keycap {
   background: var(--keycap);
   box-shadow: var(--shadow-keycap);
@@ -539,7 +510,7 @@
   background: var(--scrim);
   backdrop-filter: blur(var(--scrim-blur));
 }
-/* the home headline's hand-drawn underline, wiping in once */
+
 @utility underline-wipe {
   display: inline-block;
   &::after {
@@ -558,7 +529,6 @@
   border-image: var(--scribble) 4 0 0 0 / var(--scribble-h) 0 0 0 / 0 repeat;
 }
 
-/* motion: only where the user touches */
 @utility press {
   transition: transform var(--dur-1) var(--ease);
   &:active { transform: scale(var(--press)); }
@@ -577,7 +547,6 @@
 }
 
 @layer components {
-  /* charts: axis and grid colours come from tokens, never from recharts defaults */
   [data-chart] .recharts-cartesian-axis-tick text {
     fill: var(--fg-3);
     font-size: 0.8125rem;
@@ -591,7 +560,6 @@
     outline: none;
   }
 
-  /* pending buttons: the label changes to the step and a 2px line sweeps inside the button */
   [data-slot='button'][data-pending]::after {
     content: '';
     position: absolute;
@@ -631,7 +599,7 @@
     background: var(--bg);
     color: var(--ink);
   }
-  /* selected text is brand, like everything you act on */
+
   ::selection {
     background: var(--brand);
     color: var(--on-brand);
@@ -640,7 +608,7 @@
     outline: var(--ring) solid var(--brand-fg);
     outline-offset: var(--ring-offset);
   }
-  /* everything you can press shows a pointer */
+
   a[href],
   button:not(:disabled),
   label[for],

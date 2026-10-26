@@ -4,7 +4,6 @@ import { useFormStatus } from "react-dom";
 
 import { Button, type ButtonProps } from "@/components/ui/button";
 
-/** A submit button that reads its pending state from the surrounding form. */
 export function SubmitButton({
   pendingLabel,
   ...props

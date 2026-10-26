@@ -7,27 +7,20 @@ import { IconButton } from "@/components/ui/icon-button";
 import { formatLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { cn } from "@/lib/utils";
 
-/**
- * A month grid on the 4px grid. Days are 36px cells; the selected day is a
- * keycap, today gets an ink ring, and `marked` days carry a small dot.
- * One roving tab stop, arrow keys move by day and week.
- */
-
 export type CalendarProps = {
-  /** Selected day, `YYYY-MM-DD`. */
   value?: string;
   onChange?: (localDate: string) => void;
-  /** Today in the person's time zone, `YYYY-MM-DD`. */
+
   today?: string;
   min?: string;
   max?: string;
-  /** Days to mark with a dot, for example days with an entry. */
+
   marked?: Iterable<string>;
   locale?: string;
-  /** 0 = Sunday. Defaults to the locale's first day when known. */
+
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   className?: string;
-  /** Focus the selected (or first enabled) day on mount, for use in a popover. */
+
   autoFocus?: boolean;
 };
 
@@ -78,7 +71,6 @@ export function Calendar({
   const markedSet = React.useMemo(() => new Set(marked ?? []), [marked]);
   const gridRef = React.useRef<HTMLDivElement>(null);
 
-  // Follow an outside change of value into its month (adjust state during render).
   const [seenValue, setSeenValue] = React.useState(value);
   if (seenValue !== value) {
     setSeenValue(value);
@@ -114,7 +106,7 @@ export function Calendar({
   );
   const weekdayNames = React.useMemo(() => {
     const narrow = new Intl.DateTimeFormat(locale, { weekday: "short" });
-    const base = parseLocalDate("2024-01-07"); // a Sunday
+    const base = parseLocalDate("2024-01-07");
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(base);
       d.setDate(base.getDate() + ((start + i) % 7));
@@ -126,7 +118,6 @@ export function Calendar({
     [locale],
   );
 
-  // The one tab stop: focused day, else selected, else today, else first enabled in view.
   const days = weeks.flat();
   const tabStop =
     (focused && days.some((d) => d.localDate === focused) && focused) ||
@@ -143,7 +134,6 @@ export function Calendar({
     });
   }
 
-  // In a popover, land focus on the tab stop without changing state.
   React.useEffect(() => {
     if (!autoFocus) return;
     gridRef.current?.querySelector<HTMLButtonElement>('[tabindex="0"]')?.focus();

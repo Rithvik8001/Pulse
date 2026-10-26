@@ -3,11 +3,6 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Page anatomy: breadcrumb, title, lead, the working area, how it works,
- * feature sections, one statement, related links.
- */
-
 export function Page({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="page" className={cn("grid gap-10", className)} {...props} />;
 }
@@ -52,7 +47,6 @@ export function PageLead({ className, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-/** One big sentence, for a mission or privacy statement. */
 export function Statement({ className, ...props }: React.ComponentProps<"p">) {
   return <p className={cn("max-w-measure type-statement text-pretty", className)} {...props} />;
 }
@@ -66,7 +60,6 @@ export function Prose({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-/** Numbered rows explaining how something works. */
 export function HowItWorks({
   title = "How it works",
   steps,

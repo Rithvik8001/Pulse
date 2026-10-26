@@ -24,7 +24,6 @@ import type { ProofEntry, ProofQuestOption } from "@/lib/pulse/proof";
 const initialFormState: ProofFormState = { status: "idle" };
 const pageSize = 30;
 
-/** Every check-in, searchable, 30 at a time. */
 export function ProofArchive({
   entries,
   questOptions,
@@ -240,7 +239,7 @@ function EditProofTray({ entry, onClose }: { entry: ProofEntry | null; onClose: 
               </Field>
               {state.status === "error" ? <Notice tone="bad">{state.message}</Notice> : null}
             </TrayBody>
-            <div className="grid gap-2 pt-1">
+            <div className="grid gap-3 pt-1">
               <SubmitButton variant="primary" fullWidth pendingLabel="Saving">
                 Save check-in
               </SubmitButton>

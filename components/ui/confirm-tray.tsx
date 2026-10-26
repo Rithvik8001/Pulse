@@ -7,11 +7,6 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 
-/**
- * A confirm tray for permanent deletes only. Undoable actions use a toast.
- * Submits a form with hidden fields through the given server action, so
- * callers keep the same field names they use today.
- */
 export function ConfirmTray({
   trigger,
   title,
@@ -30,11 +25,11 @@ export function ConfirmTray({
   body: React.ReactNode;
   confirmLabel: string;
   pendingLabel?: string;
-  /** Server action to submit. */
+
   formAction?: (formData: FormData) => void | Promise<void>;
-  /** Hidden inputs submitted with the form. */
+
   hidden?: Record<string, string>;
-  /** Client handler used instead of a form action. */
+
   onConfirm?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -68,7 +63,7 @@ export function ConfirmTray({
                 {Object.entries(hidden ?? {}).map(([name, value]) => (
                   <input key={name} type="hidden" name={name} value={value} />
                 ))}
-                <div className="grid gap-2 pt-1">
+                <div className="grid gap-3 pt-1">
                   <SubmitButton
                     variant="plain-destructive"
                     fullWidth
@@ -86,7 +81,7 @@ export function ConfirmTray({
             ) : (
               <>
                 {content}
-                <div className="grid gap-2 pt-1">
+                <div className="grid gap-3 pt-1">
                   <AlertPrimitive.Action asChild>
                     <Button variant="plain-destructive" fullWidth onClick={onConfirm}>
                       {confirmLabel}

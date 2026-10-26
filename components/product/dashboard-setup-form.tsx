@@ -72,7 +72,7 @@ export function DashboardSetupForm() {
       >
         <ul className="grid list-none gap-4 p-0">
           {quests.map((quest, index) => (
-            <li key={index} className="flex items-end gap-2">
+            <li key={index} className="flex items-end gap-3">
               <Field
                 label={`Habit ${index + 1}`}
                 className="flex-1"

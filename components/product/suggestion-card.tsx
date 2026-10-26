@@ -23,7 +23,6 @@ import type { QuestSuggestion } from "@/lib/pulse/suggestions";
 
 const initialRewordState: RewordOptionsState = { status: "idle" };
 
-/** At most three quiet suggestions under the habit list. */
 export function SuggestionList({
   suggestions,
   isAtQuestLimit,
@@ -152,7 +151,7 @@ function RewordTray({
                 options={alternatives.map((alt) => ({ value: alt, title: alt }))}
               />
             </TrayBody>
-            <div className="grid gap-2 pt-1">
+            <div className="grid gap-3 pt-1">
               <SubmitButton variant="primary" fullWidth pendingLabel="Renaming">
                 Use this wording
               </SubmitButton>

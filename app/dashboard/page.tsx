@@ -9,7 +9,7 @@ import { getDashboardDataForUser, requireUserId } from "@/lib/pulse/dashboard";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
-  title: "Today · Pulse",
+  title: "Today - Pulse",
   description: "Check in on today's habits.",
 };
 

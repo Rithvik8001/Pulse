@@ -133,7 +133,7 @@ function CreateQuestForm({
   const [handled, setHandled] = useState(state);
   if (handled !== state) {
     setHandled(state);
-    // Remount the form so the field clears after a successful add.
+
     if (state.status === "success") setFormKey((k) => k + 1);
   }
 
@@ -254,7 +254,7 @@ function RenameForm({ quest, onDone }: { quest: ManagedQuest; onDone: () => void
     if (state.status === "success") onDone();
   }
   return (
-    <form action={action} className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
+    <form action={action} className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
       <input type="hidden" name="questId" value={quest.id} />
       <Field
         label="Habit name"

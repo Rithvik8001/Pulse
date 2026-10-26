@@ -9,7 +9,7 @@ import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
-  title: "Journal · Pulse",
+  title: "Journal - Pulse",
   description: "A few lines about your day.",
 };
 

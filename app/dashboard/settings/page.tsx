@@ -15,7 +15,7 @@ import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Settings · Pulse",
+  title: "Settings - Pulse",
   description: "Appearance, region and email preferences.",
 };
 

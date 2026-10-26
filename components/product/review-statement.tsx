@@ -8,7 +8,6 @@ import { Statement } from "@/components/ui/page";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
 
-/** One sentence about who you are becoming, with a button to refresh it. */
 export function ReviewStatement({
   statement,
   updatedAt,

@@ -8,14 +8,13 @@ import { Tip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label"> & {
-  /** The accessible name. Also shown as the tooltip. */
   label: string;
   icon: IconComponent;
   size?: "md" | "sm";
   variant?: "ghost" | "secondary";
   shortcut?: string[];
   asChild?: boolean;
-  /** Set when the button sits inside a component that already names it. */
+
   noTooltip?: boolean;
 };
 

@@ -5,11 +5,6 @@ import { ResponsiveContainer } from "recharts";
 
 import { cn } from "@/lib/utils";
 
-/**
- * A frame for a recharts chart: a labelled figure with a hidden data table
- * so the numbers never depend on the SVG. Series colours are tokens passed
- * as `var(--color-*)`. Axis and grid colours come from globals.css.
- */
 export function ChartFrame({
   label,
   height = "md",
@@ -59,10 +54,6 @@ export function ChartFrame({
 
 export type ChartTooltipRow = { label: string; value: string };
 
-/**
- * Tooltip content for recharts. Pass `format` to turn the hovered point into
- * a title and rows. Styled like the system tooltip: ink, small, no border.
- */
 export function ChartTooltip<T>({
   active,
   payload,

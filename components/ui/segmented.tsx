@@ -9,14 +9,13 @@ import { cn } from "@/lib/utils";
 export type SegmentedOption = {
   value: string;
   label: React.ReactNode;
-  /** Icon-only segments must set `label` as plain text for the aria-label. */
+
   icon?: IconComponent;
   iconOnly?: boolean;
   disabled?: boolean;
 };
 
 export type SegmentedProps = {
-  /** The accessible name for the group. */
   label: string;
   name?: string;
   value?: string;
@@ -24,16 +23,12 @@ export type SegmentedProps = {
   onValueChange?: (value: string) => void;
   options: SegmentedOption[];
   size?: "md" | "sm";
-  /** Stack segments on phones (for long labels). */
+
   stackOnPhone?: boolean;
   disabled?: boolean;
   className?: string;
 };
 
-/**
- * A track with equal-width segments. The selected one is a knob that slides.
- * Spans its container. Form-friendly through a radio group.
- */
 export function Segmented({
   label,
   name,
@@ -51,7 +46,7 @@ export function Segmented({
   );
   const current = value ?? internal;
   const found = options.findIndex((o) => o.value === current);
-  // No knob until a value is chosen.
+
   const index = Math.max(0, found);
 
   return (
@@ -80,8 +75,7 @@ export function Segmented({
         className,
       )}
     >
-      {/* the knob */}
-      <span
+            <span
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-y-1 left-1 -z-10 w-[calc((100%-0.5rem)/var(--count))] knob rounded-inner transition-transform duration-(--dur-2) ease-(--ease)",

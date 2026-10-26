@@ -17,7 +17,7 @@ import { getWeeklyStoryDataForUser, type WeeklyStory } from "@/lib/pulse/story";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
-  title: "Review · Pulse",
+  title: "Review - Pulse",
   description: "Your weekly recap and who you are becoming.",
 };
 

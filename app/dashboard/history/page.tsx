@@ -15,7 +15,7 @@ import { getStatsDataForUser } from "@/lib/pulse/stats";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
-  title: "History · Pulse",
+  title: "History - Pulse",
   description: "Every check-in, and how your habits are going.",
 };
 
@@ -50,7 +50,7 @@ export default async function HistoryPage() {
         </PageLead>
       </PageHeader>
 
-      <div className="grid gap-3">
+      <div className="grid gap-4 rounded-card bg-fill p-5 sm:p-6">
         <StatStrip
           columns={3}
           stats={[
@@ -66,7 +66,7 @@ export default async function HistoryPage() {
       </div>
 
       <Section title="Last 8 weeks">
-        <ProofHistoryGrid days={proof.days.slice(-56)} cellClassName="sm:size-5" />
+        <ProofHistoryGrid days={proof.days.slice(-56)} cellClassName="sm:size-5" locale={locale} />
       </Section>
 
       <StatsDashboard

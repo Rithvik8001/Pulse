@@ -71,7 +71,6 @@ const goKeyFor = Object.fromEntries(
   Object.entries(goKeys).map(([key, feature]) => [feature, key]),
 ) as Partial<Record<Feature, string>>;
 
-/** The command menu. Opens with ⌘K, Ctrl K, or / when nothing is focused. */
 export function CommandMenu() {
   const router = useRouter();
   const { panel, close, open } = useShell();

@@ -7,11 +7,6 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
 
-/**
- * Dialog "tray": a scrim with a 6px blur, a 28px tray holding a 22px card.
- * One job per tray. The card rises 8px and fades over 300ms.
- */
-
 export const Tray = DialogPrimitive.Root;
 export const TrayTrigger = DialogPrimitive.Trigger;
 export const TrayClose = DialogPrimitive.Close;
@@ -50,7 +45,7 @@ export function TrayHeader({
   children,
 }: {
   title: React.ReactNode;
-  /** Hidden from view but announced. */
+
   description?: React.ReactNode;
   children?: React.ReactNode;
 }) {
@@ -79,7 +74,6 @@ export function TrayBody({
   return <div className={cn("grid gap-4", className)} {...props} />;
 }
 
-/** A full-width primary with optional text buttons stacked under it. */
 export function TrayActions({
   primary,
   secondary,
@@ -90,17 +84,13 @@ export function TrayActions({
   className?: string;
 }) {
   return (
-    <div className={cn("grid gap-2 pt-1", className)}>
+    <div className={cn("grid gap-3 pt-1", className)}>
       {primary}
       {secondary}
     </div>
   );
 }
 
-/**
- * Multi-step content. Steps fade and slide 8px, and the card animates its
- * height between them.
- */
 export function TraySteps({
   step,
   children,
@@ -144,7 +134,6 @@ export function TraySteps({
   );
 }
 
-/** The done view: a centred thumbnail with a green check, a past-tense heading. */
 export function TrayDone({
   thumbnail,
   heading,

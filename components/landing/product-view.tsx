@@ -1,9 +1,7 @@
 import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
 import { ProofOutcome } from "@/components/product/proof-outcome";
 import { FeatureChip } from "@/components/ui/feature-chip";
-import { Statement } from "@/components/ui/page";
 import { ActionRow, RowList } from "@/components/ui/row";
-import { Section } from "@/components/ui/section";
 import type { ProofHistoryDay } from "@/lib/pulse/dashboard";
 
 const quests: { title: string; outcome: "win" | "pass" | null; note?: string }[] = [
@@ -12,7 +10,6 @@ const quests: { title: string; outcome: "win" | "pass" | null; note?: string }[]
   { title: "Read 10 pages", outcome: null },
 ];
 
-/** Deterministic sample history so the page renders the same everywhere. */
 function sampleDays(): ProofHistoryDay[] {
   let seed = 11;
   const rnd = () => {
@@ -36,12 +33,17 @@ function sampleDays(): ProofHistoryDay[] {
 
 const days = sampleDays();
 
-/** A still of the real product rows and grid, with sample data. */
 export function ProductView() {
   return (
-    <div inert className="grid gap-8 rounded-card bg-fill p-5 sm:p-6">
-      <Statement>I am a writer.</Statement>
-      <Section title="Today">
+    <div
+      inert
+      className="grid gap-8 rounded-card bg-fill p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-10 sm:p-8"
+    >
+      <div className="grid gap-4">
+        <div className="grid gap-1">
+          <p className="type-section">Today</p>
+          <p className="type-heading">I am a writer.</p>
+        </div>
         <RowList>
           {quests.map((quest) => (
             <ActionRow
@@ -53,10 +55,11 @@ export function ProductView() {
             />
           ))}
         </RowList>
-      </Section>
-      <Section title="Last 8 weeks">
-        <ProofHistoryGrid days={days} />
-      </Section>
+      </div>
+      <div className="grid gap-3">
+        <p className="type-section">Last 8 weeks</p>
+        <ProofHistoryGrid days={days} cellClassName="size-5" />
+      </div>
     </div>
   );
 }

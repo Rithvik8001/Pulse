@@ -23,7 +23,6 @@ export function useShell() {
   return ctx;
 }
 
-/** Destinations reachable with `g` then a key. */
 export const goKeys: Record<string, Feature> = {
   t: "today",
   h: "habits",
@@ -33,7 +32,6 @@ export const goKeys: Record<string, Feature> = {
   ",": "settings",
 };
 
-/** Old letters still work, quietly. */
 const legacyGoKeys: Record<string, Feature> = {
   q: "habits",
   p: "history",
@@ -44,8 +42,8 @@ const legacyGoKeys: Record<string, Feature> = {
 function isEditable(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
-  const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"; // design-ok: tag names
+  const tag = target.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select";
 }
 
 export function ShellProvider({ children }: { children: React.ReactNode }) {
@@ -67,7 +65,6 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // Close transient panels on navigation. The assistant stays open.
   const [lastPathname, setLastPathname] = React.useState(pathname);
   if (lastPathname !== pathname) {
     setLastPathname(pathname);

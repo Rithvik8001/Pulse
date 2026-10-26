@@ -10,7 +10,6 @@ import { Tray, TrayBody, TrayContent, TrayHeader } from "@/components/ui/tray";
 
 const destinations: Feature[] = ["today", "habits", "history", "review", "journal", "settings"];
 
-/** Every page, for phones. */
 export function NavTray() {
   const pathname = usePathname();
   const { panel, close } = useShell();

@@ -9,10 +9,6 @@ import { useFieldContext } from "@/components/ui/field";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { cn } from "@/lib/utils";
 
-/**
- * A field-shaped trigger that opens the Calendar in a menu-style popover.
- * Sits inside `Field` like Input; closes once a day is chosen.
- */
 export function DatePicker({
   value,
   onChange,

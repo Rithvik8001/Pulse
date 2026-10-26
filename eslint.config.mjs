@@ -3,19 +3,14 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import pulse from "./eslint-plugin-pulse.mjs";
 
-/**
- * Globs that have been migrated to the Quiet Keycap design system.
- * Files here fail the build on off-system styling or copy.
- * Everything else only warns until its phase lands.
- */
 const MIGRATED = ["app/**/*.tsx", "components/**/*.tsx"];
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+
   globalIgnores([
-    // Default ignores of eslint-config-next:
+
     ".next/**",
     "out/**",
     "build/**",
@@ -23,7 +18,7 @@ const eslintConfig = defineConfig([
   ]),
   {
     files: ["app/**/*.tsx", "components/**/*.tsx"],
-    ignores: ["app/(dev)/**", "emails/**", "lib/**"],
+    ignores: ["emails/**", "lib/**"],
     plugins: { pulse },
     rules: {
       "pulse/no-raw-style": "warn",

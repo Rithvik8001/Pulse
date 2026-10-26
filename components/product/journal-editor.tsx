@@ -74,9 +74,10 @@ export function JournalEditor({
     if (state.status === "success") toast.show("Entry saved");
   }, [state]);
 
-  function goToDate(date: string) {
-    router.push(`/dashboard/journal?date=${date}`);
-  }
+  const goToDate = React.useCallback(
+    (date: string) => router.push(`/dashboard/journal?date=${date}`),
+    [router],
+  );
 
   React.useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -91,8 +92,7 @@ export function JournalEditor({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
+  }, [selectedDate, goToDate]);
 
   function insertPrompt(prompt: string) {
     const el = textareaRef.current;
@@ -121,7 +121,7 @@ export function JournalEditor({
   return (
     <div className="grid gap-10">
       <div className="grid gap-5">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <IconButton
             label="Previous day"
             icon={CaretLeft}
@@ -155,7 +155,7 @@ export function JournalEditor({
 
         <form ref={formRef} action={action} className="grid gap-4">
           <input name="localDate" type="hidden" value={selectedDate} />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {prompts.map((prompt) => (
               <Button key={prompt} variant="secondary" size="xs" onClick={() => insertPrompt(prompt)}>
                 {prompt}

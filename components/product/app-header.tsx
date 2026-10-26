@@ -17,11 +17,6 @@ export function isCurrent(pathname: string, href: string) {
   return href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 }
 
-/**
- * The sticky header: logo mark left; search pill, nav links, assistant and
- * settings right. Below 768px the pill becomes an icon button and the links
- * move into a tray.
- */
 export function AppHeader({ showAssistant = true }: { showAssistant?: boolean }) {
   const pathname = usePathname();
   const { open, toggle } = useShell();
@@ -37,7 +32,7 @@ export function AppHeader({ showAssistant = true }: { showAssistant?: boolean })
           <Mascot width={28} height={28} />
         </Link>
 
-        <nav aria-label="Primary" className="ml-2 hidden items-center gap-1 md:flex">
+        <nav aria-label="Primary" className="ml-2 hidden items-center gap-2 md:flex">
           {primaryLinks.map((key) => {
             const f = features[key];
             const current = isCurrent(pathname, f.href);
@@ -57,7 +52,7 @@ export function AppHeader({ showAssistant = true }: { showAssistant?: boolean })
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             onClick={() => open("command")}

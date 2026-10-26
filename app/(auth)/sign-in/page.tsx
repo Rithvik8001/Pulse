@@ -6,7 +6,7 @@ import { isResetSuccessParam, safeRedirectPath } from "@/lib/auth/auth-core";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Sign in · Pulse",
+  title: "Sign in - Pulse",
   description: "Sign in to your Pulse dashboard.",
 };
 

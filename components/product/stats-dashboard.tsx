@@ -17,7 +17,6 @@ function formatRate(rate: number | null) {
   return rate === null ? "None yet" : `${rate}%`;
 }
 
-/** Weekly done rate over 12 weeks, and done rate by habit. Read-only. */
 export function StatsDashboard({
   weeklyTrend,
   questStats,
@@ -51,7 +50,7 @@ export function StatsDashboard({
               rows: trend.map((w) => [w.label, formatRate(w.winRate), w.winCount, w.passCount]),
             }}
           >
-            <LineChart data={trend} margin={{ left: 0, right: 12, top: 12, bottom: 0 }}>
+            <LineChart data={trend} margin={{ left: 4, right: 16, top: 12, bottom: 0 }}>
               <CartesianGrid vertical={false} />
               <XAxis axisLine={false} dataKey="label" tickLine={false} tickMargin={10} />
               <YAxis
@@ -60,7 +59,8 @@ export function StatsDashboard({
                 ticks={[0, 25, 50, 75, 100]}
                 tickFormatter={(value) => `${value}%`}
                 tickLine={false}
-                width={40}
+                tickMargin={8}
+                width="auto"
               />
               <Tooltip
                 cursor={chartCursor}

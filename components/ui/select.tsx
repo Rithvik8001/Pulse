@@ -14,7 +14,6 @@ export type SelectOption = {
 };
 
 export type SelectProps = Omit<FieldProps, "children"> & {
-  /** Renders a hidden native select so the value submits with the form. */
   name?: string;
   value?: string;
   defaultValue?: string;
@@ -25,10 +24,6 @@ export type SelectProps = Omit<FieldProps, "children"> & {
   triggerClassName?: string;
 };
 
-/**
- * A select that looks like a field, with a chevron that turns when open.
- * The popup is a menu.
- */
 export function Select({
   name,
   value,

@@ -12,10 +12,6 @@ export type ChoiceCardOption = {
   disabled?: boolean;
 };
 
-/**
- * A track holding radio cards. The selected card is the knob.
- * One column on phones, equal columns from 768px.
- */
 export function ChoiceCards({
   label,
   name,
@@ -32,7 +28,7 @@ export function ChoiceCards({
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   options: ChoiceCardOption[];
-  /** Columns from 768px. Defaults to the number of options. */
+
   columns?: number;
   className?: string;
 }) {

@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 
 export const RadioGroup = RadioPrimitive.Root;
 
-/** 22px. Checked is brand with a white dot. */
 export function Radio({
   label,
   caption,

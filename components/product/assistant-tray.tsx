@@ -73,10 +73,6 @@ function StarterGroup({
   );
 }
 
-/**
- * One assistant. Both endpoints stay; the conversation uses whichever one
- * the first message went to, and "Start over" brings back the choice.
- */
 export function AssistantTray({ showHabits = true }: { showHabits?: boolean }) {
   const { panel, close } = useShell();
   const coach = useAssistantChat(coachConfig.api);

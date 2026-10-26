@@ -61,7 +61,6 @@ function TooltipContent({
   );
 }
 
-/** A tooltip showing a label and an optional shortcut ("Draw · P"). */
 function Tip({
   label,
   shortcut,

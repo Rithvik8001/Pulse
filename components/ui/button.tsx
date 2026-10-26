@@ -39,7 +39,7 @@ export type ButtonProps = Omit<React.ComponentProps<"button">, "size"> & {
   variant?: Variant;
   size?: Size;
   fullWidth?: boolean;
-  /** Shows the step label and a sweeping progress line inside the button. */
+
   pending?: boolean;
   pendingLabel?: React.ReactNode;
   asChild?: boolean;

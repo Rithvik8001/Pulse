@@ -5,7 +5,7 @@ import { ForgotPasswordForm } from "@/components/auth/password-reset-forms";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Reset password · Pulse",
+  title: "Reset password - Pulse",
   description: "Request a Pulse password reset link.",
 };
 

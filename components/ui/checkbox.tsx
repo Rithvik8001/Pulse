@@ -6,7 +6,6 @@ import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-/** 22px. Checked is brand with a white bold check. For picking items in a list. */
 export function Checkbox({
   className,
   ...props
@@ -27,7 +26,6 @@ export function Checkbox({
   );
 }
 
-/** A checkbox with its visible label on the right. */
 export function CheckboxField({
   label,
   caption,

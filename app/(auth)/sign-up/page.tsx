@@ -5,7 +5,7 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Create account · Pulse",
+  title: "Create account - Pulse",
   description: "Create your Pulse account.",
 };
 

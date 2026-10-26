@@ -4,17 +4,13 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-/**
- * A round brand pill with a 2px bg ring. Capped at 99+, hidden at 0.
- * Springs in on mount and whenever the number changes.
- */
 export function CountBadge({
   value,
   label,
   className,
 }: {
   value: number;
-  /** For the screen reader, e.g. "unread". */
+
   label?: string;
   className?: string;
 }) {

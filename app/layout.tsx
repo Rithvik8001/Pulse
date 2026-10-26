@@ -15,7 +15,7 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: "Pulse",
-  description: "Check in on small daily habits and see who you are becoming.",
+  description: "A daily habit app. Check in on a few small habits and get a weekly recap of who you are becoming.",
 };
 
 export default function RootLayout({

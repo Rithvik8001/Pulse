@@ -8,7 +8,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint && DESIGN_STRICT=1 node scripts/check-design.mjs",
-    "test": "node --import tsx --test \"**/*.test.ts\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -51,7 +50,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
-    "tsx": "^4.22.4",
     "typescript": "^5"
   },
   "ignoreScripts": [

@@ -10,7 +10,6 @@ const tones = {
   warn: "bg-warn-bg text-warn",
 } as const;
 
-/** Notices explain; they never shout. Body text with an optional text action. */
 export function Notice({
   tone = "neutral",
   action,

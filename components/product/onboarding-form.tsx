@@ -39,7 +39,6 @@ function demoDays(proofToday: number): ProofHistoryDay[] {
   return days;
 }
 
-/** A public demo of the setup. Nothing is saved, in a database or in the browser. */
 export function OnboardingForm() {
   const [character, setCharacter] = useState("");
   const [quests, setQuests] = useState([""]);
@@ -121,7 +120,7 @@ export function OnboardingForm() {
         >
           <ul className="grid list-none gap-4 p-0">
             {quests.map((quest, index) => (
-              <li key={index} className="flex items-end gap-2">
+              <li key={index} className="flex items-end gap-3">
                 <Field
                   label={`Habit ${index + 1}`}
                   className="flex-1"

@@ -151,7 +151,7 @@ function CheckInRow({
 
       {editingNote && currentOutcome ? (
         <form
-          className="flex flex-wrap items-end gap-2 sm:pl-14"
+          className="flex flex-wrap items-end gap-3 sm:pl-14"
           onSubmit={(event) => {
             event.preventDefault();
             if (isDirty) submit(currentOutcome, note, false);

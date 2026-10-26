@@ -18,10 +18,10 @@ export function useFieldContext() {
 
 export type FieldProps = {
   label: React.ReactNode;
-  /** Keep the label for assistive tech but hide it, for toolbars only. */
+
   labelHidden?: boolean;
   hint?: React.ReactNode;
-  /** Replaces the hint. */
+
   error?: React.ReactNode;
   id?: string;
   required?: boolean;
@@ -29,10 +29,6 @@ export type FieldProps = {
   children: React.ReactNode;
 };
 
-/**
- * A labelled form control. The label sits above in label role, fg-2, 8px gap.
- * The hint sits below in small; an error replaces it. All wired by id.
- */
 export function Field({
   label,
   labelHidden,
@@ -105,22 +101,6 @@ export function Input({
       {...props}
       {...control}
       className={cn("field", className)}
-    />
-  );
-}
-
-export function DateInput({
-  className,
-  ...props
-}: Omit<React.ComponentProps<"input">, "type">) {
-  const control = useControlProps(props);
-  return (
-    <input
-      data-slot="date-input"
-      type="date"
-      {...props}
-      {...control}
-      className={cn("field tabular-nums", className)}
     />
   );
 }

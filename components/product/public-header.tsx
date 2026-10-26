@@ -4,7 +4,6 @@ import { Mascot } from "@/components/landing/mascot";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** The sticky header for signed-out pages. */
 export function PublicHeader({
   cta = "sign-up",
   width = "page",
@@ -27,7 +26,7 @@ export function PublicHeader({
             <Mascot width={28} height={28} />
           </Link>
         ) : null}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
           <Button variant="text" size="sm" asChild>
             <Link href="/sign-in">Sign in</Link>
           </Button>

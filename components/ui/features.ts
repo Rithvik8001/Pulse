@@ -11,10 +11,6 @@ import {
 
 import type { IconComponent } from "@/components/ui/icon";
 
-/**
- * One tint per feature, used everywhere the feature appears.
- * Class strings are literal so Tailwind can see them.
- */
 export type Tint =
   | "neutral"
   | "violet"

@@ -5,14 +5,13 @@ export type Stat = {
   value: string;
 };
 
-/** Flat tiles: a tabular heading number over a caption. No boxes, no dots. */
 export function StatStrip({
   stats,
   columns,
   className,
 }: {
   stats: Stat[];
-  /** Columns from 640px. Defaults to the number of stats, up to 4. */
+
   columns?: 2 | 3 | 4;
   className?: string;
 }) {

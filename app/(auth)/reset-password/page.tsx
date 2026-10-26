@@ -7,7 +7,7 @@ import { passwordResetIntentCookie } from "@/lib/auth/auth-core";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Choose new password · Pulse",
+  title: "Choose new password - Pulse",
   description: "Choose a new password for your Pulse account.",
 };
 

@@ -11,7 +11,7 @@ import { computeSuggestions, getSuggestionsDataForUser } from "@/lib/pulse/sugge
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
-  title: "Habits · Pulse",
+  title: "Habits - Pulse",
   description: "Add, order and archive your habits.",
 };
 
