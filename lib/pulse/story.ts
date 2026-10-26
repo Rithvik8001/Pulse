@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
+import { aiModel, hasAiKey, missingAiKeyMessage } from "@/lib/pulse/ai-provider";
 
 import { generateText, Output } from "ai";
 import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
@@ -102,7 +102,7 @@ const weeklyStorySchema = z.object({
 export class MissingWeeklyProofError extends Error {
   constructor() {
     super(
-      "Add at least one Check-in or Journal entry this week before generating a Story.",
+      "Check in or write a journal entry this week, then try again.",
     );
     this.name = "MissingWeeklyProofError";
   }
@@ -110,9 +110,7 @@ export class MissingWeeklyProofError extends Error {
 
 export class MissingAiGatewayKeyError extends Error {
   constructor() {
-    super(
-      "Add OPENAI_API_KEY to your environment before generating.",
-    );
+    super(missingAiKeyMessage);
     this.name = "MissingAiGatewayKeyError";
   }
 }
@@ -232,7 +230,7 @@ export async function generateAndSaveWeeklyStory() {
   }
 
   const system =
-    "You are Pulse, an identity-first reflection coach. Write friendly and specifically. Never shame missed days, never worship streaks, and always frame proof as evidence for who the user is becoming. Be honest, motivating, and encouraging.";
+    "You write weekly recaps inside Pulse, a habit app. Write warmly and specifically, in plain words. Never shame skipped days or focus on days in a row. Treat check-ins as evidence of who the person is becoming. Be honest and encouraging.";
   const prompt = buildWeeklyStoryPrompt({
     characterName: character.name,
     journal,

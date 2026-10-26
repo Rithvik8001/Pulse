@@ -103,15 +103,15 @@ describe("buildHabitAgentSystemPrompt", () => {
   it("includes confirmation-only and delete safety rules", () => {
     const prompt = buildHabitAgentSystemPrompt(makeContext());
 
-    assert.match(prompt, /Habit Agent/);
-    assert.match(prompt, /Character: Builder/);
+    assert.match(prompt, /You are the assistant inside Pulse/);
+    assert.match(prompt, /Who they are becoming: Builder/);
     assert.match(prompt, /Write 500 words \[id:quest-1\]/);
-    assert.match(prompt, /The user must confirm each card/);
-    assert.match(prompt, /Never claim you created, updated, archived/);
-    assert.match(prompt, /Delete is only valid for habits with zero Proof/);
+    assert.match(prompt, /The person must confirm each card/);
+    assert.match(prompt, /Never claim you added, renamed, archived/);
+    assert.match(prompt, /Delete is only allowed for habits with no check-ins/);
     assert.match(prompt, /propose archiving it instead/);
     assert.match(prompt, /do not create a card/);
-    assert.match(prompt, /Do not propose Check-ins, Journal entries/);
+    assert.match(prompt, /Do not propose check-ins, journal entries/);
     assert.match(prompt, /Never reveal ids, UUIDs/);
   });
 });

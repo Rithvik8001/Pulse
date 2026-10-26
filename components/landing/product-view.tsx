@@ -46,15 +46,15 @@ export function ProductView() {
           {quests.map((quest) => (
             <ActionRow
               key={quest.title}
-              leading={<FeatureChip feature="quests" />}
+              leading={<FeatureChip feature="habits" />}
               title={quest.title}
-              caption={quest.note ?? (quest.outcome ? "Checked in" : "Not checked in yet")}
+              caption={quest.note ?? (quest.outcome ? "Checked in today" : "Not done yet today")}
               actions={quest.outcome ? <ProofOutcome outcome={quest.outcome} /> : null}
             />
           ))}
         </RowList>
       </Section>
-      <Section title="Recent proof">
+      <Section title="Last 8 weeks">
         <ProofHistoryGrid days={days} />
       </Section>
     </div>

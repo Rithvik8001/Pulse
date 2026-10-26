@@ -19,7 +19,9 @@ import { ConfirmTray } from "@/components/ui/confirm-tray";
 import { CountBadge } from "@/components/ui/count-badge";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import { features, type Feature } from "@/components/ui/features";
-import { DateInput, Field, Input, Textarea } from "@/components/ui/field";
+import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { IconButton } from "@/components/ui/icon-button";
 import { Kbd } from "@/components/ui/kbd";
 import { Menu, MenuItem, MenuSeparator } from "@/components/ui/menu";
@@ -68,6 +70,7 @@ export function DesignSink() {
   const [pending, setPending] = React.useState(false);
   const [range, setRange] = React.useState("8");
   const [count, setCount] = React.useState(3);
+  const [date, setDate] = React.useState("2026-10-26");
   const [stepperValue, setStepperValue] = React.useState(2);
   const [step, setStep] = React.useState(0);
   const [switchOn, setSwitchOn] = React.useState(true);
@@ -182,9 +185,10 @@ export function DesignSink() {
             <Field label="Entry" hint="0 of 2000">
               <Textarea autoGrow placeholder="What happened today?" />
             </Field>
-            <Field label="Date">
-              <DateInput defaultValue="2026-10-26" />
+            <Field label="Date" hint="Opens a calendar. Arrow keys move by day and week.">
+              <DatePicker value={date} today="2026-10-26" max="2026-10-26" marked={["2026-10-20", "2026-10-24"]} onChange={setDate} />
             </Field>
+            <Calendar value={date} today="2026-10-26" marked={["2026-10-20", "2026-10-24"]} onChange={setDate} />
             <Select
               label="Outcome"
               name="outcome"
@@ -243,7 +247,7 @@ export function DesignSink() {
         <Section title="Rows" count={count} action={<Button variant="text" size="sm" onClick={() => setCount((c) => c + 1)}>Add one</Button>}>
           <RowList>
             <ActionRow
-              leading={<FeatureChip feature="quests" />}
+              leading={<FeatureChip feature="habits" />}
               title="Write 500 words"
               caption="12 proof"
               actions={
@@ -262,8 +266,8 @@ export function DesignSink() {
             />
             <DetailRow label="Theme" caption="Follows your device by default." control={<Switch defaultChecked />} />
             <DetailRow label="Time zone" control={<span className="type-body text-fg-2">Europe/London</span>} />
-            <NavRow href="/dashboard/stats" feature="stats" title="Stats" caption="Win rate by week." />
-            <NavRow href="/dashboard/identity" feature="identity" title="Identity" caption="Evidence of who you are becoming." current />
+            <NavRow href="/dashboard/stats" feature="history" title="Stats" caption="Win rate by week." />
+            <NavRow href="/dashboard/identity" feature="review" title="Identity" caption="Evidence of who you are becoming." current />
           </RowList>
           <SummaryBar caption="3 of 4 done">
             <Button variant="primary">Add quest</Button>
@@ -280,9 +284,9 @@ export function DesignSink() {
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <FeatureChip feature="proof" size="sm" />
-            <FeatureChip feature="proof" />
-            <FeatureChip feature="proof" size="lg" />
+            <FeatureChip feature="history" size="sm" />
+            <FeatureChip feature="history" />
+            <FeatureChip feature="history" size="lg" />
             <span className="type-body">Count <CountBadge value={count} /></span>
             <span className="type-body">Many <CountBadge value={120} /></span>
           </div>
@@ -375,7 +379,7 @@ export function DesignSink() {
                   </TrayBody>
                   <TrayBody>
                     <TrayDone
-                      thumbnail={<FeatureChip feature="quests" size="lg" />}
+                      thumbnail={<FeatureChip feature="habits" size="lg" />}
                       heading="Renamed"
                       meta="Draft one page"
                     />
@@ -418,8 +422,8 @@ export function DesignSink() {
         />
 
         <RelatedLinks>
-          <NavRow href="/dashboard/stats" feature="stats" title="Stats" />
-          <NavRow href="/dashboard/story" feature="story" title="Story" />
+          <NavRow href="/dashboard/stats" feature="history" title="Stats" />
+          <NavRow href="/dashboard/story" feature="review" title="Story" />
         </RelatedLinks>
       </Page>
     </main>

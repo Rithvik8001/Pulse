@@ -20,19 +20,17 @@ export default function LandingPage() {
           <ProductView />
           <HowItWorks
             steps={[
-              { title: "Choose your character", body: "One sentence about who you are becoming." },
-              { title: "Check in with wins", body: "Each day, mark each quest as a win or a pass." },
-              { title: "Watch your proof grow", body: "Weeks of check-ins become evidence." },
+              { title: "Say who you are becoming", body: "I am a writer, a runner, an early riser." },
+              { title: "Check in each day", body: "Mark each habit Done or Skipped. Skipping is allowed." },
+              { title: "Look back each week", body: "Pulse writes a short recap of what your days show." },
             ]}
           />
           <FeatureSections />
           <CoachSample />
-          <Statement>
-            Every quest you complete is proof of the person you are becoming.
-          </Statement>
+          <Statement>Each small thing you do shows who you are becoming.</Statement>
           <RelatedLinks title="Start">
             <NavRow href="/onboarding" feature="today" title="Try the demo" caption="No account. Nothing is saved." />
-            <NavRow href="/sign-up" feature="proof" title="Create an account" caption="Keep your proof for real." />
+            <NavRow href="/sign-up" feature="history" title="Create an account" caption="Keep your check-ins." />
           </RelatedLinks>
         </Page>
       </main>

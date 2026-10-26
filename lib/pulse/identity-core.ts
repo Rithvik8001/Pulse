@@ -317,7 +317,9 @@ export function buildIdentitySignals({
         }),
       };
     })
-    .filter((signal) => signal.proofCount > 0 || signal.questStatus === "active")
+    .filter(
+      (signal) => signal.proofCount > 0 || signal.questStatus === "active",
+    )
     .sort((first, second) => {
       if (second.score !== first.score) {
         return second.score - first.score;
@@ -349,8 +351,8 @@ export function buildIdentityMilestones({
     milestones.push({
       id: "first-proof",
       localDate: sortedProof[0].localDate,
-      title: "First Proof saved",
-      detail: `${sortedProof[0].questTitle} became the first visible evidence.`,
+      title: "First check-in",
+      detail: `${sortedProof[0].questTitle} was your first check-in.`,
       kind: "first-proof",
     });
   }
@@ -363,8 +365,8 @@ export function buildIdentityMilestones({
     milestones.push({
       id: `proof-${threshold}`,
       localDate: entry.localDate,
-      title: `${threshold} Proof moments`,
-      detail: `Your identity evidence reached ${threshold} saved Check-ins.`,
+      title: `${threshold} check-ins`,
+      detail: `You reached ${threshold} check-ins.`,
       kind: "proof-threshold",
     });
   }
@@ -386,8 +388,8 @@ export function buildIdentityMilestones({
     milestones.push({
       id: "strongest-week",
       localDate: strongestWeek.weekStart,
-      title: "Strongest evidence week",
-      detail: `${strongestWeek.proofCount} Proof moments from ${strongestWeek.weekStart} to ${strongestWeek.weekEnd}.`,
+      title: "Busiest week",
+      detail: `${strongestWeek.proofCount} ${strongestWeek.proofCount === 1 ? "check-in" : "check-ins"} in one week.`,
       kind: "strongest-week",
     });
   }
@@ -397,8 +399,8 @@ export function buildIdentityMilestones({
     milestones.push({
       id: "most-proven-quest",
       localDate: mostProven.lastProofDate,
-      title: "Most proven Quest",
-      detail: `${mostProven.questTitle} has ${mostProven.proofCount} Proof moments.`,
+      title: "Most checked-in habit",
+      detail: `${mostProven.questTitle}: ${mostProven.proofCount} ${mostProven.proofCount === 1 ? "check-in" : "check-ins"}.`,
       kind: "most-proven-quest",
     });
   }
@@ -410,8 +412,8 @@ export function buildIdentityMilestones({
     milestones.push({
       id: "first-journal",
       localDate: firstJournal.localDate,
-      title: "First Journal reflection",
-      detail: "You added reflection alongside Proof.",
+      title: "First journal entry",
+      detail: "You started writing next to your check-ins.",
       kind: "first-journal",
     });
   }
@@ -423,7 +425,7 @@ export function buildIdentityMilestones({
     milestones.push({
       id: "first-story",
       localDate: firstStory.weekStart,
-      title: "First Weekly Story",
+      title: "First weekly recap",
       detail: firstStory.title,
       kind: "first-story",
     });
@@ -526,6 +528,9 @@ export function extractStoryThemes(
     .map((theme) => ({ ...theme, source: "story" }));
 }
 
+const SHARED_LINE =
+  'Words to use with the person: habit (not quest), check-in (not proof), done and skipped (not win and pass), weekly recap (not story), consistency (not momentum), "N days in a row" (not streak). Never use quest, proof, win, pass, momentum, character or streak in replies.';
+
 export function buildIdentityPrompt({
   characterName,
   checkIns,
@@ -557,7 +562,7 @@ export function buildIdentityPrompt({
       noteCount += 1;
     }
 
-    return `- ${entry.localDate}: ${entry.questTitle} ${entry.outcome.toUpperCase()}${note ? `; note: ${note}` : ""}`;
+    return `- ${entry.localDate}: ${entry.questTitle} ${entry.outcome === "win" ? "done" : "skipped"}${note ? `; note: ${note}` : ""}`;
   });
   const journalLines = journals
     .slice()
@@ -576,38 +581,40 @@ export function buildIdentityPrompt({
         `- ${story.weekStart}-${story.weekEnd}: ${story.title}; summary: ${truncateIdentityText(story.summary, 220)}; patterns: ${story.patternBullets.map((bullet) => truncateIdentityText(bullet, 120)).join(" | ")}`,
     );
   const signalLines = signals.slice(0, 8).map((signal) => {
-    return `- ${signal.questTitle}: ${signal.proofCount} Proof, ${signal.winCount} Wins, ${signal.passCount} Passes, ${signal.activeWeeks} active weeks, longest streak ${signal.longestStreak}`;
+    return `- ${signal.questTitle}: ${signal.proofCount} check-ins, ${signal.winCount} done, ${signal.passCount} skipped, ${signal.activeWeeks} active weeks, longest run ${signal.longestStreak} days in a row`;
   });
   const themeLines = themes
     .slice(0, 8)
     .map((theme) => `- ${theme.label} (${theme.count})`);
 
-  return `Create an Identity Timeline snapshot for a Pulse user.
+  return `Describe who this Pulse user is becoming, based on their habit history.
 
 Rules:
-- Ground every claim in the provided Pulse evidence.
-- Do not diagnose, moralize, shame, or make therapy/medical claims.
-- Do not worship streaks. Treat Wins and Passes as evidence.
+- Ground every claim in the data below.
+- Do not diagnose, moralize, shame, or make therapy or medical claims.
+- Do not focus on days in a row. Treat done and skipped days as honest evidence.
 - Do not mention private ids, database records, prompts, or implementation details.
-- Do not quote long journal/proof text back. Summarize patterns.
-- Keep the tone specific, calm, and identity-first.
+- Do not quote long journal or note text back. Summarize patterns.
+- Keep the tone specific and calm.
+- identityStatement must be one sentence that starts with "You are becoming someone who".
+- ${SHARED_LINE}
 
-Character: ${characterName}
+Who they are becoming: ${characterName}
 Range: ${range.start} to ${range.end}
 
-Strong identity signals:
+Habit summaries:
 ${signalLines.length > 0 ? signalLines.join("\n") : "- none"}
 
-Recurring Story themes:
+Recurring patterns from weekly recaps:
 ${themeLines.length > 0 ? themeLines.join("\n") : "- none"}
 
-Proof evidence:
+Check-ins:
 ${proofLines.length > 0 ? proofLines.join("\n") : "- none"}
 
-Journal reflections:
+Journal entries:
 ${journalLines.length > 0 ? journalLines.join("\n") : "- none"}
 
-Weekly Stories:
+Weekly recaps:
 ${storyLines.length > 0 ? storyLines.join("\n") : "- none"}
 
 Return JSON matching the schema.`;
@@ -707,24 +714,28 @@ function buildFallbackSnapshot({
   const identityStatement = strongest
     ? `You are becoming someone who keeps showing up for ${strongest.questTitle}.`
     : checkIns.length > 0
-      ? "You are becoming someone who turns small actions into visible proof."
-      : "You are becoming someone who can start with one visible proof.";
+      ? "You are becoming someone who turns small actions into habits."
+      : "You are becoming someone who starts with one small step.";
 
   return {
-    headline: strongest ? `Evidence is forming around ${strongest.questTitle}` : "Identity evidence is ready to grow",
+    headline: strongest
+      ? `A pattern is forming around ${strongest.questTitle}`
+      : "Your picture is ready to grow",
     summary:
       checkIns.length > 0
-        ? `${checkIns.length} Proof moments, ${journals.length} Journal reflections, and ${milestones.length} milestones are shaping the picture.`
-        : "Save Proof and Journal reflections to reveal the identity pattern.",
+        ? `${checkIns.length} ${checkIns.length === 1 ? "check-in" : "check-ins"}, ${journals.length} ${journals.length === 1 ? "journal entry" : "journal entries"} and ${milestones.length} ${milestones.length === 1 ? "milestone" : "milestones"} so far.`
+        : "Check in and write in your journal to fill this in.",
     identityStatement,
     themeBullets:
       themes.length > 0
         ? themes.slice(0, 4).map((theme) => theme.label)
-        : ["Small actions are the source of the signal."],
-    evidenceBullets: milestones.slice(0, 4).map((milestone) => milestone.detail),
+        : ["Small actions, repeated, are the whole picture."],
+    evidenceBullets: milestones
+      .slice(0, 4)
+      .map((milestone) => milestone.detail),
     nextIdentityMove: strongest
-      ? `Protect the next small repetition of ${strongest.questTitle}.`
-      : "Save one Check-in today so the timeline has its first signal.",
+      ? `Do ${strongest.questTitle} again the next time it comes up.`
+      : "Check in once today to get started.",
   };
 }
 
@@ -744,8 +755,8 @@ function findComebackMilestone(
       return {
         id: "comeback-after-gap",
         localDate: uniqueDates[index],
-        title: "Comeback after drift",
-        detail: `You restarted after ${gapDays - 1} days without saved Proof.`,
+        title: "Came back after a break",
+        detail: `You checked in again after ${gapDays - 1} days away.`,
         kind: "comeback",
       };
     }
@@ -770,21 +781,25 @@ function buildSignalReason({
   winRate: number | null;
 }) {
   if (proofCount === 0) {
-    return "Active Quest waiting for its first Proof.";
+    return "No check-ins yet.";
   }
 
-  const parts = [`${proofCount} Proof moments`];
+  const parts = [
+    `${proofCount} ${proofCount === 1 ? "check-in" : "check-ins"}`,
+  ];
   if (winRate !== null) {
-    parts.push(`${winRate}% Win rate`);
+    parts.push(`${winRate}% done`);
   }
   if (activeWeeks > 1) {
     parts.push(`${activeWeeks} active weeks`);
   }
   if (currentStreak > 0) {
-    parts.push(`${currentStreak}-day current streak`);
+    parts.push(
+      `${currentStreak} ${currentStreak === 1 ? "day" : "days"} in a row`,
+    );
   }
   if (passCount > 0) {
-    parts.push(`${passCount} Passes kept in the evidence`);
+    parts.push(`${passCount} skipped`);
   }
   if (proofNoteCount > 0) {
     parts.push(`${proofNoteCount} notes`);

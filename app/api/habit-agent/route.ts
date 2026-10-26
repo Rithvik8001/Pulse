@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       requestId,
     });
     return Response.json(
-      { error: "Create your Character before using Habit Agent." },
+      { error: "Finish setting up Pulse before changing habits here." },
       { status: 400 },
     );
   }
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       userId,
       requestId,
     });
-    return Response.json({ error: "Missing chat messages." }, { status: 400 });
+    return Response.json({ error: "Your message did not arrive. Try again." }, { status: 400 });
   }
 
   const chatValidation = validateAndTrimAiChatMessages(messages);
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: chatValidation.messages,
-    onError: () => "Habit Agent could not respond yet. Try again in a bit.",
+    onError: () => "The assistant could not answer. Try again.",
   });
 }
 

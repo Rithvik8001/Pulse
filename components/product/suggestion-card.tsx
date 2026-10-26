@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { X } from "@phosphor-icons/react";
 
-import { removeQuestAction, restoreQuestAction } from "@/app/dashboard/quests/actions";
+import { removeQuestAction, restoreQuestAction } from "@/app/dashboard/habits/actions";
 import {
   applyRewordAction,
   getRewordOptionsAction,
@@ -23,6 +23,7 @@ import type { QuestSuggestion } from "@/lib/pulse/suggestions";
 
 const initialRewordState: RewordOptionsState = { status: "idle" };
 
+/** At most three quiet suggestions under the habit list. */
 export function SuggestionList({
   suggestions,
   isAtQuestLimit,
@@ -37,7 +38,7 @@ export function SuggestionList({
   );
   const [rewordingQuestId, setRewordingQuestId] = useState<string | null>(null);
 
-  const visible = suggestions.filter((s) => !dismissedIds.has(s.questId));
+  const visible = suggestions.filter((s) => !dismissedIds.has(s.questId)).slice(0, 3);
   if (visible.length === 0) return null;
 
   function dismiss(questId: string) {
@@ -59,12 +60,12 @@ export function SuggestionList({
                   <ConfirmTray
                     trigger={
                       <Button variant="text" size="sm">
-                        Archive quest
+                        Archive
                       </Button>
                     }
                     title={`Archive ${suggestion.questTitle}?`}
-                    body="If this quest has proof, it moves to your archive and the proof stays. If it has none, it is deleted."
-                    confirmLabel="Archive quest"
+                    body="If it has check-ins, it leaves Today and they stay in your history. If it has none, it is deleted."
+                    confirmLabel="Archive habit"
                     pendingLabel="Archiving"
                     formAction={removeQuestAction}
                     hidden={{ questId: suggestion.questId }}
@@ -73,21 +74,13 @@ export function SuggestionList({
                 {suggestion.type === "restore" ? (
                   <form action={restoreQuestAction}>
                     <input type="hidden" name="questId" value={suggestion.questId} />
-                    <SubmitButton
-                      variant="text"
-                      size="sm"
-                      disabled={isAtQuestLimit}
-                      pendingLabel="Restoring"
-                    >
-                      Restore quest
+                    <SubmitButton variant="text" size="sm" disabled={isAtQuestLimit} pendingLabel="Restoring">
+                      Restore
                     </SubmitButton>
                   </form>
                 ) : null}
                 {suggestion.type === "reword" ? (
-                  <form
-                    action={rewordAction}
-                    onSubmit={() => setRewordingQuestId(suggestion.questId)}
-                  >
+                  <form action={rewordAction} onSubmit={() => setRewordingQuestId(suggestion.questId)}>
                     <input type="hidden" name="questId" value={suggestion.questId} />
                     <Button
                       type="submit"
@@ -96,22 +89,17 @@ export function SuggestionList({
                       pending={rewordPending && rewordingQuestId === suggestion.questId}
                       pendingLabel="Finding wording"
                     >
-                      Reword
+                      Suggest wording
                     </Button>
                   </form>
                 ) : null}
-                <IconButton
-                  label="Dismiss suggestion"
-                  icon={X}
-                  size="sm"
-                  onClick={() => dismiss(suggestion.questId)}
-                />
+                <IconButton label="Dismiss suggestion" icon={X} size="sm" onClick={() => dismiss(suggestion.questId)} />
               </>
             }
           >
             {suggestion.type === "restore" && isAtQuestLimit ? (
               <p className="w-full type-small text-fg-2 sm:pl-14">
-                Archive a quest first to restore this one.
+                Archive an active habit to restore this one.
               </p>
             ) : null}
             {suggestion.type === "reword" &&
@@ -128,9 +116,7 @@ export function SuggestionList({
       <RewordTray
         suggestion={visible.find((s) => s.questId === rewordingQuestId) ?? null}
         alternatives={
-          rewordState.status === "success" && rewordState.alternatives
-            ? rewordState.alternatives
-            : null
+          rewordState.status === "success" && rewordState.alternatives ? rewordState.alternatives : null
         }
         onClose={() => setRewordingQuestId(null)}
       />
@@ -152,16 +138,13 @@ function RewordTray({
     <Tray open={open} onOpenChange={(o) => !o && onClose()}>
       <TrayContent>
         <TrayHeader
-          title="Reword quest"
-          description="Pick a wording. The original stays until you confirm."
+          title={`New wording for ${suggestion?.questTitle ?? "this habit"}`}
+          description="Choose one. Nothing changes until you save."
         />
         {suggestion && alternatives ? (
           <form action={applyRewordAction} className="grid gap-4">
             <input type="hidden" name="questId" value={suggestion.questId} />
             <TrayBody>
-              <p className="type-body text-fg-2">
-                Currently <span className="text-ink">{suggestion.questTitle}</span>.
-              </p>
               <ChoiceCards
                 label="Wording"
                 name="title"
@@ -174,7 +157,7 @@ function RewordTray({
                 Use this wording
               </SubmitButton>
               <Button variant="text" fullWidth onClick={onClose}>
-                Keep the original
+                Keep current name
               </Button>
             </div>
           </form>

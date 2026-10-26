@@ -6,15 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { features, type Feature } from "@/components/ui/features";
 
 export type Panel = "command" | "assistant" | "shortcuts" | "nav" | null;
-export type AssistantTab = "coach" | "habits";
 
 type ShellContextValue = {
   panel: Panel;
   open: (panel: Exclude<Panel, null>) => void;
   close: () => void;
   toggle: (panel: Exclude<Panel, null>) => void;
-  assistantTab: AssistantTab;
-  setAssistantTab: (tab: AssistantTab) => void;
   announce: (message: string) => void;
 };
 
@@ -29,13 +26,19 @@ export function useShell() {
 /** Destinations reachable with `g` then a key. */
 export const goKeys: Record<string, Feature> = {
   t: "today",
-  q: "quests",
-  p: "proof",
-  s: "stats",
-  i: "identity",
+  h: "habits",
+  y: "history",
+  r: "review",
   j: "journal",
-  y: "story",
   ",": "settings",
+};
+
+/** Old letters still work, quietly. */
+const legacyGoKeys: Record<string, Feature> = {
+  q: "habits",
+  p: "history",
+  s: "history",
+  i: "review",
 };
 
 function isEditable(target: EventTarget | null) {
@@ -49,7 +52,6 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [panel, setPanel] = React.useState<Panel>(null);
-  const [assistantTab, setAssistantTab] = React.useState<AssistantTab>("coach");
   const [message, setMessage] = React.useState("");
   const pendingGo = React.useRef<number | null>(null);
 
@@ -86,7 +88,7 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
       if (pendingGo.current !== null) {
         window.clearTimeout(pendingGo.current);
         pendingGo.current = null;
-        const feature = goKeys[event.key];
+        const feature = goKeys[event.key] ?? legacyGoKeys[event.key];
         if (feature) {
           event.preventDefault();
           router.push(features[feature].href);
@@ -124,7 +126,7 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ShellContext.Provider
-      value={{ panel, open, close, toggle, assistantTab, setAssistantTab, announce }}
+      value={{ panel, open, close, toggle, announce }}
     >
       {children}
       <div aria-live="polite" role="status" className="sr-only">

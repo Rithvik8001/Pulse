@@ -3,7 +3,7 @@ import { PublicHeader } from "@/components/product/public-header";
 
 export const metadata = {
   title: "Try Pulse · Pulse",
-  description: "Set up a character and a few quests. Nothing is saved.",
+  description: "Pick who you are becoming and a few habits. Nothing is saved.",
 };
 
 export default function OnboardingPage() {

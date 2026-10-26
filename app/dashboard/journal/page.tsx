@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 
 import { JournalEditor } from "@/components/product/journal-editor";
 import { SetupGate } from "@/components/product/setup-gate";
-import { Breadcrumb, HowItWorks, Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
+import { Breadcrumb, Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
 import { requireUserId } from "@/lib/pulse/dashboard";
-import { getJournalDataForUser, journalHistoryDays } from "@/lib/pulse/journal";
+import { getJournalDataForUser } from "@/lib/pulse/journal";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
   title: "Journal · Pulse",
-  description: "One honest reflection a day.",
+  description: "A few lines about your day.",
 };
 
 export default async function JournalPage({
@@ -49,20 +49,6 @@ export default async function JournalPage({
         selectedEntry={data.selectedEntry}
         selectedProof={data.selectedProof}
         locale={dateContext.locale}
-      />
-
-      <HowItWorks
-        steps={[
-          { title: "One entry per day", body: "Coming back to a date updates that day's entry." },
-          {
-            title: "Proof stays in view",
-            body: "The wins and passes from the selected day sit under the entry while you write.",
-          },
-          {
-            title: "Entries feed your weekly story",
-            body: `The last ${journalHistoryDays} days are kept here. This week's entries go into the story.`,
-          },
-        ]}
       />
     </Page>
   );

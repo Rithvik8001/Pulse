@@ -18,8 +18,7 @@ export function SetupGate({
       <PageHeader>
         <PageTitle>Set up Pulse</PageTitle>
         <PageLead>
-          Choose one character and one to three quests. Daily check-ins become
-          proof of who you are becoming.
+          Say who you are becoming, then pick one to three small habits that show it.
         </PageLead>
       </PageHeader>
       <DashboardSetupForm />

@@ -14,12 +14,13 @@ import {
   failAiUsage,
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
-import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
-import { requireUserId } from "@/lib/pulse/dashboard";
 import {
-  offsetLocalDate,
-  parseLocalDate,
-} from "@/lib/pulse/local-date-core";
+  aiModel,
+  hasAiKey,
+  missingAiKeyMessage,
+} from "@/lib/pulse/ai-provider";
+import { requireUserId } from "@/lib/pulse/dashboard";
+import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import {
   getUserLocalDateContextForUser,
@@ -65,9 +66,7 @@ export type SuggestionsRawData = {
 
 export class MissingAiKeyError extends Error {
   constructor() {
-    super(
-      "Add OPENAI_API_KEY to your environment to generate reword suggestions.",
-    );
+    super(missingAiKeyMessage);
     this.name = "MissingAiKeyError";
   }
 }
@@ -173,7 +172,7 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
         questId: quest.id,
         questTitle: quest.title,
         reason:
-          "Missed 7+ days in a row — consider putting this Quest to rest.",
+          "No check-ins for 7 days or more. Archive it to clear Today, or keep going.",
       });
       archivedQuestIds.add(quest.id);
       continue;
@@ -189,7 +188,7 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
         questId: quest.id,
         questTitle: quest.title,
         reason:
-          "Under 30% wins in the last 30 days — this Quest might need a smaller target.",
+          "Done on fewer than 3 in 10 check-ins this month. A smaller version may be easier.",
       });
     }
   }
@@ -210,8 +209,8 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
           questId: quest.id,
           questTitle: quest.title,
           reason: goodWinRate
-            ? "You had a strong track record here — want to bring it back?"
-            : "Archived recently — still want to work on this?",
+            ? "You did this often before you archived it."
+            : "You archived this in the last 3 weeks.",
         });
       }
     }
@@ -244,7 +243,7 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
     .limit(1);
 
   if (!questRow) {
-    throw new Error("Quest not found.");
+    throw new Error("That habit was not found.");
   }
 
   const passNoteRows = await db
@@ -265,7 +264,7 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
     .filter((n): n is string => n !== null && n.trim().length > 0);
   const truncatedPassNotes = passNotes.slice(0, 10).map(truncateRewordNote);
   const system =
-    "You are Pulse, a habit coach. Suggest shorter, more achievable rewordings of a user's quest. Keep each under 80 characters. Be concrete and kind.";
+    "You are Pulse, a habit coach. Suggest shorter, easier versions of a person's habit name. Keep each under 80 characters. Be concrete and kind.";
   const prompt = buildRewordPrompt(questRow.title, truncatedPassNotes);
   const reservation = await reserveAiUsage({
     userId,
@@ -319,10 +318,10 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
 function buildRewordPrompt(title: string, passNotes: string[]): string {
   const notesSection =
     passNotes.length > 0
-      ? `\n\nRecent pass notes:\n${passNotes.map((n) => `- ${n}`).join("\n")}`
+      ? `\n\nNotes from skipped days:\n${passNotes.map((n) => `- ${n}`).join("\n")}`
       : "";
 
-  return `Quest: "${title}"${notesSection}\n\nSuggest 2–3 shorter, more achievable alternative phrasings. Each must be under 80 characters.`;
+  return `Habit: "${title}"${notesSection}\n\nSuggest 2 or 3 shorter, easier ways to say this habit. Each must be under 80 characters.`;
 }
 
 function truncateRewordNote(note: string) {

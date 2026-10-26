@@ -194,7 +194,7 @@ async function sendWeeklyDigestForCandidate(
     type: "weekly_digest",
     dedupeKey,
     to: candidate.email,
-    subject: "Your week in Proof",
+    subject: "Your week in Pulse",
     react: (
       <WeeklyDigestEmail
         characterName={candidate.characterName}
@@ -209,7 +209,7 @@ async function sendWeeklyDigestForCandidate(
         storyTitle={story?.title ?? null}
         storySummary={story?.summary ?? null}
         dashboardUrl={new URL("/dashboard", siteUrl).toString()}
-        storyUrl={new URL("/dashboard/story", siteUrl).toString()}
+        storyUrl={new URL("/dashboard/review", siteUrl).toString()}
         unsubscribeUrl={unsubscribeUrl}
       />
     ),

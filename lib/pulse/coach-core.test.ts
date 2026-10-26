@@ -108,21 +108,21 @@ describe("buildPulseCoachSystemPrompt", () => {
   it("includes full Pulse context and proposal-only action rules", () => {
     const prompt = buildPulseCoachSystemPrompt(makeContext());
 
-    assert.match(prompt, /Pulse Coach/);
-    assert.match(prompt, /Character: Builder/);
+    assert.match(prompt, /You are the assistant inside Pulse/);
+    assert.match(prompt, /Who they are becoming: Builder/);
     assert.match(prompt, /Ship one useful thing \[id:quest-1\]/);
-    assert.match(prompt, /90-day Proof: 31 total, 22 Wins, 9 Passes/);
-    assert.match(prompt, /Stats: 31 Proof in 12 weeks/);
-    assert.match(prompt, /Latest identity snapshot/);
-    assert.match(prompt, /Momentum: 78\/100 \(On Fire\)/);
-    assert.match(prompt, /Adaptive Suggestions/);
-    assert.match(prompt, /Recent Journal/);
-    assert.match(prompt, /Recent Weekly Stories/);
-    assert.match(prompt, /The user must confirm before Pulse changes anything/);
+    assert.match(prompt, /Last 90 days: 31 check-ins, 22 done, 9 skipped/);
+    assert.match(prompt, /Last 12 weeks: 31 check-ins; done rate 71%/);
+    assert.match(prompt, /Latest statement of who they are becoming/);
+    assert.match(prompt, /Consistency: 78 of 100; longest run 9 days in a row/);
+    assert.match(prompt, /Suggestions:/);
+    assert.match(prompt, /Recent journal entries/);
+    assert.match(prompt, /Recent weekly recaps/);
+    assert.match(prompt, /The person must confirm before Pulse changes anything/);
     assert.match(prompt, /Never reveal ids, UUIDs, database keys/);
-    assert.match(prompt, /refer to Quests by title, never by id/);
+    assert.match(prompt, /refer to habits by name, never by id/);
     assert.match(prompt, /Format answers in Markdown/);
-    assert.match(prompt, /Use 1-3 meaningful emojis/);
+    assert.doesNotMatch(prompt, /emoji/i);
   });
 
   it("handles incomplete setup without pretending actions can mutate safely", () => {
@@ -135,8 +135,8 @@ describe("buildPulseCoachSystemPrompt", () => {
     };
     const prompt = buildPulseCoachSystemPrompt(context);
 
-    assert.match(prompt, /has not created a Character yet/);
-    assert.match(prompt, /must be confirmed by the user/);
+    assert.match(prompt, /has not set up Pulse yet/);
+    assert.match(prompt, /must be confirmed by the person/);
   });
 });
 

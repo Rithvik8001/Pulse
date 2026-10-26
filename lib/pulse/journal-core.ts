@@ -19,11 +19,11 @@ export function normalizeJournalBody(value: string) {
 
 export function validateJournalBody(body: string) {
   if (!body) {
-    return "Write a reflection before saving.";
+    return "Write something before saving.";
   }
 
   if (body.length > journalBodyMaxLength) {
-    return `Keep Journal entries under ${journalBodyMaxLength} characters.`;
+    return `Keep entries to ${journalBodyMaxLength.toLocaleString()} characters or fewer.`;
   }
 
   return null;

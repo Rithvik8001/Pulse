@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       userId,
       requestId,
     });
-    return Response.json({ error: "Missing chat messages." }, { status: 400 });
+    return Response.json({ error: "Your message did not arrive. Try again." }, { status: 400 });
   }
 
   const chatValidation = validateAndTrimAiChatMessages(messages);
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: chatValidation.messages,
-    onError: () => "Pulse Coach could not respond yet. Try again in a bit.",
+    onError: () => "The assistant could not answer. Try again.",
   });
 }
 

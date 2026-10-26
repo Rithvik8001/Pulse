@@ -23,8 +23,8 @@ function toFormState(result: ProofMutationResult): ProofFormState {
 
 function revalidateProofSurfaces() {
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/proof");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/review");
 }
 
 export async function updateProofAction(

@@ -29,7 +29,7 @@ export async function confirmPulseCoachAction(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "Pulse Coach could not confirm that action.",
+      message: "This change could not be made. Ask the assistant again.",
     };
   }
 
@@ -77,7 +77,7 @@ async function saveCoachCheckIn(
   if (cleanNote && cleanNote.length > 240) {
     return {
       status: "error",
-      message: "Keep proof notes under 240 characters.",
+      message: "Keep the note to 240 characters or fewer.",
     };
   }
 
@@ -101,7 +101,7 @@ async function saveCoachCheckIn(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not find that active Quest for your account.",
+      message: "This habit is no longer active. Reload the page and try again.",
     };
   }
 
@@ -127,15 +127,15 @@ async function saveCoachCheckIn(
 
   return {
     status: "success",
-    message: `${action.outcome === "win" ? "Win" : "Pass"} saved for ${quest.title}.`,
+    message: `Saved ${quest.title} as ${action.outcome === "win" ? "done" : "skipped"}.`,
   };
 }
 
 function revalidatePulseCoachSurfaces() {
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/quests");
+  revalidatePath("/dashboard/habits");
   revalidatePath("/dashboard/journal");
-  revalidatePath("/dashboard/proof");
-  revalidatePath("/dashboard/stats");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/review");
 }

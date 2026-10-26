@@ -1,16 +1,12 @@
 import {
   BookOpenText,
-  ChartLine,
-  ChatCircleText,
-  Fingerprint,
   GearSix,
   House,
   Lightbulb,
-  ListChecks,
   Notebook,
   SealCheck,
+  Sparkle,
   Target,
-  TrendUp,
 } from "@phosphor-icons/react/dist/ssr";
 
 import type { IconComponent } from "@/components/ui/icon";
@@ -46,16 +42,12 @@ export const tintClassName: Record<Tint, string> = {
 
 export type Feature =
   | "today"
-  | "quests"
-  | "proof"
-  | "stats"
-  | "identity"
-  | "journal"
-  | "story"
-  | "coach"
   | "habits"
+  | "history"
+  | "review"
+  | "journal"
+  | "assistant"
   | "suggestions"
-  | "momentum"
   | "settings";
 
 export const features: Record<
@@ -63,15 +55,11 @@ export const features: Record<
   { label: string; tint: Tint; icon: IconComponent; href: string }
 > = {
   today: { label: "Today", tint: "neutral", icon: House, href: "/dashboard" },
-  quests: { label: "Quests", tint: "orange", icon: Target, href: "/dashboard/quests" },
-  proof: { label: "Proof", tint: "green", icon: SealCheck, href: "/dashboard/proof" },
-  stats: { label: "Stats", tint: "blue", icon: ChartLine, href: "/dashboard/stats" },
-  identity: { label: "Identity", tint: "violet", icon: Fingerprint, href: "/dashboard/identity" },
+  habits: { label: "Habits", tint: "orange", icon: Target, href: "/dashboard/habits" },
+  history: { label: "History", tint: "green", icon: SealCheck, href: "/dashboard/history" },
+  review: { label: "Review", tint: "violet", icon: BookOpenText, href: "/dashboard/review" },
   journal: { label: "Journal", tint: "amber", icon: Notebook, href: "/dashboard/journal" },
-  story: { label: "Story", tint: "pink", icon: BookOpenText, href: "/dashboard/story" },
-  coach: { label: "Coach", tint: "cyan", icon: ChatCircleText, href: "/dashboard" },
-  habits: { label: "Habit agent", tint: "indigo", icon: ListChecks, href: "/dashboard" },
-  suggestions: { label: "Suggestions", tint: "indigo", icon: Lightbulb, href: "/dashboard" },
-  momentum: { label: "Momentum", tint: "red", icon: TrendUp, href: "/dashboard/stats" },
+  assistant: { label: "Assistant", tint: "cyan", icon: Sparkle, href: "/dashboard" },
+  suggestions: { label: "Suggestions", tint: "indigo", icon: Lightbulb, href: "/dashboard/habits" },
   settings: { label: "Settings", tint: "neutral", icon: GearSix, href: "/dashboard/settings" },
 };

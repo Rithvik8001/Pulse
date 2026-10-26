@@ -71,9 +71,9 @@ function CheckInRow({
   const [pending, startTransition] = useTransition();
   const savedOutcome = quest.todayCheckIn?.outcome ?? null;
   const currentOutcome = activeOutcome ?? savedOutcome;
-  const [note, setNote] = useState(quest.todayCheckIn?.note ?? "");
   const [savedNote, setSavedNote] = useState(quest.todayCheckIn?.note ?? "");
-  const [noteOpen, setNoteOpen] = useState(Boolean(quest.todayCheckIn?.note));
+  const [note, setNote] = useState(savedNote);
+  const [editingNote, setEditingNote] = useState(false);
   const isDirty = note !== savedNote;
 
   function submit(outcome: Outcome, nextNote: string, optimistic: boolean) {
@@ -91,8 +91,16 @@ function CheckInRow({
       if (result.status === "success") {
         setState(initialState);
         setQuestOutcome(quest.id, outcome);
+        const noteChanged = nextNote !== savedNote;
         setSavedNote(nextNote);
-        toast.success("Proof saved");
+        setEditingNote(false);
+        toast.show(
+          noteChanged && !optimistic
+            ? "Note saved"
+            : outcome === "win"
+              ? "Saved as done"
+              : "Saved as skipped",
+        );
       } else {
         setState(result);
         if (optimistic) setQuestOutcome(quest.id, previous);
@@ -100,74 +108,91 @@ function CheckInRow({
     });
   }
 
-  const caption = quest.todayCheckIn
-    ? `Saved as a ${quest.todayCheckIn.outcome}${quest.todayCheckIn.note ? `: ${quest.todayCheckIn.note}` : ""}`
-    : "Not checked in yet";
+  const status = !currentOutcome
+    ? "Not done yet today"
+    : currentOutcome === "win"
+      ? "Done"
+      : "Skipped";
 
   return (
     <li className="grid gap-3 py-3.5">
       <div className="flex flex-wrap items-center gap-4">
-        <FeatureChip feature="quests" />
+        <FeatureChip feature="habits" />
         <div className="grid min-w-0 flex-1 gap-0.5">
           <div className="truncate type-body font-medium">{quest.title}</div>
-          <div className="truncate type-caption text-fg-2">{caption}</div>
+          {editingNote ? null : (
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 type-caption text-fg-2">
+              <span className="truncate">
+                {status}
+                {currentOutcome && savedNote ? `: ${savedNote}` : ""}
+              </span>
+              {currentOutcome ? (
+                <Button variant="text" size="xs" className="-my-1 h-6 px-1.5" onClick={() => setEditingNote(true)}>
+                  {savedNote ? "Edit note" : "Add a note"}
+                </Button>
+              ) : null}
+            </div>
+          )}
         </div>
         <div className="w-full sm:w-44">
           <Segmented
-            label={`Outcome for ${quest.title}`}
+            label={`Did you do ${quest.title} today?`}
             size="sm"
             value={currentOutcome ?? ""}
             disabled={pending}
             onValueChange={(value) => submit(value as Outcome, note, true)}
             options={[
-              { value: "win", label: "Win" },
-              { value: "pass", label: "Pass" },
+              { value: "win", label: "Done" },
+              { value: "pass", label: "Skipped" },
             ]}
           />
         </div>
       </div>
 
-      {currentOutcome ? (
-        noteOpen ? (
-          <form
-            className="flex flex-wrap items-end gap-2 sm:pl-14"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (isDirty) submit(currentOutcome, note, false);
+      {editingNote && currentOutcome ? (
+        <form
+          className="flex flex-wrap items-end gap-2 sm:pl-14"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (isDirty) submit(currentOutcome, note, false);
+            else setEditingNote(false);
+          }}
+        >
+          <Field label="Note" labelHidden className="min-w-0 flex-1">
+            <Input
+              autoFocus
+              placeholder="Walked to the station instead of driving"
+              value={note}
+              maxLength={240}
+              className="h-control-sm"
+              onChange={(event) => setNote(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setNote(savedNote);
+                  setEditingNote(false);
+                }
+              }}
+            />
+          </Field>
+          <Button type="submit" variant="secondary" size="sm" disabled={!isDirty} pending={pending && isDirty} pendingLabel="Saving">
+            Save note
+          </Button>
+          <Button
+            variant="text"
+            size="sm"
+            onClick={() => {
+              setNote(savedNote);
+              setEditingNote(false);
             }}
           >
-            <Field label="Note" labelHidden className="min-w-0 flex-1">
-              <Input
-                placeholder="What happened?"
-                value={note}
-                maxLength={240}
-                className="h-control-sm"
-                onChange={(event) => setNote(event.target.value)}
-              />
-            </Field>
-            <Button
-              type="submit"
-              variant="secondary"
-              size="sm"
-              disabled={!isDirty}
-              pending={pending && isDirty}
-              pendingLabel="Saving"
-            >
-              Save note
-            </Button>
-          </form>
-        ) : (
-          <div className="sm:pl-14">
-            <Button variant="text" size="xs" onClick={() => setNoteOpen(true)}>
-              Add a note
-            </Button>
-          </div>
-        )
+            Cancel
+          </Button>
+        </form>
       ) : null}
 
       {state.status === "error" ? (
         <Notice tone="bad" className="sm:ml-14">
-          {state.message ?? "Proof could not be saved. Check your connection and try again."}
+          {state.message ?? "This did not save. Check your connection and try again."}
         </Notice>
       ) : null}
     </li>

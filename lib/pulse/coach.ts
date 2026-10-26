@@ -230,7 +230,10 @@ export async function getPulseCoachContextForUser(
       })
       .from(identitySnapshots)
       .where(eq(identitySnapshots.userId, userId))
-      .orderBy(desc(identitySnapshots.periodEnd), desc(identitySnapshots.updatedAt))
+      .orderBy(
+        desc(identitySnapshots.periodEnd),
+        desc(identitySnapshots.updatedAt),
+      )
       .limit(1),
   ]);
 
@@ -386,18 +389,18 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
   return {
     proposeCreateQuest: tool({
       description:
-        "Propose creating a new active Quest. Use only when the user wants a new repeatable habit or asks for a concrete plan.",
+        "Propose adding a new active habit. Use only when the person wants a new repeatable habit or asks for a concrete plan.",
       inputSchema: z.object({
         title: z.string().min(1).max(96),
       }),
       execute: async ({ title }) =>
-        proposal("Create Quest", `Add "${title}" to active Quests.`, {
+        proposal("Add habit", `Add "${title}" to your habits.`, {
           type: "createQuest",
           title,
         }),
     }),
     proposeUpdateQuest: tool({
-      description: "Propose renaming an existing Quest.",
+      description: "Propose renaming an existing habit.",
       inputSchema: z.object({
         questId: z.string().min(1),
         title: z.string().min(1).max(96),
@@ -405,44 +408,44 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
       execute: async ({ questId, title }) => {
         const quest = findQuest(context, questId);
         return proposal(
-          "Update Quest",
-          `Rename "${quest?.title ?? "this Quest"}" to "${title}".`,
+          "Rename habit",
+          `Rename "${quest?.title ?? "this habit"}" to "${title}".`,
           { type: "updateQuest", questId, title },
         );
       },
     }),
     proposeArchiveQuest: tool({
       description:
-        "Propose archiving an active Quest so it leaves daily Check-ins while preserving Proof.",
+        "Propose archiving an active habit so it leaves Today. Its check-ins are kept.",
       inputSchema: z.object({
         questId: z.string().min(1),
       }),
       execute: async ({ questId }) => {
         const quest = findQuest(context, questId);
         return proposal(
-          "Archive Quest",
-          `Archive "${quest?.title ?? "this Quest"}" and keep its Proof intact.`,
+          "Archive habit",
+          `Archive "${quest?.title ?? "this habit"}". Its check-ins stay in your history.`,
           { type: "archiveQuest", questId },
         );
       },
     }),
     proposeRestoreQuest: tool({
-      description: "Propose restoring an archived Quest to the active list.",
+      description: "Propose restoring an archived habit to your active habits.",
       inputSchema: z.object({
         questId: z.string().min(1),
       }),
       execute: async ({ questId }) => {
         const quest = findQuest(context, questId);
         return proposal(
-          "Restore Quest",
-          `Restore "${quest?.title ?? "this Quest"}" to active Quests. Active limit: ${activeQuestLimit}.`,
+          "Restore habit",
+          `Restore "${quest?.title ?? "this habit"}" to your active habits. You can have up to ${activeQuestLimit}.`,
           { type: "restoreQuest", questId },
         );
       },
     }),
     proposeSaveCheckIn: tool({
       description:
-        "Propose saving today's Check-in for an active Quest as a Win or Pass with an optional proof note.",
+        'Propose checking in on an active habit for a date. Set outcome to "win" when the person did it (they see this as Done) and "pass" when they skipped it (they see Skipped). Optional short note.',
       inputSchema: z.object({
         questId: z.string().min(1),
         outcome: z.enum(["win", "pass"]),
@@ -455,8 +458,8 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
       execute: async ({ questId, outcome, note, localDate }) => {
         const quest = findQuest(context, questId);
         return proposal(
-          "Save Check-in",
-          `Mark "${quest?.title ?? "this Quest"}" as ${outcome === "win" ? "Win" : "Pass"} for ${localDate ?? context.today}.`,
+          "Check in",
+          `Mark "${quest?.title ?? "this habit"}" as ${outcome === "win" ? "done" : "skipped"} for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}.`,
           {
             type: "saveCheckIn",
             questId,
@@ -469,7 +472,7 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
     }),
     proposeSaveJournal: tool({
       description:
-        "Propose saving or updating a Journal entry for a local date. Use for reflective user-approved writing.",
+        "Propose saving or updating a journal entry for a date. Only for writing the person asked for or approved.",
       inputSchema: z.object({
         localDate: z
           .string()
@@ -479,8 +482,8 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
       }),
       execute: async ({ localDate, body }) =>
         proposal(
-          "Save Journal",
-          `Save a Journal entry for ${localDate ?? context.today}.`,
+          "Save journal entry",
+          `Save a journal entry for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}.`,
           {
             type: "saveJournal",
             localDate: localDate ?? context.today,

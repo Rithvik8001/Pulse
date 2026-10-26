@@ -53,21 +53,21 @@ export async function createInitialSetup(
   const errors: SetupFormState["errors"] = {};
 
   if (!character) {
-    errors.character = "Add a Character before continuing.";
+    errors.character = "Add who you are becoming, like writer or early riser.";
   } else if (character.length > characterMaxLength) {
-    errors.character = `Keep Character under ${characterMaxLength} characters.`;
+    errors.character = `Use ${characterMaxLength} characters or fewer.`;
   }
 
   if (questList.length === 0) {
-    errors.quests = "Add at least one Quest.";
+    errors.quests = "Add at least one habit.";
   } else if (questList.some((quest) => quest.length > questMaxLength)) {
-    errors.quests = `Keep each Quest under ${questMaxLength} characters.`;
+    errors.quests = `Keep each habit to ${questMaxLength} characters or fewer.`;
   }
 
   if (Object.keys(errors).length > 0) {
     return {
       status: "error",
-      message: "Check the highlighted fields and try again.",
+      message: "Fix the fields marked below, then save again.",
       fields: {
         character,
         quests: questList.length > 0 ? questList : ["", "", ""],
@@ -101,7 +101,7 @@ export async function createInitialSetup(
     return {
       status: "error",
       message:
-        "We could not save your setup. If you already created one, refresh the dashboard.",
+        "Your setup did not save. If you set up Pulse before, reload the page to see it.",
       fields: {
         character,
         quests: questList,
@@ -140,14 +140,14 @@ export async function upsertCheckInAction(
   if (!questId || !localDate || !outcome) {
     return {
       status: "error",
-      message: "Choose Win or Pass before saving proof.",
+      message: "Choose Done or Skipped first.",
     };
   }
 
   if (note && note.length > noteMaxLength) {
     return {
       status: "error",
-      message: `Keep proof notes under ${noteMaxLength} characters.`,
+      message: `Keep the note to ${noteMaxLength} characters or fewer.`,
     };
   }
 
@@ -170,7 +170,7 @@ export async function upsertCheckInAction(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not find that Quest for your account.",
+      message: "This habit is no longer active. Reload the page to see your habits.",
     };
   }
 
@@ -195,10 +195,12 @@ export async function upsertCheckInAction(
     });
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/review");
 
   return {
     status: "success",
-    message: outcome === "win" ? "Win saved." : "Pass saved.",
+    message: outcome === "win" ? "Saved as done." : "Saved as skipped.",
   };
 }
 

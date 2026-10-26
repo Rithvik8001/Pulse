@@ -46,7 +46,7 @@ export function DashboardSetupForm() {
       <Field
         label="I am a"
         error={state.errors?.character}
-        hint="One word or a short phrase, like writer or early riser."
+        hint="A word or short phrase, like writer or early riser."
         required
       >
         <Input
@@ -61,11 +61,11 @@ export function DashboardSetupForm() {
       </Field>
 
       <Section
-        title="Quests that prove it"
+        title="Habits that show it"
         action={
           quests.length < 3 ? (
             <Button variant="text" size="sm" onClick={addQuest}>
-              Add another quest
+              Add another habit
             </Button>
           ) : null
         }
@@ -74,7 +74,7 @@ export function DashboardSetupForm() {
           {quests.map((quest, index) => (
             <li key={index} className="flex items-end gap-2">
               <Field
-                label={`Quest ${index + 1}`}
+                label={`Habit ${index + 1}`}
                 className="flex-1"
                 error={index === quests.length - 1 ? state.errors?.quests : undefined}
               >
@@ -89,7 +89,7 @@ export function DashboardSetupForm() {
               </Field>
               {quests.length > 1 ? (
                 <IconButton
-                  label={`Remove quest ${index + 1}`}
+                  label={`Remove habit ${index + 1}`}
                   icon={X}
                   onClick={() => removeQuest(index)}
                   className="mb-1"
@@ -102,9 +102,9 @@ export function DashboardSetupForm() {
 
       {state.message ? <Notice tone="bad">{state.message}</Notice> : null}
 
-      <SummaryBar caption="One to three quests. You can change them any time.">
-        <SubmitButton variant="primary" pendingLabel="Saving">
-          Save setup
+      <SummaryBar caption="One to three habits. You can change them later.">
+        <SubmitButton variant="primary" pendingLabel="Setting up">
+          Start checking in
         </SubmitButton>
       </SummaryBar>
     </form>

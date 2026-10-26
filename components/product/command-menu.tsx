@@ -2,30 +2,17 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Keyboard,
-  ListChecks,
-  MagnifyingGlass,
-  Moon,
-  Notebook,
-  PencilSimple,
-  Plus,
-  SignOut,
-  Sparkle,
-  Sun,
-  SunHorizon,
-} from "@phosphor-icons/react";
+import { MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
 import { Command } from "cmdk";
-import { useTheme } from "next-themes";
 
-import { signOutAction } from "@/app/(auth)/auth/actions";
 import { goKeys, useShell } from "@/components/product/shell";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import { features, type Feature } from "@/components/ui/features";
 import { Icon, type IconComponent } from "@/components/ui/icon";
 import { Kbd } from "@/components/ui/kbd";
+import { Dialog as DialogPrimitive } from "radix-ui";
+
 import { Tray, TrayContent } from "@/components/ui/tray";
-import { cn } from "@/lib/utils";
 
 const itemClassName =
   "flex h-10 cursor-pointer items-center gap-3 rounded-item px-3 type-body font-medium outline-none select-none data-[selected=true]:bg-fill-2 data-[selected=true]:inset-rule";
@@ -71,39 +58,29 @@ function Group({ heading, children }: { heading: string; children: React.ReactNo
   );
 }
 
-const destinations: Feature[] = [
-  "today",
-  "quests",
-  "proof",
-  "stats",
-  "identity",
-  "journal",
-  "story",
-  "settings",
+const destinations: { key: Feature; keywords: string[] }[] = [
+  { key: "today", keywords: ["check in", "home"] },
+  { key: "habits", keywords: ["quest", "add habit", "archive"] },
+  { key: "history", keywords: ["proof", "check-ins", "stats", "consistency"] },
+  { key: "review", keywords: ["recap", "story", "identity", "milestones", "statement"] },
+  { key: "journal", keywords: ["entry", "write"] },
+  { key: "settings", keywords: ["theme", "dark", "sign out", "email"] },
 ];
 
 const goKeyFor = Object.fromEntries(
   Object.entries(goKeys).map(([key, feature]) => [feature, key]),
-) as Record<Feature, string>;
+) as Partial<Record<Feature, string>>;
 
 /** The command menu. Opens with ⌘K, Ctrl K, or / when nothing is focused. */
-export function CommandMenu({ showHabits }: { showHabits: boolean }) {
+export function CommandMenu() {
   const router = useRouter();
-  const { panel, close, open, setAssistantTab } = useShell();
-  const { setTheme } = useTheme();
-  const signOutRef = React.useRef<HTMLFormElement>(null);
+  const { panel, close, open } = useShell();
   const [query, setQuery] = React.useState("");
-
   const isOpen = panel === "command";
 
   function go(href: string) {
     close();
     router.push(href);
-  }
-
-  function assistant(tab: "coach" | "habits") {
-    setAssistantTab(tab);
-    open("assistant");
   }
 
   return (
@@ -117,7 +94,8 @@ export function CommandMenu({ showHabits }: { showHabits: boolean }) {
       }}
     >
       <TrayContent width="wide" className="top-[12vh] translate-y-0 data-[state=open]:animate-rise" aria-describedby={undefined}>
-        <Command label="Command menu" loop className="grid gap-2">
+        <DialogPrimitive.Title className="sr-only">Search or go to a page</DialogPrimitive.Title>
+        <Command label="Search or go to a page" loop className="grid gap-2">
           <div className="relative">
             <MagnifyingGlass
               size={20}
@@ -127,8 +105,8 @@ export function CommandMenu({ showHabits }: { showHabits: boolean }) {
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Search or jump to"
-              aria-label="Search or jump to"
+              placeholder="Go to"
+              aria-label="Search or go to a page"
               className="field pl-12"
             />
           </div>
@@ -136,66 +114,26 @@ export function CommandMenu({ showHabits }: { showHabits: boolean }) {
             <Command.Empty className="px-3 py-6 text-center type-body text-fg-2">
               Nothing matches.
             </Command.Empty>
-
             <Group heading="Go to">
-              {destinations.map((key) => (
+              {destinations.map(({ key, keywords }) => (
                 <Item
                   key={key}
                   feature={key}
-                  shortcut={["G", goKeyFor[key].toUpperCase()]}
+                  keywords={keywords}
+                  shortcut={goKeyFor[key] ? ["G", goKeyFor[key]!.toUpperCase()] : undefined}
                   onSelect={() => go(features[key].href)}
                 >
                   {features[key].label}
                 </Item>
               ))}
             </Group>
-
-            <Group heading="Create">
-              <Item icon={Plus} keywords={["quest", "habit"]} onSelect={() => go("/dashboard/quests#new-quest")}>
-                New quest
-              </Item>
-              <Item icon={Notebook} keywords={["journal"]} onSelect={() => go("/dashboard/journal")}>
-                Write today&apos;s entry
-              </Item>
-              <Item icon={PencilSimple} keywords={["story", "weekly"]} onSelect={() => go("/dashboard/story#write")}>
-                Write weekly story
-              </Item>
-            </Group>
-
             <Group heading="Assistant">
-              <Item icon={Sparkle} shortcut={["A"]} onSelect={() => assistant("coach")}>
-                Ask coach
-              </Item>
-              {showHabits ? (
-                <Item icon={ListChecks} onSelect={() => assistant("habits")}>
-                  Ask habit agent
-                </Item>
-              ) : null}
-            </Group>
-
-            <Group heading="Preferences">
-              <Item icon={Sun} keywords={["theme"]} onSelect={() => { setTheme("light"); close(); }}>
-                Use light theme
-              </Item>
-              <Item icon={Moon} keywords={["theme"]} onSelect={() => { setTheme("dark"); close(); }}>
-                Use dark theme
-              </Item>
-              <Item icon={SunHorizon} keywords={["theme", "system"]} onSelect={() => { setTheme("system"); close(); }}>
-                Match system theme
-              </Item>
-              <Item icon={Keyboard} shortcut={["?"]} onSelect={() => open("shortcuts")}>
-                Keyboard shortcuts
-              </Item>
-            </Group>
-
-            <Group heading="Account">
-              <Item icon={SignOut} onSelect={() => signOutRef.current?.requestSubmit()}>
-                Sign out
+              <Item icon={Sparkle} shortcut={["A"]} keywords={["coach", "ask", "help"]} onSelect={() => open("assistant")}>
+                Ask the assistant
               </Item>
             </Group>
           </Command.List>
         </Command>
-        <form ref={signOutRef} action={signOutAction} className={cn("hidden")} />
       </TrayContent>
     </Tray>
   );

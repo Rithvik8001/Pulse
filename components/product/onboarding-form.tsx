@@ -88,14 +88,14 @@ export function OnboardingForm() {
     <Page>
       <PageHeader>
         <PageTitle>Try Pulse</PageTitle>
-        <PageLead>Set up a character and a few quests. Nothing is saved.</PageLead>
+        <PageLead>Pick who you are becoming and a few habits. Nothing is saved.</PageLead>
       </PageHeader>
 
       <form onSubmit={onSubmit} className="grid gap-8">
         <Field
           label="I am a"
-          error={submitted && character.trim().length === 0 ? "Add a character to continue." : undefined}
-          hint="One word or a short phrase, like writer or early riser."
+          error={submitted && character.trim().length === 0 ? "Add who you are becoming to continue." : undefined}
+          hint="A word or short phrase, like writer or early riser."
         >
           <Input
             value={character}
@@ -110,11 +110,11 @@ export function OnboardingForm() {
         </Field>
 
         <Section
-          title="Quests that prove it"
+          title="Habits that show it"
           action={
             quests.length < 3 ? (
               <Button variant="text" size="sm" onClick={addQuest}>
-                Add another quest
+                Add another habit
               </Button>
             ) : null
           }
@@ -123,11 +123,11 @@ export function OnboardingForm() {
             {quests.map((quest, index) => (
               <li key={index} className="flex items-end gap-2">
                 <Field
-                  label={`Quest ${index + 1}`}
+                  label={`Habit ${index + 1}`}
                   className="flex-1"
                   error={
                     submitted && cleanQuests.length === 0 && index === quests.length - 1
-                      ? "Add at least one quest to continue."
+                      ? "Add at least one habit to continue."
                       : undefined
                   }
                 >
@@ -141,7 +141,7 @@ export function OnboardingForm() {
                 </Field>
                 {quests.length > 1 ? (
                   <IconButton
-                    label={`Remove quest ${index + 1}`}
+                    label={`Remove habit ${index + 1}`}
                     icon={X}
                     onClick={() => removeQuest(index)}
                     className="mb-1"
@@ -152,10 +152,10 @@ export function OnboardingForm() {
           </ul>
         </Section>
 
-        <SummaryBar caption={`${cleanQuests.length} of 3 quests`}>
+        <SummaryBar caption={`${cleanQuests.length} of 3 habits`}>
           {demoReady ? (
             <Button variant="text" onClick={resetDemo}>
-              Reset
+              Start over
             </Button>
           ) : null}
           <Button type="submit" variant="primary">
@@ -171,30 +171,30 @@ export function OnboardingForm() {
           {previewQuests.map((quest, index) => (
             <ActionRow
               key={`${quest}-${index}`}
-              leading={<FeatureChip feature="quests" />}
+              leading={<FeatureChip feature="habits" />}
               title={quest}
-              caption={demoReady ? "Checked in today" : "Not checked in yet"}
+              caption={demoReady ? "Checked in today" : "Not done yet today"}
               actions={demoReady ? <ProofOutcome outcome={index === 1 ? "pass" : "win"} /> : null}
             />
           ))}
         </RowList>
         <p className="type-small text-fg-2">
           {demoReady
-            ? "This is what your first day of proof looks like. Nothing was saved."
-            : "Press Preview to see a first day of proof."}
+            ? "This is your first day in Pulse. Nothing was saved."
+            : "Select Preview to see your first day."}
         </p>
       </Section>
 
       <HowItWorks
         steps={[
-          { title: "Choose your character", body: "One sentence about who you are becoming." },
-          { title: "Check in with wins", body: "Each day, mark each quest as a win or a pass." },
-          { title: "Watch your proof grow", body: "Weeks of check-ins become evidence." },
+          { title: "Say who you are becoming", body: "I am a writer, a runner, an early riser." },
+          { title: "Check in each day", body: "Mark each habit Done or Skipped. Skipping is allowed." },
+          { title: "Look back each week", body: "Pulse writes a short recap of what your days show." },
         ]}
       />
 
       <RelatedLinks>
-        <NavRow href="/sign-up" feature="today" title="Create an account" caption="Keep your proof for real." />
+        <NavRow href="/sign-up" feature="today" title="Create an account" caption="Keep your check-ins." />
       </RelatedLinks>
     </Page>
   );

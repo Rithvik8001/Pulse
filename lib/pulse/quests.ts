@@ -8,8 +8,8 @@ import { requireUserId } from "@/lib/pulse/dashboard";
 
 export const activeQuestLimit = 12;
 export const questTitleMaxLength = 96;
-const activeQuestLimitMessage = `Keep active Quests to ${activeQuestLimit} or fewer.`;
-const restoreActiveQuestLimitMessage = `Archive another Quest before restoring this one. The active limit is ${activeQuestLimit}.`;
+const activeQuestLimitMessage = `You can have up to ${activeQuestLimit} active habits. Archive one to add another.`;
+const restoreActiveQuestLimitMessage = `You have ${activeQuestLimit} active habits. Archive one before restoring this one.`;
 
 export type ManagedQuest = {
   id: string;
@@ -104,7 +104,7 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
   if (!character) {
     return {
       status: "error",
-      message: "Create your Character before adding Quests.",
+      message: "Finish setting up Pulse before adding habits.",
     };
   }
 
@@ -164,7 +164,7 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
 
   return {
     status: "success",
-    message: "Quest added.",
+    message: "Habit added.",
   };
 }
 
@@ -195,13 +195,13 @@ export async function updateQuestTitle(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not find that Quest for your account.",
+      message: "This habit could not be found. Reload the page and try again.",
     };
   }
 
   return {
     status: "success",
-    message: "Quest updated.",
+    message: "Habit renamed.",
   };
 }
 
@@ -232,7 +232,7 @@ export async function moveQuest(
   if (!currentQuest || !targetQuest) {
     return {
       status: "error",
-      message: "That Quest cannot move any further.",
+      message: "This habit cannot move further in that direction.",
     };
   }
 
@@ -263,7 +263,7 @@ export async function moveQuest(
 
   return {
     status: "success",
-    message: "Quest moved.",
+    message: "Habit moved.",
   };
 }
 
@@ -276,7 +276,7 @@ export async function removeQuest(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not find that Quest for your account.",
+      message: "This habit could not be found. Reload the page and try again.",
     };
   }
 
@@ -287,7 +287,7 @@ export async function removeQuest(
 
     return {
       status: "success",
-      message: "Quest deleted.",
+      message: "Habit deleted.",
     };
   }
 
@@ -302,7 +302,7 @@ export async function removeQuest(
 
   return {
     status: "success",
-    message: "Quest archived. Your Proof stayed intact.",
+    message: "Habit archived. Its check-ins are still in your history.",
   };
 }
 
@@ -331,13 +331,13 @@ export async function archiveQuest(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not archive that active Quest.",
+      message: "This habit could not be archived. Reload the page and try again.",
     };
   }
 
   return {
     status: "success",
-    message: "Quest archived. Your Proof stayed intact.",
+    message: "Habit archived. Its check-ins are still in your history.",
   };
 }
 
@@ -350,14 +350,14 @@ export async function deleteQuestIfZeroProof(
   if (!quest) {
     return {
       status: "error",
-      message: "We could not find that Quest for your account.",
+      message: "This habit could not be found. Reload the page and try again.",
     };
   }
 
   if (quest.checkInCount > 0) {
     return {
       status: "error",
-      message: "This Quest has Proof, so it can be archived but not deleted.",
+      message: "This habit has check-ins, so you can archive it but not delete it.",
     };
   }
 
@@ -367,7 +367,7 @@ export async function deleteQuestIfZeroProof(
 
   return {
     status: "success",
-    message: "Quest deleted.",
+    message: "Habit deleted.",
   };
 }
 
@@ -415,7 +415,7 @@ export async function restoreQuest(
     if (result === "missing") {
       return {
         status: "error",
-        message: "We could not restore that Quest.",
+        message: "This habit could not be restored. Reload the page and try again.",
       };
     }
   } catch (error) {
@@ -431,7 +431,7 @@ export async function restoreQuest(
 
   return {
     status: "success",
-    message: "Quest restored.",
+    message: "Habit restored.",
   };
 }
 
@@ -441,11 +441,11 @@ function normalizeQuestTitle(value: string) {
 
 function validateQuestTitle(title: string) {
   if (!title) {
-    return "Add a Quest title before saving.";
+    return "Name the habit before saving.";
   }
 
   if (title.length > questTitleMaxLength) {
-    return `Keep Quest titles under ${questTitleMaxLength} characters.`;
+    return `Keep habit names to ${questTitleMaxLength} characters or fewer.`;
   }
 
   return null;

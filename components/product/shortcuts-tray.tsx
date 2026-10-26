@@ -8,7 +8,7 @@ const groups: { title: string; rows: { keys: string[][]; label: string }[] }[] =
   {
     title: "Anywhere",
     rows: [
-      { keys: [["⌘", "K"], ["/"]], label: "Search or jump to" },
+      { keys: [["⌘", "K"], ["/"]], label: "Search or go to a page" },
       { keys: [["?"]], label: "Keyboard shortcuts" },
       { keys: [["A"]], label: "Open the assistant" },
       { keys: [["Esc"]], label: "Close a tray or menu" },
@@ -18,12 +18,10 @@ const groups: { title: string; rows: { keys: string[][]; label: string }[] }[] =
     title: "Go to",
     rows: [
       { keys: [["G", "T"]], label: "Today" },
-      { keys: [["G", "Q"]], label: "Quests" },
-      { keys: [["G", "P"]], label: "Proof" },
+      { keys: [["G", "H"]], label: "Habits" },
+      { keys: [["G", "Y"]], label: "History" },
+      { keys: [["G", "R"]], label: "Review" },
       { keys: [["G", "J"]], label: "Journal" },
-      { keys: [["G", "S"]], label: "Stats" },
-      { keys: [["G", "I"]], label: "Identity" },
-      { keys: [["G", "Y"]], label: "Story" },
       { keys: [["G", ","]], label: "Settings" },
     ],
   },

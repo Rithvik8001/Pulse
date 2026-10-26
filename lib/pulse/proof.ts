@@ -164,14 +164,14 @@ export async function updateProofEntry(
   if (!cleanCheckInId || !cleanOutcome) {
     return {
       status: "error",
-      message: "Choose Win or Pass before saving Proof.",
+      message: "Choose Done or Skipped before saving.",
     };
   }
 
   if (cleanNote && cleanNote.length > noteMaxLength) {
     return {
       status: "error",
-      message: `Keep Proof notes under ${noteMaxLength} characters.`,
+      message: `Keep the note to ${noteMaxLength} characters or fewer.`,
     };
   }
 
@@ -190,13 +190,13 @@ export async function updateProofEntry(
   if (!updated) {
     return {
       status: "error",
-      message: "We could not find that Proof for your account.",
+      message: "This check-in could not be found. Reload the page and try again.",
     };
   }
 
   return {
     status: "success",
-    message: "Proof updated.",
+    message: "Check-in updated.",
   };
 }
 
@@ -209,7 +209,7 @@ export async function deleteProofEntry(
   if (!cleanCheckInId) {
     return {
       status: "error",
-      message: "We could not find that Proof for your account.",
+      message: "This check-in could not be found. Reload the page and try again.",
     };
   }
 
@@ -223,13 +223,13 @@ export async function deleteProofEntry(
   if (!deleted) {
     return {
       status: "error",
-      message: "We could not find that Proof for your account.",
+      message: "This check-in could not be found. Reload the page and try again.",
     };
   }
 
   return {
     status: "success",
-    message: "Proof deleted.",
+    message: "Check-in deleted.",
   };
 }
 

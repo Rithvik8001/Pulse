@@ -21,7 +21,7 @@ describe("email templates", () => {
     assert.match(html, /unsubscribe\?token=abc/);
   });
 
-  it("renders weekly digest with Proof counts and Story CTA", () => {
+  it("renders weekly digest with check-in counts and recap CTA", () => {
     const html = renderToStaticMarkup(
       createElement(WeeklyDigestEmail, {
         characterName: "Runner",
@@ -34,15 +34,15 @@ describe("email templates", () => {
         storyTitle: "The Steady Week",
         storySummary: "Small actions kept showing up.",
         dashboardUrl: "https://pulse.example/dashboard",
-        storyUrl: "https://pulse.example/dashboard/story",
+        storyUrl: "https://pulse.example/dashboard/review",
         unsubscribeUrl: "https://pulse.example/api/email/unsubscribe?token=abc",
       }),
     );
 
-    assert.match(html, /Runner&#x27;s week in Proof/);
-    assert.match(html, /4 pieces/);
+    assert.match(html, /Runner&#x27;s week/);
+    assert.match(html, /checked in 4 times/);
     assert.match(html, /Morning run/);
     assert.match(html, /The Steady Week/);
-    assert.match(html, /https:\/\/pulse\.example\/dashboard\/story/);
+    assert.match(html, /https:\/\/pulse\.example\/dashboard\/review/);
   });
 });

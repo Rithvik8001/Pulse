@@ -14,7 +14,8 @@ import { ProofOutcome } from "@/components/product/proof-outcome";
 import { Button } from "@/components/ui/button";
 import { ConfirmTray } from "@/components/ui/confirm-tray";
 import { FeatureChip } from "@/components/ui/feature-chip";
-import { DateInput, Field, Textarea } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Field, Textarea } from "@/components/ui/field";
 import { IconButton } from "@/components/ui/icon-button";
 import { Notice } from "@/components/ui/notice";
 import { ActionRow, NavRow, RowList } from "@/components/ui/row";
@@ -30,9 +31,9 @@ import { cn } from "@/lib/utils";
 const initialFormState: JournalFormState = { status: "idle" };
 
 const prompts = [
-  "What proof did I notice?",
-  "Where did today drift?",
-  "What is one small next move?",
+  "What went well?",
+  "What got in the way?",
+  "What is one small next step?",
 ];
 
 function offsetLocalDate(localDate: string, days: number) {
@@ -128,11 +129,14 @@ export function JournalEditor({
             onClick={() => goToDate(offsetLocalDate(selectedDate, -1))}
           />
           <Field label="Date" labelHidden className="w-48">
-            <DateInput
+            <DatePicker
               value={selectedDate}
+              today={today}
               max={today}
+              locale={locale}
+              marked={history.map((entry) => entry.localDate)}
               className="h-control-sm"
-              onChange={(event) => event.target.value && goToDate(event.target.value)}
+              onChange={goToDate}
             />
           </Field>
           <IconButton
@@ -144,7 +148,7 @@ export function JournalEditor({
           />
           {selectedDate !== today ? (
             <Button variant="text" size="sm" onClick={() => goToDate(today)}>
-              Today
+              Go to today
             </Button>
           ) : null}
         </div>
@@ -173,7 +177,7 @@ export function JournalEditor({
               rows={6}
               value={draft}
               maxLength={journalBodyMaxLength}
-              placeholder="What happened today?"
+              placeholder="Walked before work and it set up the morning."
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
@@ -193,7 +197,7 @@ export function JournalEditor({
                   </Button>
                 }
                 title="Delete this entry?"
-                body={`The entry for ${formatDay(selectedEntry.localDate)} is removed for good.`}
+                body={`The entry for ${formatDay(selectedEntry.localDate)} is deleted. This cannot be undone.`}
                 confirmLabel="Delete entry"
                 pendingLabel="Deleting"
                 formAction={deleteJournalEntryAction}
@@ -207,13 +211,13 @@ export function JournalEditor({
         </form>
       </div>
 
-      <Section title="Proof from this day">
+      <Section title="Check-ins on this day">
         {selectedProof.length > 0 ? (
           <RowList>
             {selectedProof.map((proof) => (
               <ActionRow
                 key={proof.id}
-                leading={<FeatureChip feature="proof" />}
+                leading={<FeatureChip feature="history" />}
                 title={proof.questTitle}
                 caption={proof.note ?? "No note"}
                 actions={<ProofOutcome outcome={proof.outcome} />}
@@ -221,13 +225,13 @@ export function JournalEditor({
             ))}
           </RowList>
         ) : (
-          <Notice action={{ label: "Go to today", href: "/dashboard" }}>
-            No check-ins on this day. Write anyway, or check in first.
+          <Notice action={selectedDate === today ? { label: "Go to today", href: "/dashboard" } : undefined}>
+            No check-ins on this day.
           </Notice>
         )}
       </Section>
 
-      <Section title="Last 30 days">
+      <Section title="Past entries">
         {history.length > 0 ? (
           <RowList>
             {history.map((entry) => (
@@ -242,7 +246,7 @@ export function JournalEditor({
             ))}
           </RowList>
         ) : (
-          <Notice>Save today&apos;s entry to start your history.</Notice>
+          <Notice>Entries you save show here.</Notice>
         )}
       </Section>
     </div>

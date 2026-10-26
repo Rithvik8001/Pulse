@@ -257,12 +257,12 @@ export function buildStatsSummary(
     passCount,
     overallWinRate: toWinRate(winCount, totalProof),
     strongestQuest: strongest
-      ? toInsightQuest(strongest, "Best win rate with enough recent Proof.")
+      ? toInsightQuest(strongest, "Highest done rate with enough recent check-ins.")
       : null,
     needsAttentionQuest: lowWinRate
-      ? toInsightQuest(lowWinRate, "Lowest win rate with enough recent Proof.")
+      ? toInsightQuest(lowWinRate, "Lowest done rate with enough recent check-ins.")
       : staleActive
-        ? toInsightQuest(staleActive, "No Proof in this window yet.")
+        ? toInsightQuest(staleActive, "No check-ins in this period yet.")
         : null,
     activeQuestCount,
   };

@@ -28,7 +28,7 @@ export async function confirmHabitAgentAction(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "Habit Agent could not confirm that action.",
+      message: "This change could not be made. Ask the assistant again.",
     };
   }
 
@@ -59,8 +59,8 @@ export async function confirmHabitAgentAction(
 
 function revalidateHabitAgentSurfaces() {
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/quests");
-  revalidatePath("/dashboard/proof");
-  revalidatePath("/dashboard/stats");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/habits");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/review");
 }

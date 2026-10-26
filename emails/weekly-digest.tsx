@@ -36,33 +36,30 @@ export default function WeeklyDigestEmail({
 }: WeeklyDigestEmailProps) {
   return (
     <PulseEmailLayout
-      preview={`${totalProof} pieces of Proof from ${weekLabel}.`}
-      title={`${characterName}'s week in Proof`}
+      preview={`You checked in ${totalProof} ${totalProof === 1 ? "time" : "times"} from ${weekLabel}.`}
+      title={`${characterName}'s week`}
       footer={<UnsubscribeFooter href={unsubscribeUrl} />}
     >
       <EmailText>
-        Last week, you logged {totalProof} piece{totalProof === 1 ? "" : "s"} of
-        Proof: {winCount} Win{winCount === 1 ? "" : "s"} and {passCount} Pass
-        {passCount === 1 ? "" : "es"}.
+        Last week you checked in {totalProof}{" "}
+        {totalProof === 1 ? "time" : "times"}: {winCount} done and {passCount}{" "}
+        skipped.
       </EmailText>
       {strongestQuest ? (
-        <EmailText>Strongest signal: {strongestQuest}.</EmailText>
+        <EmailText>Most consistent: {strongestQuest}.</EmailText>
       ) : null}
       {needsAttentionQuest ? (
-        <EmailText>Worth attention: {needsAttentionQuest}.</EmailText>
+        <EmailText>Worth a look: {needsAttentionQuest}.</EmailText>
       ) : null}
       {storyTitle && storySummary ? (
         <EmailText>
-          Your latest Story, &quot;{storyTitle}&quot;, noticed this:{" "}
-          {storySummary}
+          Your weekly recap, &quot;{storyTitle}&quot;, says: {storySummary}
         </EmailText>
       ) : (
-        <EmailText>
-          You have enough context to reflect on the week whenever you are ready.
-        </EmailText>
+        <EmailText>Your weekly recap is ready to write when you are.</EmailText>
       )}
       <EmailButton href={storyTitle ? storyUrl : dashboardUrl}>
-        {storyTitle ? "Read your Story" : "Open Pulse"}
+        {storyTitle ? "Read your recap" : "Open Pulse"}
       </EmailButton>
     </PulseEmailLayout>
   );

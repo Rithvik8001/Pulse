@@ -2,7 +2,7 @@ import { Check, Minus } from "@phosphor-icons/react/dist/ssr";
 
 import { cn } from "@/lib/utils";
 
-/** Win is ok with a bold check. Pass is a neutral, honest choice, never a failure. */
+/** Done is ok with a bold check. Skipped is a neutral, honest choice, never a failure. */
 export function ProofOutcome({
   outcome,
   className,
@@ -24,7 +24,7 @@ export function ProofOutcome({
       ) : (
         <Minus size={16} aria-hidden />
       )}
-      {win ? "Win" : "Pass"}
+      {win ? "Done" : "Skipped"}
     </span>
   );
 }

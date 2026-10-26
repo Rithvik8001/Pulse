@@ -24,7 +24,7 @@ function toFormState(result: JournalMutationResult): JournalFormState {
 function revalidateJournalSurfaces() {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/journal");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/review");
 }
 
 export async function saveJournalEntryAction(

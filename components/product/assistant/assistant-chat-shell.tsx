@@ -5,7 +5,6 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import type { Icon } from "@phosphor-icons/react";
 
 import { AssistantMessage } from "@/components/product/assistant/assistant-message";
 import {
@@ -15,11 +14,24 @@ import {
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
 import { Button } from "@/components/ui/button";
-import { FeatureChip } from "@/components/ui/feature-chip";
-import type { Feature } from "@/components/ui/features";
 import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { toast } from "@/components/ui/toast";
+
+/** API routes answer errors as JSON; show only the message. */
+function errorText(error: Error) {
+  const raw = error.message?.trim();
+  if (!raw) return "The assistant could not answer. Try again.";
+  if (raw.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(raw) as { error?: unknown };
+      if (typeof parsed.error === "string" && parsed.error) return parsed.error;
+    } catch {
+      // fall through
+    }
+  }
+  return raw;
+}
 
 export type AssistantSession = {
   clearError: () => void;
@@ -31,9 +43,7 @@ export type AssistantSession = {
   messages: UIMessage[];
   regenerate: () => void;
   sendMessage: (message: { text: string }) => void;
-  setConfirmations: React.Dispatch<
-    React.SetStateAction<Record<string, ConfirmationState>>
-  >;
+  setConfirmations: React.Dispatch<React.SetStateAction<Record<string, ConfirmationState>>>;
   setInput: (value: string) => void;
   setMessages: (messages: UIMessage[]) => void;
   startConfirming: (callback: () => void) => void;
@@ -42,39 +52,17 @@ export type AssistantSession = {
 
 export type AssistantPaneConfig = {
   api: string;
-  feature: Feature;
-  emptyDescription: string;
-  emptyIcon: Icon;
-  emptyTitle: string;
-  inputPlaceholder: string;
-  label: string;
-  mutationNotice: string;
   parseProposal: (output: unknown) => ParsedProposal | null;
   proposalPendingText: string;
-  starterPrompts: string[];
-  streamingText: string;
 };
 
 export function useAssistantChat(api: string): AssistantSession {
   const [input, setInput] = useState("");
-  const [confirmations, setConfirmations] = useState<
-    Record<string, ConfirmationState>
-  >({});
+  const [confirmations, setConfirmations] = useState<Record<string, ConfirmationState>>({});
   const [isConfirming, startConfirming] = useTransition();
   const transport = useMemo(() => new DefaultChatTransport({ api }), [api]);
-  const {
-    clearError,
-    error,
-    messages,
-    regenerate,
-    sendMessage,
-    setMessages,
-    status,
-    stop,
-  } = useChat({
-    transport,
-    experimental_throttle: 80,
-  });
+  const { clearError, error, messages, regenerate, sendMessage, setMessages, status, stop } =
+    useChat({ transport, experimental_throttle: 80 });
 
   return {
     clearError,
@@ -98,24 +86,24 @@ export function AssistantPane({
   config,
   confirmAction,
   session,
+  empty,
+  onReset,
 }: {
   config: AssistantPaneConfig;
-  confirmAction: (
-    action: ProposalAction,
-  ) => Promise<{ status: "success" | "error"; message: string }>;
+  confirmAction: (action: ProposalAction) => Promise<{ status: "success" | "error"; message: string }>;
   session: AssistantSession;
+  empty: React.ReactNode;
+  onReset: () => void;
 }) {
   const router = useRouter();
   const hasMessages = session.messages.length > 0;
   const logRef = React.useRef<HTMLDivElement>(null);
 
-  // A proposal waiting on the user takes the primary slot from Send.
+  // A proposal waiting on the person takes the primary slot from Send.
   const awaitingConfirmation = session.messages.some((message) =>
     message.parts.some(
       (part) =>
-        isToolPart(part) &&
-        part.state === "output-available" &&
-        !session.confirmations[part.toolCallId],
+        isToolPart(part) && part.state === "output-available" && !session.confirmations[part.toolCallId],
     ),
   );
 
@@ -126,22 +114,12 @@ export function AssistantPane({
     el.scrollTop = el.scrollHeight;
   }, [hasMessages, session.messages, session.isStreaming]);
 
-  function submitPrompt(prompt: string) {
-    void session.sendMessage({ text: prompt });
-  }
-
   function submitMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = session.input.trim();
     if (!text || session.isStreaming) return;
     session.setInput("");
     void session.sendMessage({ text });
-  }
-
-  function clearChat() {
-    session.setMessages([]);
-    session.setConfirmations({});
-    session.clearError();
   }
 
   function confirmProposal(toolCallId: string, action: ProposalAction) {
@@ -165,10 +143,7 @@ export function AssistantPane({
   function cancelProposal(toolCallId: string) {
     session.setConfirmations((current) => ({
       ...current,
-      [toolCallId]: {
-        status: "canceled",
-        message: "Cancelled. Nothing was changed.",
-      },
+      [toolCallId]: { status: "canceled", message: "Cancelled. Nothing changed." },
     }));
   }
 
@@ -178,39 +153,16 @@ export function AssistantPane({
         ref={logRef}
         role="log"
         aria-live="polite"
-        aria-label={`${config.label} conversation`}
+        aria-label="Assistant conversation"
         className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"
       >
         {!hasMessages ? (
-          <div className="grid gap-4 py-1">
-            <div className="grid justify-items-center gap-3 text-center">
-              <FeatureChip feature={config.feature} size="lg" />
-              <div className="grid gap-1">
-                <h3 className="type-subhead">{config.emptyTitle}</h3>
-                <p className="mx-auto max-w-lead type-caption text-fg-2">
-                  {config.emptyDescription}
-                </p>
-              </div>
-            </div>
-            <ul className="grid list-none p-0 [&>*+*]:hairline">
-              {config.starterPrompts.map((prompt) => (
-                <li key={prompt}>
-                  <button
-                    type="button"
-                    onClick={() => submitPrompt(prompt)}
-                    className="-mx-3 flex min-h-control w-[calc(100%+1.5rem)] items-center rounded-row px-3 py-2.5 text-left type-body font-medium outline-none transition-colors duration-(--dur-1) hover:bg-fill"
-                  >
-                    {prompt}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          empty
         ) : (
           <div className="grid gap-4 py-1">
             <div className="flex justify-end">
-              <Button variant="text" size="xs" onClick={clearChat}>
-                Clear conversation
+              <Button variant="text" size="xs" onClick={onReset}>
+                Start over
               </Button>
             </div>
             {session.messages.map((message) => (
@@ -218,7 +170,7 @@ export function AssistantPane({
                 key={message.id}
                 confirmations={session.confirmations}
                 disabled={session.disabled}
-                feature={config.feature}
+                feature="assistant"
                 message={message}
                 parseProposal={config.parseProposal}
                 proposalPendingText={config.proposalPendingText}
@@ -228,7 +180,7 @@ export function AssistantPane({
             ))}
             {session.isStreaming ? (
               <p className="type-small text-fg-3" aria-live="polite">
-                {config.streamingText}
+                Thinking
               </p>
             ) : null}
           </div>
@@ -236,22 +188,19 @@ export function AssistantPane({
       </div>
 
       {session.error ? (
-        <Notice
-          tone="bad"
-          action={{ label: "Try again", onClick: () => void session.regenerate() }}
-        >
-          {session.error.message || `The ${config.label.toLowerCase()} could not respond.`}
+        <Notice tone="bad" action={{ label: "Try again", onClick: () => void session.regenerate() }}>
+          {errorText(session.error)}
         </Notice>
       ) : null}
 
       <form className="grid gap-3" onSubmit={submitMessage}>
-        <Field label={`Message ${config.label.toLowerCase()}`} labelHidden>
+        <Field label="Message the assistant" labelHidden>
           <Textarea
             autoGrow
             rows={2}
             className="max-h-40"
             disabled={session.isStreaming}
-            placeholder={config.inputPlaceholder}
+            placeholder="Ask about your habits, or ask to change one"
             value={session.input}
             onChange={(event) => session.setInput(event.target.value)}
             onKeyDown={(event) => {
@@ -263,18 +212,14 @@ export function AssistantPane({
           />
         </Field>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="type-small text-fg-3">{config.mutationNotice}</p>
+          <p className="type-small text-fg-3">Nothing changes until you confirm.</p>
           <div className="flex items-center gap-2">
             {session.isStreaming ? (
               <Button variant="secondary" size="sm" onClick={() => void session.stop()}>
                 Stop
               </Button>
             ) : (
-              <Button
-                type="submit"
-                variant={awaitingConfirmation ? "secondary" : "primary"}
-                size="sm"
-              >
+              <Button type="submit" variant={awaitingConfirmation ? "secondary" : "primary"} size="sm">
                 Send
               </Button>
             )}

@@ -85,8 +85,8 @@ export function PulseEmailLayout({
                 margin: "12px 0 0",
               }}
             >
-              Pulse helps you turn small actions into Proof of the person you
-              are becoming.
+              Pulse helps you see who you are becoming, one small check-in at a
+              time.
             </Text>
           </Section>
         </Container>

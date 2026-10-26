@@ -1,31 +1,10 @@
-"use client";
-
-import { Tip } from "@/components/ui/tooltip";
 import type { ProofHistoryDay } from "@/lib/pulse/dashboard";
 import { cn } from "@/lib/utils";
 
-function formatDay(localDate: string) {
-  const [y, m, d] = localDate.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  return date.toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC", // design-ok: a code value, not copy
-  });
-}
-
-function describe(day: ProofHistoryDay) {
-  if (day.totalCount === 0) return `${formatDay(day.localDate)}: no check-ins`;
-  const parts = [];
-  if (day.winCount) parts.push(`${day.winCount} ${day.winCount === 1 ? "win" : "wins"}`);
-  if (day.passCount) parts.push(`${day.passCount} ${day.passCount === 1 ? "pass" : "passes"}`);
-  return `${formatDay(day.localDate)}: ${parts.join(", ")}`;
-}
-
 /**
- * Weeks as columns, days as rows. Wins deepen the green, passes are the rule
- * grey, empty days the fill. The last day carries an ink ring.
+ * Weeks as columns, days as rows. Done days deepen the green, skipped-only
+ * days are the rule grey, empty days the fill. One summary for assistive
+ * tech; the cells themselves are not focusable.
  */
 export function ProofHistoryGrid({
   days,
@@ -35,19 +14,22 @@ export function ProofHistoryGrid({
   cellClassName?: string;
 }) {
   const last = days[days.length - 1]?.localDate;
+  const weeks = Math.ceil(days.length / 7);
+  const checkedIn = days.filter((d) => d.totalCount > 0).length;
+  const withDone = days.filter((d) => d.winCount > 0).length;
+
   return (
-    <div
-      role="img"
-      aria-label={`Check-ins by day over the last ${Math.ceil(days.length / 7)} weeks`}
-      className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1"
-    >
-      {days.map((day) => (
-        <Tip key={day.localDate} label={describe(day)} side="top">
-          <button
-            type="button"
-            aria-label={describe(day)}
+    <div className="grid gap-2">
+      <div
+        role="img"
+        aria-label={`Last ${weeks} weeks: checked in on ${checkedIn} of ${days.length} days, ${withDone} with at least one habit done.`}
+        className="grid grid-flow-col grid-rows-7 justify-start gap-1 overflow-x-auto pb-1"
+      >
+        {days.map((day) => (
+          <span
+            key={day.localDate}
             className={cn(
-              "size-4 rounded-cell outline-none transition-[outline-color] duration-(--dur-1) focus-visible:outline-brand-fg",
+              "size-4 rounded-cell",
               day.winCount >= 3 && "bg-ok",
               day.winCount === 2 && "bg-ok opacity-(--soft)",
               day.winCount === 1 && "bg-ok opacity-(--muted)",
@@ -57,8 +39,9 @@ export function ProofHistoryGrid({
               cellClassName,
             )}
           />
-        </Tip>
-      ))}
+        ))}
+      </div>
+      <p className="type-small text-fg-2">Darker squares mean more habits done that day.</p>
     </div>
   );
 }

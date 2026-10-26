@@ -6,7 +6,7 @@ import { getEmailPreferenceRow } from "@/app/dashboard/_data";
 import { ShortcutsButton } from "@/components/product/settings/shortcuts-button";
 import { ThemeControl } from "@/components/product/settings/theme-control";
 import { Notice } from "@/components/ui/notice";
-import { Breadcrumb, Page, PageHeader, PageTitle } from "@/components/ui/page";
+import { Breadcrumb, Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
 import { DetailRow, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -42,13 +42,14 @@ export default async function SettingsPage() {
       <PageHeader>
         <Breadcrumb items={[{ href: "/dashboard", label: "Today" }]} />
         <PageTitle>Settings</PageTitle>
+        <PageLead>Appearance, region, email and your account.</PageLead>
       </PageHeader>
 
       <Section title="Appearance">
         <RowList>
           <DetailRow
             label="Theme"
-            caption="Follows your device by default."
+            caption="Matches your device unless you choose Light or Dark."
             control={
               <div className="w-60 max-w-full">
                 <ThemeControl />
@@ -71,14 +72,16 @@ export default async function SettingsPage() {
         <RowList>
           <DetailRow
             label="Product emails"
+            caption="Welcome and occasional updates"
             control={<Value>{preference?.productEmailsEnabled ? "On" : "Off"}</Value>}
           />
           <DetailRow
-            label="Weekly digest"
+            label="Weekly summary"
+            caption="A short email each week about your check-ins and recap"
             control={<Value>{preference?.weeklyDigestEnabled ? "On" : "Off"}</Value>}
           />
         </RowList>
-        <Notice>To stop emails, use the unsubscribe link in any Pulse email.</Notice>
+        <Notice>To stop emails, use the unsubscribe link at the bottom of any Pulse email.</Notice>
       </Section>
 
       <Section title="Keyboard">

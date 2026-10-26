@@ -16,19 +16,18 @@ export default function WelcomeEmail({
 }) {
   return (
     <PulseEmailLayout
-      preview="Your first Pulse setup is ready."
+      preview="Your habits are set up."
       title={`Welcome, ${characterName}.`}
       footer={<UnsubscribeFooter href={unsubscribeUrl} />}
     >
       <EmailText>
-        Your Character and first Quests are set. From here, each Win or Pass is
-        just Proof for the identity you are building.
+        Your habits are ready. Each day, open Pulse and mark each one done or
+        skipped. Skipping is fine. It keeps the record honest.
       </EmailText>
       <EmailText>
-        No streak pressure. No shame for missed days. Just honest evidence and a
-        small next action.
+        Once a week, Pulse writes a short recap of what your check-ins show.
       </EmailText>
-      <EmailButton href={dashboardUrl}>Go to dashboard</EmailButton>
+      <EmailButton href={dashboardUrl}>Check in today</EmailButton>
     </PulseEmailLayout>
   );
 }

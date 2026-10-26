@@ -31,11 +31,11 @@ describe("journal-core", () => {
       normalizeJournalBody("  Proof: showed up   \n\n\nNext: rest  "),
       "Proof: showed up\nNext: rest",
     );
-    assert.equal(validateJournalBody(""), "Write a reflection before saving.");
+    assert.equal(validateJournalBody(""), "Write something before saving.");
     assert.equal(validateJournalBody("A steady day."), null);
     assert.equal(
       validateJournalBody("x".repeat(journalBodyMaxLength + 1)),
-      `Keep Journal entries under ${journalBodyMaxLength} characters.`,
+      `Keep entries to ${journalBodyMaxLength.toLocaleString()} characters or fewer.`,
     );
   });
 });

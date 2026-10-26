@@ -15,6 +15,9 @@ export type StoryPromptWeekRange = {
   end: string;
 };
 
+const SHARED_LINE =
+  'Words to use with the person: habit (not quest), check-in (not proof), done and skipped (not win and pass), weekly recap (not story), consistency (not momentum), "N days in a row" (not streak). Never use quest, proof, win, pass, momentum, character or streak in replies.';
+
 export function buildWeeklyStoryPrompt({
   characterName,
   journal = [],
@@ -31,29 +34,31 @@ export function buildWeeklyStoryPrompt({
   const proofLines = proof
     .map((entry) => {
       const note = entry.note ? ` Note: ${entry.note}` : "";
-      return `- ${entry.localDate}: ${entry.questTitle} = ${entry.outcome.toUpperCase()}.${note}`;
+      return `- ${entry.localDate}: ${entry.questTitle}: ${entry.outcome === "win" ? "done" : "skipped"}.${note}`;
     })
     .join("\n");
   const journalSection =
     journal.length > 0
-      ? `\n\nJournal reflections from this week:\n${journal
+      ? `\n\nJournal entries this week:\n${journal
           .map((entry) => `- ${entry.localDate}: ${entry.body}`)
           .join("\n")}`
       : "";
 
-  return `Write a Weekly Story for a Pulse user.
+  return `Write a weekly recap for a Pulse user.
 
-Character: ${characterName}
+${SHARED_LINE}
+
+Who they are becoming: ${characterName}
 Week: ${week.start} through ${week.end}
-Active quests: ${quests.join(", ")}
+Active habits: ${quests.join(", ")}
 
-Proof from this week:
-${proofLines || "- No Check-ins saved this week."}${journalSection}
+Check-ins this week:
+${proofLines || "- No check-ins this week."}${journalSection}
 
 Return a concise, emotionally intelligent reflection with:
 - a title that sounds like a weekly letter, not a metric report
 - a one-sentence summary
 - a letter body in second person, 2-4 short paragraphs
-- 2-4 pattern bullets grounded in the provided proof
-- one next-week quest recommendation that is small and concrete`;
+- 2-4 pattern bullets grounded in the check-ins and journal entries above
+- one small, concrete habit to try next week`;
 }

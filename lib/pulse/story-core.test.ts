@@ -28,9 +28,9 @@ describe("buildWeeklyStoryPrompt", () => {
       },
     });
 
-    assert.match(prompt, /Journal reflections from this week/);
+    assert.match(prompt, /Journal entries this week/);
     assert.match(prompt, /I wrote before checking my phone/);
-    assert.match(prompt, /Write = WIN/);
+    assert.match(prompt, /Write: done/);
   });
 
   it("still works when Journal is absent and Proof is empty", () => {
@@ -44,7 +44,7 @@ describe("buildWeeklyStoryPrompt", () => {
       },
     });
 
-    assert.match(prompt, /No Check-ins saved this week/);
-    assert.doesNotMatch(prompt, /Journal reflections from this week/);
+    assert.match(prompt, /No check-ins this week/);
+    assert.doesNotMatch(prompt, /Journal entries this week/);
   });
 });

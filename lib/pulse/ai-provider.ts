@@ -8,7 +8,7 @@ import { createOpenAI } from "@ai-sdk/openai";
  * for logging; it is stripped here.
  */
 export const missingAiKeyMessage =
-  "Add OPENAI_API_KEY to your environment before using AI features.";
+  "AI is not set up yet. Ask the person who runs Pulse to turn it on.";
 
 export function hasAiKey() {
   return Boolean(process.env.OPENAI_API_KEY);

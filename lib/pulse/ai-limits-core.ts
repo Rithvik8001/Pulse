@@ -70,7 +70,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
   features: {
     "pulse-coach": {
       feature: "pulse-coach",
-      label: "Pulse Coach",
+      label: "the assistant",
       period: "day",
       requestLimit: 5,
       tokenLimit: 60_000,
@@ -78,7 +78,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
     },
     "habit-agent": {
       feature: "habit-agent",
-      label: "Habit Agent",
+      label: "habit changes",
       period: "day",
       requestLimit: 3,
       tokenLimit: 30_000,
@@ -86,7 +86,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
     },
     "reword-suggestions": {
       feature: "reword-suggestions",
-      label: "reword suggestions",
+      label: "wording suggestions",
       period: "day",
       requestLimit: 5,
       tokenLimit: 10_000,
@@ -94,7 +94,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
     },
     "weekly-story": {
       feature: "weekly-story",
-      label: "Weekly Story",
+      label: "weekly recaps",
       period: "week",
       requestLimit: 2,
       tokenLimit: 25_000,
@@ -102,7 +102,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
     },
     "identity-timeline": {
       feature: "identity-timeline",
-      label: "Identity Timeline",
+      label: "statement refreshes",
       period: "week",
       requestLimit: 2,
       tokenLimit: 35_000,
@@ -222,7 +222,7 @@ export function validateAiChatMessages(messages: MinimalUiMessage[]) {
       if (part.text.length > aiChatMaxSingleUserTextChars) {
         return {
           valid: false as const,
-          message: `Keep each AI message under ${aiChatMaxSingleUserTextChars.toLocaleString()} characters.`,
+          message: `Keep each message to ${aiChatMaxSingleUserTextChars.toLocaleString()} characters or fewer.`,
         };
       }
 
@@ -233,7 +233,7 @@ export function validateAiChatMessages(messages: MinimalUiMessage[]) {
   if (totalUserTextChars > aiChatMaxTotalUserTextChars) {
     return {
       valid: false as const,
-      message: `This AI chat is too long. Start a fresh chat or keep the last request under ${aiChatMaxTotalUserTextChars.toLocaleString()} total characters.`,
+      message: `This conversation is too long. Select Start over to begin a new one.`,
     };
   }
 
@@ -377,12 +377,11 @@ function formatLimitMessage(
     hour: "numeric",
     minute: "2-digit",
   }).format(resetAt);
-  const scope =
-    reason === "global_requests" || reason === "global_tokens"
-      ? "Pulse's site-wide AI limit"
-      : `Your ${featureLimit.period === "week" ? "weekly" : "daily"} ${featureLimit.label} AI limit`;
-
-  return `${scope} was reached. Try again after ${resetLabel}.`;
+  if (reason === "global_requests" || reason === "global_tokens") {
+    return `Pulse has reached its AI limit for today. Try again after ${resetLabel}.`;
+  }
+  const window = featureLimit.period === "week" ? "this week's" : "today's";
+  return `You have reached ${window} limit for ${featureLimit.label}. Try again after ${resetLabel}.`;
 }
 
 function withEnvLimit(

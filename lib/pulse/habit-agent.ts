@@ -109,12 +109,12 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
   return {
     proposeCreateHabit: tool({
       description:
-        "Propose creating a new active habit. Use only for repeatable habits.",
+        "Propose adding a new active habit. Use only for repeatable habits.",
       inputSchema: z.object({
         title: z.string().min(1).max(96),
       }),
       execute: async ({ title }) =>
-        proposal("Create Habit", `Add "${title}" to active habits.`, {
+        proposal("Add habit", `Add "${title}" to your habits.`, {
           type: "createHabit",
           title,
         }),
@@ -129,7 +129,7 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
         const habit = findHabit(context, questId);
 
         return proposal(
-          "Update Habit",
+          "Rename habit",
           `Rename "${habit?.title ?? "this habit"}" to "${title}".`,
           { type: "updateHabit", questId, title },
         );
@@ -137,7 +137,7 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
     }),
     proposeArchiveHabit: tool({
       description:
-        "Propose archiving an active habit so it leaves daily Check-ins while preserving Proof.",
+        "Propose archiving an active habit so it leaves Today. Its check-ins are kept.",
       inputSchema: z.object({
         questId: z.string().min(1),
       }),
@@ -145,8 +145,8 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
         const habit = findHabit(context, questId);
 
         return proposal(
-          "Archive Habit",
-          `Archive "${habit?.title ?? "this habit"}" and keep its Proof intact.`,
+          "Archive habit",
+          `Archive "${habit?.title ?? "this habit"}". Its check-ins stay in your history.`,
           { type: "archiveHabit", questId },
         );
       },
@@ -160,15 +160,15 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
         const habit = findHabit(context, questId);
 
         return proposal(
-          "Restore Habit",
-          `Restore "${habit?.title ?? "this habit"}" to active habits. Active limit: ${activeQuestLimit}.`,
+          "Restore habit",
+          `Restore "${habit?.title ?? "this habit"}" to your active habits. You can have up to ${activeQuestLimit}.`,
           { type: "restoreHabit", questId },
         );
       },
     }),
     proposeDeleteHabit: tool({
       description:
-        "Propose deleting a habit only when it has zero Proof. If an active habit has Proof, this tool returns an archive proposal instead. If an archived habit has Proof, this tool returns no card.",
+        "Propose deleting a habit only when it has no check-ins. If an active habit has check-ins, this tool returns an archive proposal instead. If an archived habit has check-ins, this tool returns no card.",
       inputSchema: z.object({
         questId: z.string().min(1),
       }),

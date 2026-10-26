@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiModel, hasAiKey } from "@/lib/pulse/ai-provider";
+import { aiModel, hasAiKey, missingAiKeyMessage } from "@/lib/pulse/ai-provider";
 
 import { generateText, Output } from "ai";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
@@ -80,7 +80,7 @@ export type IdentityTimelineData =
 export class MissingIdentityEvidenceError extends Error {
   constructor() {
     super(
-      "Save at least one Proof, Journal entry, or Weekly Story before generating an Identity snapshot.",
+      "Check in or write a journal entry first, then refresh your statement.",
     );
     this.name = "MissingIdentityEvidenceError";
   }
@@ -88,9 +88,7 @@ export class MissingIdentityEvidenceError extends Error {
 
 export class MissingIdentityAiGatewayKeyError extends Error {
   constructor() {
-    super(
-      "Add OPENAI_API_KEY to your environment before generating.",
-    );
+    super(missingAiKeyMessage);
     this.name = "MissingIdentityAiGatewayKeyError";
   }
 }
@@ -349,7 +347,7 @@ export async function generateIdentitySnapshotForUser(
     stories: storyRows,
   });
   const system =
-    "You are Pulse, an identity-first reflection coach. Produce concise, grounded identity evidence summaries from provided habit data. Never shame, diagnose, or expose private implementation details.";
+    "You describe who a Pulse user is becoming, using only their habit data. Be brief and grounded. Never shame, diagnose, or mention how Pulse works internally.";
   const prompt = buildIdentityPrompt({
     characterName: character.name,
     checkIns: checkInInputs,

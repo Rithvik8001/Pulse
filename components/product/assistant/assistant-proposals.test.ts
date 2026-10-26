@@ -20,7 +20,7 @@ describe("assistant proposals", () => {
           localDate: "2026-06-23",
         },
       })?.actionLabel,
-      "Check-in",
+      "Check in",
     );
     assert.equal(
       parseHabitProposal({

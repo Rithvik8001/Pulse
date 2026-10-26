@@ -31,7 +31,7 @@ const copy = {
   },
   "sign-up": {
     title: "Create an account",
-    lead: "Start saving proof once your email is confirmed.",
+    lead: "Start checking in once your email is confirmed.",
     submit: "Create account",
     pending: "Creating account",
     footerText: "Already have an account?",

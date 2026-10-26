@@ -1,10 +1,9 @@
 "use client";
 
-import * as React from "react";
 import { useActionState, useMemo, useState } from "react";
 import { DotsThree, MagnifyingGlass, PencilSimple, Trash } from "@phosphor-icons/react";
 
-import { deleteProofAction, updateProofAction, type ProofFormState } from "@/app/dashboard/proof/actions";
+import { deleteProofAction, updateProofAction, type ProofFormState } from "@/app/dashboard/history/actions";
 import { ProofOutcome } from "@/components/product/proof-outcome";
 import { Button } from "@/components/ui/button";
 import { ConfirmTray } from "@/components/ui/confirm-tray";
@@ -17,12 +16,15 @@ import { ActionRow, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { SummaryBar } from "@/components/ui/summary-bar";
 import { Tray, TrayBody, TrayContent, TrayHeader } from "@/components/ui/tray";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
-import type { ProofEntry, ProofOutcome as Outcome, ProofQuestOption } from "@/lib/pulse/proof";
+import type { ProofEntry, ProofQuestOption } from "@/lib/pulse/proof";
 
 const initialFormState: ProofFormState = { status: "idle" };
+const pageSize = 30;
 
+/** Every check-in, searchable, 30 at a time. */
 export function ProofArchive({
   entries,
   questOptions,
@@ -33,66 +35,69 @@ export function ProofArchive({
   locale: string;
 }) {
   const [questFilter, setQuestFilter] = useState("all");
-  const [outcomeFilter, setOutcomeFilter] = useState<"all" | Outcome>("all");
   const [search, setSearch] = useState("");
+  const [limit, setLimit] = useState(pageSize);
   const [editing, setEditing] = useState<ProofEntry | null>(null);
   const [deleting, setDeleting] = useState<ProofEntry | null>(null);
 
-  const hasProof = entries.length > 0;
-  const hasFilters = questFilter !== "all" || outcomeFilter !== "all" || search.trim() !== "";
+  const hasFilters = questFilter !== "all" || search.trim() !== "";
 
-  const groups = useMemo(() => {
+  const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const filtered = entries.filter((entry) => {
+    return entries.filter((entry) => {
       if (questFilter !== "all" && entry.questId !== questFilter) return false;
-      if (outcomeFilter !== "all" && entry.outcome !== outcomeFilter) return false;
       if (!query) return true;
       return (
         entry.questTitle.toLowerCase().includes(query) ||
         (entry.note?.toLowerCase().includes(query) ?? false)
       );
     });
+  }, [entries, questFilter, search]);
+
+  const groups = useMemo(() => {
     const byDate = new Map<string, ProofEntry[]>();
-    for (const entry of filtered) {
+    for (const entry of filtered.slice(0, limit)) {
       const list = byDate.get(entry.localDate) ?? [];
       list.push(entry);
       byDate.set(entry.localDate, list);
     }
     return [...byDate.entries()];
-  }, [entries, outcomeFilter, questFilter, search]);
+  }, [filtered, limit]);
 
   function resetFilters() {
     setQuestFilter("all");
-    setOutcomeFilter("all");
     setSearch("");
+    setLimit(pageSize);
   }
 
   const formatDay = (date: string) =>
     formatLocalDateForLocale(date, locale, { weekday: "long", month: "short", day: "numeric" });
 
-  if (!hasProof) {
+  if (entries.length === 0) {
     return (
-      <Section title="Saved proof">
+      <Section title="All check-ins">
         <Notice action={{ label: "Go to today", href: "/dashboard" }}>
-          Check in on a quest to start your proof.
+          No check-ins yet. Check in on Today to start your history.
         </Notice>
       </Section>
     );
   }
 
+  const shown = Math.min(limit, filtered.length);
+
   return (
     <Section
-      title="Saved proof"
+      title="All check-ins"
       action={
         hasFilters ? (
           <Button variant="text" size="sm" onClick={resetFilters}>
-            Reset filters
+            Clear filters
           </Button>
         ) : null
       }
     >
-      <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr] sm:items-end">
-        <Field label="Search proof">
+      <div className="grid gap-4 sm:grid-cols-[2fr_1fr] sm:items-end">
+        <Field label="Search notes and habits">
           <div className="relative">
             <MagnifyingGlass
               size={20}
@@ -101,41 +106,35 @@ export function ProofArchive({
             />
             <Input
               type="search"
-              placeholder="Notes or quest names"
+              placeholder="morning"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setLimit(pageSize);
+              }}
               className="pl-12"
             />
           </div>
         </Field>
         <Select
-          label="Quest"
+          label="Habit"
           value={questFilter}
-          onValueChange={setQuestFilter}
+          onValueChange={(value) => {
+            setQuestFilter(value);
+            setLimit(pageSize);
+          }}
           options={[
-            { value: "all", label: "All quests" },
+            { value: "all", label: "All habits" },
             ...questOptions.map((quest) => ({
               value: quest.id,
               label: quest.status === "archived" ? `${quest.title} (archived)` : quest.title,
             })),
           ]}
         />
-        <Select
-          label="Outcome"
-          value={outcomeFilter}
-          onValueChange={(value) => setOutcomeFilter(value as "all" | Outcome)}
-          options={[
-            { value: "all", label: "All outcomes" },
-            { value: "win", label: "Wins" },
-            { value: "pass", label: "Passes" },
-          ]}
-        />
       </div>
 
       {groups.length === 0 ? (
-        <Notice action={{ label: "Reset filters", onClick: resetFilters }}>
-          No proof matches these filters.
-        </Notice>
+        <Notice action={{ label: "Clear filters", onClick: resetFilters }}>No check-ins match.</Notice>
       ) : (
         <div className="grid gap-6">
           {groups.map(([date, list]) => (
@@ -145,10 +144,10 @@ export function ProofArchive({
                 {list.map((entry) => (
                   <ActionRow
                     key={entry.id}
-                    leading={<FeatureChip feature="proof" />}
+                    leading={<FeatureChip feature="history" />}
                     title={entry.questTitle}
                     caption={
-                      [entry.questStatus === "archived" ? "Archived quest" : null, entry.note]
+                      [entry.questStatus === "archived" ? "Archived habit" : null, entry.note]
                         .filter(Boolean)
                         .join(" · ") || "No note"
                     }
@@ -174,17 +173,27 @@ export function ProofArchive({
         </div>
       )}
 
+      {filtered.length > shown ? (
+        <SummaryBar caption={`Showing ${shown} of ${filtered.length}`}>
+          <Button variant="secondary" onClick={() => setLimit((l) => l + pageSize)}>
+            Show {pageSize} more
+          </Button>
+        </SummaryBar>
+      ) : filtered.length > pageSize ? (
+        <p className="type-small text-fg-2">Showing all {filtered.length}.</p>
+      ) : null}
+
       <EditProofTray entry={editing} onClose={() => setEditing(null)} />
       <ConfirmTray
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
-        title="Delete this proof?"
+        title="Delete this check-in?"
         body={
           deleting
-            ? `The check-in for ${deleting.questTitle} on ${formatDay(deleting.localDate)} is removed for good.`
+            ? `The check-in for ${deleting.questTitle} on ${formatDay(deleting.localDate)} is deleted. This cannot be undone.`
             : ""
         }
-        confirmLabel="Delete proof"
+        confirmLabel="Delete check-in"
         pendingLabel="Deleting"
         formAction={deleteProofAction}
         hidden={{ checkInId: deleting?.id ?? "" }}
@@ -204,21 +213,19 @@ function EditProofTray({ entry, onClose }: { entry: ProofEntry | null; onClose: 
   return (
     <Tray open={entry !== null} onOpenChange={(o) => !o && onClose()}>
       <TrayContent>
-        <TrayHeader title="Edit proof" description="Change the outcome or the note." />
+        <TrayHeader title="Edit check-in" description="Change the outcome or the note. The date stays the same." />
         {entry ? (
           <form key={entry.id} action={action} className="grid gap-4">
             <input type="hidden" name="checkInId" value={entry.id} />
             <TrayBody>
-              <p className="type-body text-fg-2">
-                {entry.questTitle}. The date stays the same.
-              </p>
+              <p className="type-body text-fg-2">{entry.questTitle}. The date stays the same.</p>
               <Select
                 label="Outcome"
                 name="outcome"
                 defaultValue={entry.outcome}
                 options={[
-                  { value: "win", label: "Win" },
-                  { value: "pass", label: "Pass" },
+                  { value: "win", label: "Done" },
+                  { value: "pass", label: "Skipped" },
                 ]}
               />
               <Field label="Note" hint="Up to 240 characters.">
@@ -228,14 +235,14 @@ function EditProofTray({ entry, onClose }: { entry: ProofEntry | null; onClose: 
                   rows={3}
                   defaultValue={entry.note ?? ""}
                   maxLength={240}
-                  placeholder="What did this prove?"
+                  placeholder="Finished the first chapter"
                 />
               </Field>
               {state.status === "error" ? <Notice tone="bad">{state.message}</Notice> : null}
             </TrayBody>
             <div className="grid gap-2 pt-1">
               <SubmitButton variant="primary" fullWidth pendingLabel="Saving">
-                Save proof
+                Save check-in
               </SubmitButton>
               <Button variant="text" fullWidth onClick={onClose}>
                 Cancel

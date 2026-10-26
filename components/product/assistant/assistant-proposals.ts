@@ -134,15 +134,15 @@ function getHabitProposal(output: unknown): HabitAgentProposal | null {
 function formatCoachActionLabel(action: CoachAction["type"]) {
   switch (action) {
     case "createQuest":
-      return "Create";
+      return "Add";
     case "updateQuest":
-      return "Update";
+      return "Rename";
     case "archiveQuest":
       return "Archive";
     case "restoreQuest":
       return "Restore";
     case "saveCheckIn":
-      return "Check-in";
+      return "Check in";
     case "saveJournal":
       return "Journal";
   }
@@ -151,9 +151,9 @@ function formatCoachActionLabel(action: CoachAction["type"]) {
 function formatHabitActionLabel(action: HabitAgentAction["type"]) {
   switch (action) {
     case "createHabit":
-      return "Create";
+      return "Add";
     case "updateHabit":
-      return "Update";
+      return "Rename";
     case "archiveHabit":
       return "Archive";
     case "restoreHabit":

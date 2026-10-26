@@ -190,7 +190,7 @@ export async function upsertJournalEntry(
   if (!character) {
     return {
       status: "error",
-      message: "Create your Character before writing Journal entries.",
+      message: "Finish setting up Pulse before writing in your journal.",
     };
   }
 
@@ -214,7 +214,7 @@ export async function upsertJournalEntry(
 
   return {
     status: "success",
-    message: "Journal saved.",
+    message: "Entry saved.",
   };
 }
 
@@ -227,7 +227,7 @@ export async function deleteJournalEntry(
   if (!cleanEntryId) {
     return {
       status: "error",
-      message: "We could not find that Journal entry.",
+      message: "This entry could not be found. Reload the page and try again.",
     };
   }
 
@@ -244,12 +244,12 @@ export async function deleteJournalEntry(
   if (!deleted) {
     return {
       status: "error",
-      message: "We could not find that Journal entry.",
+      message: "This entry could not be found. Reload the page and try again.",
     };
   }
 
   return {
     status: "success",
-    message: "Journal deleted.",
+    message: "Entry deleted.",
   };
 }

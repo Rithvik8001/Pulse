@@ -11,7 +11,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 
-const primaryLinks: Feature[] = ["today", "quests", "proof", "journal"];
+const primaryLinks: Feature[] = ["today", "habits", "history", "review"];
 
 export function isCurrent(pathname: string, href: string) {
   return href === "/dashboard" ? pathname === href : pathname.startsWith(href);

@@ -26,8 +26,8 @@ function normalizeText(value: FormDataEntryValue | null) {
 
 function revalidateQuestSurfaces() {
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/quests");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/habits");
+  revalidatePath("/dashboard/review");
 }
 
 export async function createQuestAction(

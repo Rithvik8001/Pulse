@@ -49,7 +49,7 @@ export default async function DashboardLayout({
       </main>
       <RouteFocus />
       <NavTray />
-      <CommandMenu showHabits={showHabits} />
+      <CommandMenu />
       <ShortcutsTray />
       <AssistantTray showHabits={showHabits} />
     </ShellProvider>

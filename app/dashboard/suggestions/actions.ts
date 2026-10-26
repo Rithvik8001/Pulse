@@ -23,7 +23,7 @@ export async function getRewordOptionsAction(
   const questId = normalizeText(formData.get("questId"));
 
   if (!questId) {
-    return { status: "error", message: "Invalid Quest." };
+    return { status: "error", message: "This habit could not be found. Reload the page and try again." };
   }
 
   try {
@@ -38,7 +38,7 @@ export async function getRewordOptionsAction(
     }
     return {
       status: "error",
-      message: "Could not generate suggestions. Try again.",
+      message: "Wording suggestions did not load. Try again.",
     };
   }
 }
@@ -51,6 +51,6 @@ export async function applyRewordAction(formData: FormData) {
 
   await updateQuestTitle(questId, title);
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/quests");
-  revalidatePath("/dashboard/story");
+  revalidatePath("/dashboard/habits");
+  revalidatePath("/dashboard/review");
 }
