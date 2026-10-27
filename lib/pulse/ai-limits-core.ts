@@ -9,7 +9,8 @@ export type AiFeature =
   | "habit-agent"
   | "weekly-story"
   | "reword-suggestions"
-  | "identity-timeline";
+  | "identity-timeline"
+  | "journal-check-ins";
 
 export type AiLimitPeriod = "day" | "week";
 
@@ -108,6 +109,14 @@ export const defaultAiLimitConfig: AiLimitConfig = {
       tokenLimit: 35_000,
       maxOutputTokens: 1200,
     },
+    "journal-check-ins": {
+      feature: "journal-check-ins",
+      label: "check-ins from your journal",
+      period: "day",
+      requestLimit: 5,
+      tokenLimit: 20_000,
+      maxOutputTokens: 600,
+    },
   },
 };
 
@@ -149,6 +158,11 @@ export function getAiLimitConfig(env: EnvLike = process.env): AiLimitConfig {
         defaultAiLimitConfig.features["identity-timeline"],
         env.AI_IDENTITY_TIMELINE_WEEKLY_REQUEST_LIMIT,
         env.AI_IDENTITY_TIMELINE_WEEKLY_TOKEN_LIMIT,
+      ),
+      "journal-check-ins": withEnvLimit(
+        defaultAiLimitConfig.features["journal-check-ins"],
+        env.AI_JOURNAL_CHECK_INS_DAILY_REQUEST_LIMIT,
+        env.AI_JOURNAL_CHECK_INS_DAILY_TOKEN_LIMIT,
       ),
     },
   };

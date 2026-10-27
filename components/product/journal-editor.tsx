@@ -10,6 +10,7 @@ import {
   saveJournalEntryAction,
   type JournalFormState,
 } from "@/app/dashboard/journal/actions";
+import { JournalCheckIns } from "@/components/product/journal-check-ins";
 import { ProofOutcome } from "@/components/product/proof-outcome";
 import { Button } from "@/components/ui/button";
 import { ConfirmTray } from "@/components/ui/confirm-tray";
@@ -23,7 +24,7 @@ import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
 import { toast } from "@/components/ui/toast";
-import { journalBodyMaxLength } from "@/lib/pulse/journal-core";
+import { journalBodyMaxLength, normalizeJournalBody } from "@/lib/pulse/journal-core";
 import type { JournalEntrySummary, JournalProof } from "@/lib/pulse/journal";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
 import { cn } from "@/lib/utils";
@@ -210,6 +211,16 @@ export function JournalEditor({
           </SummaryBar>
         </form>
       </div>
+
+      <Section title="Check in from this entry">
+        <JournalCheckIns
+          key={selectedDate}
+          localDate={selectedDate}
+          dayLabel={formatDay(selectedDate)}
+          hasSavedEntry={Boolean(selectedEntry)}
+          isDirty={normalizeJournalBody(draft) !== (selectedEntry?.body ?? "")}
+        />
+      </Section>
 
       <Section title="Check-ins on this day">
         {selectedProof.length > 0 ? (

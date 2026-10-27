@@ -43,6 +43,7 @@ export default async function JournalPage({
       </PageHeader>
 
       <JournalEditor
+        key={data.selectedDate}
         history={data.history}
         selectedDate={data.selectedDate}
         today={dateContext.today}

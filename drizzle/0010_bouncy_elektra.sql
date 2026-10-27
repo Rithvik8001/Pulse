@@ -1,0 +1,4 @@
+ALTER TABLE "ai_usage_buckets" DROP CONSTRAINT "ai_usage_buckets_feature_check";--> statement-breakpoint
+ALTER TABLE "ai_usage_events" DROP CONSTRAINT "ai_usage_events_feature_check";--> statement-breakpoint
+ALTER TABLE "ai_usage_buckets" ADD CONSTRAINT "ai_usage_buckets_feature_check" CHECK ("ai_usage_buckets"."feature" in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins'));--> statement-breakpoint
+ALTER TABLE "ai_usage_events" ADD CONSTRAINT "ai_usage_events_feature_check" CHECK ("ai_usage_events"."feature" in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins'));

@@ -25,7 +25,8 @@ export type AiUsageFeature =
   | "habit-agent"
   | "weekly-story"
   | "reword-suggestions"
-  | "identity-timeline";
+  | "identity-timeline"
+  | "journal-check-ins";
 export type AiUsagePeriod = "day" | "week";
 export type AiUsageEventStatus =
   | "allowed"
@@ -498,7 +499,7 @@ export const aiUsageBuckets = pgTable(
     ),
     check(
       "ai_usage_buckets_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins')`,
     ),
     check(
       "ai_usage_buckets_period_check",
@@ -553,7 +554,7 @@ export const aiUsageEvents = pgTable(
     index("ai_usage_events_period_idx").on(table.period, table.periodStart),
     check(
       "ai_usage_events_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins')`,
     ),
     check(
       "ai_usage_events_status_check",

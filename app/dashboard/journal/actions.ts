@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  findJournalCheckIns,
+  saveJournalCheckIns,
+  type FindJournalCheckInsResult,
+  type SaveJournalCheckInsResult,
+} from "@/lib/pulse/journal-check-ins";
+import {
   deleteJournalEntry,
   upsertJournalEntry,
   type JournalMutationResult,
@@ -25,6 +31,25 @@ function revalidateJournalSurfaces() {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/journal");
   revalidatePath("/dashboard/review");
+}
+
+export async function findJournalCheckInsAction(
+  localDate: string,
+): Promise<FindJournalCheckInsResult> {
+  return findJournalCheckIns(localDate);
+}
+
+export async function saveJournalCheckInsAction(
+  input: unknown,
+): Promise<SaveJournalCheckInsResult> {
+  const result = await saveJournalCheckIns(input);
+
+  if (result.status === "success") {
+    revalidateJournalSurfaces();
+    revalidatePath("/dashboard/history");
+  }
+
+  return result;
 }
 
 export async function saveJournalEntryAction(
