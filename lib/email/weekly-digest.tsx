@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte } from "drizzle-orm";
 
 import WeeklyDigestEmail from "@/emails/weekly-digest";
 import { db } from "@/lib/db";
@@ -33,6 +33,7 @@ export type WeeklyDigestRunResult = {
 };
 
 type WeeklyDigestCandidate = {
+  preferenceId: string;
   userId: string;
   email: string;
   unsubscribeToken: string;
@@ -48,30 +49,43 @@ export async function sendWeeklyDigestBatch({
   now?: Date;
   limit?: number;
 } = {}): Promise<WeeklyDigestRunResult> {
-  const candidates = await getWeeklyDigestCandidates(limit);
   const result: WeeklyDigestRunResult = {
-    checked: candidates.length,
+    checked: 0,
     sent: 0,
     skipped: 0,
     errors: 0,
   };
+  let afterPreferenceId: string | null = null;
 
-  for (const candidate of candidates) {
-    const today = getLocalDateInTimeZone(now, candidate.timeZone);
-    const week = getPreviousWeekRange(today);
-    const sendResult = await sendWeeklyDigestForCandidate(candidate, week);
+  while (true) {
+    const candidates = await getWeeklyDigestCandidates(limit, afterPreferenceId);
+    result.checked += candidates.length;
 
-    if (sendResult === "sent") result.sent += 1;
-    if (sendResult === "skipped") result.skipped += 1;
-    if (sendResult === "error") result.errors += 1;
+    for (const candidate of candidates) {
+      const today = getLocalDateInTimeZone(now, candidate.timeZone);
+      const week = getPreviousWeekRange(today);
+      const sendResult = await sendWeeklyDigestForCandidate(candidate, week);
+
+      if (sendResult === "sent") result.sent += 1;
+      if (sendResult === "skipped") result.skipped += 1;
+      if (sendResult === "error") result.errors += 1;
+    }
+
+    if (candidates.length < limit) {
+      return result;
+    }
+
+    afterPreferenceId = candidates[candidates.length - 1].preferenceId;
   }
-
-  return result;
 }
 
-async function getWeeklyDigestCandidates(limit: number) {
+async function getWeeklyDigestCandidates(
+  limit: number,
+  afterPreferenceId: string | null,
+): Promise<WeeklyDigestCandidate[]> {
   return db
     .select({
+      preferenceId: emailPreferences.id,
       userId: emailPreferences.userId,
       email: emailPreferences.email,
       unsubscribeToken: emailPreferences.unsubscribeToken,
@@ -86,9 +100,10 @@ async function getWeeklyDigestCandidates(limit: number) {
       and(
         eq(emailPreferences.productEmailsEnabled, true),
         eq(emailPreferences.weeklyDigestEnabled, true),
+        afterPreferenceId ? gt(emailPreferences.id, afterPreferenceId) : undefined,
       ),
     )
-    .orderBy(asc(emailPreferences.createdAt))
+    .orderBy(asc(emailPreferences.id))
     .limit(limit)
     .then((rows) =>
       rows.map((row) => ({

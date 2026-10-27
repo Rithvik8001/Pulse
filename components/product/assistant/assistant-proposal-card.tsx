@@ -80,6 +80,12 @@ export function AssistantProposalCard({
         </div>
       </div>
 
+      {proposal.preview ? (
+        <blockquote className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-inner bg-bg p-3 type-small text-ink">
+          {proposal.preview}
+        </blockquote>
+      ) : null}
+
       {confirmation ? (
         <p
           aria-live="polite"

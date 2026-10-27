@@ -19,6 +19,7 @@ export type ParsedProposal = {
   action: ProposalAction;
   actionLabel: string;
   destructive: boolean;
+  preview: string | null;
 };
 
 export type ConfirmationState = {
@@ -39,6 +40,7 @@ export function parseCoachProposal(output: unknown): ParsedProposal | null {
     action: proposal.action,
     actionLabel: formatCoachActionLabel(proposal.action.type),
     destructive: false,
+    preview: getCoachActionPreview(proposal.action),
   };
 }
 
@@ -55,7 +57,14 @@ export function parseHabitProposal(output: unknown): ParsedProposal | null {
     action: proposal.action,
     actionLabel: formatHabitActionLabel(proposal.action.type),
     destructive: proposal.action.type === "deleteHabit",
+    preview: null,
   };
+}
+
+function getCoachActionPreview(action: CoachAction) {
+  if (action.type === "saveJournal") return action.body;
+  if (action.type === "saveCheckIn") return action.note?.trim() || null;
+  return null;
 }
 
 export function isToolPart(

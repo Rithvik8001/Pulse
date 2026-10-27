@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { syncUserSettingsAction } from "@/app/dashboard/settings/actions";
 
@@ -13,6 +14,9 @@ export function UserSettingsSync({
   locale,
   timeZone,
 }: UserSettingsSyncProps) {
+  const router = useRouter();
+  const refreshedRef = useRef(false);
+
   useEffect(() => {
     const resolved = Intl.DateTimeFormat().resolvedOptions();
     const browserTimeZone = resolved.timeZone;
@@ -29,8 +33,13 @@ export function UserSettingsSync({
     void syncUserSettingsAction({
       locale: browserLocale,
       timeZone: browserTimeZone,
+    }).then((result) => {
+      if (result.status === "success" && browserTimeZone !== timeZone && !refreshedRef.current) {
+        refreshedRef.current = true;
+        router.refresh();
+      }
     });
-  }, [locale, timeZone]);
+  }, [locale, router, timeZone]);
 
   return null;
 }

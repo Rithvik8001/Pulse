@@ -14,16 +14,7 @@ import type { DashboardQuest } from "@/lib/pulse/dashboard";
 
 type Outcome = "win" | "pass";
 
-function getBrowserLocalDate() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
-  const [localDate] = useState(() => getBrowserLocalDate());
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>(() =>
     Object.fromEntries(
       quests
@@ -46,7 +37,6 @@ export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
         <CheckInRow
           key={quest.id}
           activeOutcome={outcomes[quest.id] ?? null}
-          localDate={localDate}
           quest={quest}
           setQuestOutcome={setQuestOutcome}
         />
@@ -57,12 +47,10 @@ export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
 
 function CheckInRow({
   activeOutcome,
-  localDate,
   quest,
   setQuestOutcome,
 }: {
   activeOutcome: Outcome | null;
-  localDate: string;
   quest: DashboardQuest;
   setQuestOutcome: (questId: string, outcome: Outcome | null) => void;
 }) {
@@ -82,7 +70,6 @@ function CheckInRow({
 
     const formData = new FormData();
     formData.set("questId", quest.id);
-    formData.set("localDate", localDate);
     formData.set("outcome", outcome);
     formData.set("note", nextNote);
 

@@ -459,7 +459,7 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
         const quest = findQuest(context, questId);
         return proposal(
           "Check in",
-          `Mark "${quest?.title ?? "this habit"}" as ${outcome === "win" ? "done" : "skipped"} for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}.`,
+          `Mark "${quest?.title ?? "this habit"}" as ${outcome === "win" ? "done" : "skipped"} for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}.${note?.trim() ? " The note below replaces any note already saved." : ""}`,
           {
             type: "saveCheckIn",
             questId,
@@ -483,7 +483,7 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
       execute: async ({ localDate, body }) =>
         proposal(
           "Save journal entry",
-          `Save a journal entry for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}.`,
+          `Save this as the journal entry for ${(localDate ?? context.today) === context.today ? "today" : (localDate ?? context.today)}. It replaces anything already written for that day.`,
           {
             type: "saveJournal",
             localDate: localDate ?? context.today,

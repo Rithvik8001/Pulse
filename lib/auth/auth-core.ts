@@ -30,11 +30,18 @@ export function safeRedirectPath(
 ) {
   const next = Array.isArray(value) ? value[0] : value;
 
-  if (typeof next !== "string" || !next.startsWith("/") || next.startsWith("//")) {
+  if (typeof next !== "string" || !next.startsWith("/") || /[\\\u0000-\u001f\u007f]/.test(next)) {
     return fallback;
   }
 
-  return next;
+  const placeholderOrigin = "https://pulse.invalid";
+  const resolved = new URL(next, placeholderOrigin);
+
+  if (resolved.origin !== placeholderOrigin) {
+    return fallback;
+  }
+
+  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
 }
 
 export function isResetSuccessParam(

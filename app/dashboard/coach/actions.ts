@@ -9,8 +9,8 @@ import { coachActionSchema, type CoachAction } from "@/lib/pulse/coach-core";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { upsertJournalEntry } from "@/lib/pulse/journal";
 import {
+  archiveQuest,
   createQuest,
-  removeQuest,
   restoreQuest,
   updateQuestTitle,
 } from "@/lib/pulse/quests";
@@ -43,7 +43,7 @@ export async function confirmPulseCoachAction(
       result = await updateQuestTitle(parsed.data.questId, parsed.data.title);
       break;
     case "archiveQuest":
-      result = await removeQuest(parsed.data.questId);
+      result = await archiveQuest(parsed.data.questId);
       break;
     case "restoreQuest":
       result = await restoreQuest(parsed.data.questId);
@@ -120,7 +120,7 @@ async function saveCoachCheckIn(
       target: [checkIns.userId, checkIns.questId, checkIns.localDate],
       set: {
         outcome: action.outcome,
-        note: cleanNote,
+        ...(cleanNote ? { note: cleanNote } : {}),
         updatedAt: new Date(),
       },
     });
@@ -135,7 +135,6 @@ function revalidatePulseCoachSurfaces() {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/habits");
   revalidatePath("/dashboard/journal");
-  revalidatePath("/dashboard/history");
   revalidatePath("/dashboard/history");
   revalidatePath("/dashboard/review");
 }

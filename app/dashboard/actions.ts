@@ -133,11 +133,11 @@ export async function upsertCheckInAction(
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
   const questId = normalizeText(formData.get("questId"));
-  const localDate = normalizeDate(formData.get("localDate"), dateContext.today);
+  const localDate = dateContext.today;
   const outcome = normalizeOutcome(formData.get("outcome"));
   const note = normalizeOptionalText(formData.get("note"));
 
-  if (!questId || !localDate || !outcome) {
+  if (!questId || !outcome) {
     return {
       status: "error",
       message: "Choose Done or Skipped first.",
@@ -202,16 +202,6 @@ export async function upsertCheckInAction(
     status: "success",
     message: outcome === "win" ? "Saved as done." : "Saved as skipped.",
   };
-}
-
-function normalizeDate(value: FormDataEntryValue | null, fallback: string) {
-  const text = normalizeText(value);
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return fallback;
-  }
-
-  return text;
 }
 
 function normalizeOutcome(value: FormDataEntryValue | null) {
