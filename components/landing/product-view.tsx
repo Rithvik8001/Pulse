@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
+
 import { ProofHistoryGrid } from "@/components/product/proof-history-grid";
 import { ProofOutcome } from "@/components/product/proof-outcome";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import { ActionRow, RowList } from "@/components/ui/row";
 import type { ProofHistoryDay } from "@/lib/pulse/dashboard";
+import { cn } from "@/lib/utils";
 
 const quests: { title: string; outcome: "win" | "pass" | null; note?: string }[] = [
   { title: "Write 500 words", outcome: "win", note: "Finished the opening scene." },
@@ -32,18 +35,35 @@ function sampleDays(): ProofHistoryDay[] {
 }
 
 const days = sampleDays();
+const daysWithDone = days.filter((day) => day.winCount > 0).length;
+const doneToday = quests.filter((quest) => quest.outcome === "win").length;
+
+function Panel({
+  eyebrow,
+  title,
+  className,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className={cn("grid content-start gap-4 rounded-card border border-card-rim bg-bg p-6 shadow-card", className)}>
+      <div className="grid gap-1">
+        <p className="type-section">{eyebrow}</p>
+        <p className="type-heading">{title}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export function ProductView() {
   return (
-    <div
-      inert
-      className="grid gap-8 rounded-card bg-fill p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-10 sm:p-8"
-    >
-      <div className="grid gap-4">
-        <div className="grid gap-1">
-          <p className="type-section">Today</p>
-          <p className="type-heading">I am a writer.</p>
-        </div>
+    <div inert className="grid gap-2 rounded-tray bg-fill p-2 md:grid-cols-[minmax(0,1fr)_auto]">
+      <Panel eyebrow="Today" title="I am a writer.">
         <RowList>
           {quests.map((quest) => (
             <ActionRow
@@ -55,11 +75,13 @@ export function ProductView() {
             />
           ))}
         </RowList>
-      </div>
-      <div className="grid gap-3">
-        <p className="type-section">Last 8 weeks</p>
-        <ProofHistoryGrid days={days} cellClassName="size-5" />
-      </div>
+        <p className="type-caption text-fg-2">
+          {doneToday} of {quests.length} done today
+        </p>
+      </Panel>
+      <Panel eyebrow="Last 8 weeks" title={`${daysWithDone} days with a habit done`}>
+        <ProofHistoryGrid days={days} cellClassName="size-6" legend="compact" />
+      </Panel>
     </div>
   );
 }

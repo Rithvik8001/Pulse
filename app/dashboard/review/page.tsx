@@ -90,6 +90,7 @@ export default async function ReviewPage({
     : hasSource
       ? "Not written yet."
       : "Check in or write a journal entry this week first.";
+  const recapWeekName = data.isPreviousWeek ? "Last week" : "This week";
 
   const view = identity.views.all;
   const statement = identity.latestSnapshot?.identityStatement ?? view.fallbackSnapshot.identityStatement;
@@ -105,7 +106,7 @@ export default async function ReviewPage({
       </PageHeader>
 
       <Section
-        title={story && isPast ? `Recap for ${weekLabel(story.weekStart, story.weekEnd, locale)}` : "This week's recap"}
+        title={story && isPast ? `Recap for ${weekLabel(story.weekStart, story.weekEnd, locale)}` : `${recapWeekName}'s recap`}
         action={
           isPast ? (
             <Button variant="text" size="sm" asChild>
@@ -117,14 +118,19 @@ export default async function ReviewPage({
         {story ? (
           <Recap story={story} />
         ) : hasSource ? (
-          <Notice>This week&apos;s recap has not been written yet.</Notice>
+          <Notice>{recapWeekName}&apos;s recap has not been written yet.</Notice>
         ) : (
           <Notice action={{ label: "Go to today", href: "/dashboard" }}>
             Once you check in or write a journal entry this week, Pulse can write your recap.
           </Notice>
         )}
         {!isPast ? (
-          <WeeklyRecapForm disabled={!hasSource} hasRecap={Boolean(data.currentWeekStory)} caption={writtenCaption} />
+          <WeeklyRecapForm
+            disabled={!hasSource}
+            hasRecap={Boolean(data.currentWeekStory)}
+            isPreviousWeek={data.isPreviousWeek}
+            caption={writtenCaption}
+          />
         ) : null}
       </Section>
 

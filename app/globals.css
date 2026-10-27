@@ -54,6 +54,13 @@
   --mascot-face: var(--brand-tint);
   --mascot-eye: #2a1458;
 
+  --pip-body: #4fc8e0;
+  --pip-shade: #2aa6c2;
+  --pip-belly: #d9f6fb;
+  --pip-leaf: #2fb886;
+  --pip-eye: #0d2a31;
+  --pip-cheek: #ff9fbd;
+
   --scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4' viewBox='0 0 240 4'%3E%3Cpath d='M0 2Q5 .9 11 2.1Q17 3.3 25 2.2Q31 1 37 1.5Q44 3.2 49 2.5Q55 .8 62 1.7Q67 3 74 2.6Q79 1.2 86 1.3Q91 3.3 98 2.3Q103 .7 109 1.6Q116 3.1 121 2.7Q127 1.1 134 1.3Q139 3.2 146 2Q151 .8 157 1.9Q164 3.3 169 2.4Q175 1 182 1.5Q187 3 194 2.8Q199 1.1 206 1.4Q211 3.2 218 2.2Q223 .9 230 1.7Q235 3 240 2' fill='none' stroke='%23dddcd8' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --keycap: linear-gradient(180deg, #8b66fb 0%, #6d3cf5 60%, #6534ee 100%);
@@ -117,6 +124,7 @@
   --dur-2: 220ms;
   --dur-3: 300ms;
   --dur-badge: 460ms;
+  --dur-loop: 1600ms;
   --press: 0.98;
   --settle: 0.96;
   --tray-rise: 0.5rem;
@@ -181,6 +189,12 @@
   --mascot-body: var(--brand);
   --mascot-face: var(--brand-tint);
   --mascot-eye: #e9ddff;
+  --pip-body: #3fc6e2;
+  --pip-shade: #1f93ad;
+  --pip-belly: #bdeef7;
+  --pip-leaf: #3fd9a8;
+  --pip-eye: #082026;
+  --pip-cheek: #f58fb3;
   --scribble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='4' viewBox='0 0 240 4'%3E%3Cpath d='M0 2Q5 .9 11 2.1Q17 3.3 25 2.2Q31 1 37 1.5Q44 3.2 49 2.5Q55 .8 62 1.7Q67 3 74 2.6Q79 1.2 86 1.3Q91 3.3 98 2.3Q103 .7 109 1.6Q116 3.1 121 2.7Q127 1.1 134 1.3Q139 3.2 146 2Q151 .8 157 1.9Q164 3.3 169 2.4Q175 1 182 1.5Q187 3 194 2.8Q199 1.1 206 1.4Q211 3.2 218 2.2Q223 .9 230 1.7Q235 3 240 2' fill='none' stroke='%232c2c2c' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --keycap: linear-gradient(180deg, #9470ff 0%, #7f4cff 60%, #7342f0 100%);
   --keycap-hover: linear-gradient(180deg, #8d66ff 0%, #7645f2 60%, #6c3be8 100%);
@@ -280,6 +294,12 @@
   --color-mascot-body: var(--mascot-body);
   --color-mascot-face: var(--mascot-face);
   --color-mascot-eye: var(--mascot-eye);
+  --color-pip-body: var(--pip-body);
+  --color-pip-shade: var(--pip-shade);
+  --color-pip-belly: var(--pip-belly);
+  --color-pip-leaf: var(--pip-leaf);
+  --color-pip-eye: var(--pip-eye);
+  --color-pip-cheek: var(--pip-cheek);
 
   --radius-pill: var(--radius-pill);
   --radius-tray: var(--radius-tray);
@@ -333,6 +353,7 @@
   --animate-rise: rise var(--dur-3) var(--ease) both;
   --animate-toast-rise: toast-rise var(--dur-3) var(--ease) both;
   --animate-sweep: sweep 1.2s var(--ease) infinite;
+  --animate-pip-bob: pip-bob var(--dur-loop) var(--ease) infinite;
   --animate-fade-out: fade-out var(--dur-2) var(--ease) both;
   --animate-wipe: wipe var(--dur-3) var(--ease) both;
   --animate-sink: sink var(--dur-2) var(--ease) both;
@@ -373,6 +394,10 @@
   @keyframes sweep {
     from { background-position: -40% 0; }
     to { background-position: 140% 0; }
+  }
+  @keyframes pip-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12%); }
   }
 }
 

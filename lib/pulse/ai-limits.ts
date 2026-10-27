@@ -257,14 +257,49 @@ export async function failAiUsage({
     return;
   }
 
-  await db
-    .update(aiUsageEvents)
-    .set({
-      status: "failed",
-      error: getErrorMessage(error),
-      updatedAt: new Date(),
-    })
-    .where(eq(aiUsageEvents.id, eventId));
+  await db.transaction(async (tx) => {
+    const [event] = await tx
+      .update(aiUsageEvents)
+      .set({
+        status: "failed",
+        error: getErrorMessage(error),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(aiUsageEvents.id, eventId), eq(aiUsageEvents.status, "allowed")))
+      .returning({
+        userId: aiUsageEvents.userId,
+        feature: aiUsageEvents.feature,
+        period: aiUsageEvents.period,
+        periodStart: aiUsageEvents.periodStart,
+        createdAt: aiUsageEvents.createdAt,
+        estimatedInputTokens: aiUsageEvents.estimatedInputTokens,
+      });
+
+    if (!event) {
+      return;
+    }
+
+    await upsertBucketDelta(tx, {
+      userId: event.userId,
+      scopeType: "user",
+      scopeId: event.userId,
+      feature: event.feature,
+      period: event.period,
+      periodStart: event.periodStart,
+      requestDelta: -1,
+      estimatedTokenDelta: -event.estimatedInputTokens,
+    });
+    await upsertBucketDelta(tx, {
+      userId: null,
+      scopeType: "global",
+      scopeId: "site",
+      feature: event.feature,
+      period: "day",
+      periodStart: getPeriodStart(event.createdAt, "day"),
+      requestDelta: -1,
+      estimatedTokenDelta: -event.estimatedInputTokens,
+    });
+  });
 }
 
 function getGatewayProviderOptions(userId: string, feature: AiFeature) {

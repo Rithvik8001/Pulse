@@ -3,6 +3,7 @@ import {
   offsetLocalDate,
   parseLocalDate,
 } from "@/lib/pulse/local-date-core";
+import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-core";
 
 export const identityDefaultWindowDays = 90;
 export const identityAllWindowDays = 3650;
@@ -262,7 +263,9 @@ export function buildIdentitySignals({
     if (entry.note?.trim()) {
       bucket.proofNoteCount += 1;
     }
-    bucket.dates.add(entry.localDate);
+    if (entry.outcome === "win") {
+      bucket.dates.add(entry.localDate);
+    }
     bucket.weeks.add(getWeekStart(entry.localDate));
     bucket.lastProofDate =
       bucket.lastProofDate === null || entry.localDate > bucket.lastProofDate
@@ -277,7 +280,7 @@ export function buildIdentitySignals({
       const winCount = bucket?.winCount ?? 0;
       const passCount = bucket?.passCount ?? 0;
       const sortedDates = [...(bucket?.dates ?? new Set<string>())].sort();
-      const currentStreak = computeCurrentStreak(new Set(sortedDates), today);
+      const currentStreak = computeCurrentStreak(new Set(sortedDates), today).current;
       const longestStreak = computeLongestStreak(sortedDates);
       const winRate =
         proofCount > 0 ? Math.round((winCount / proofCount) * 100) : null;
@@ -806,42 +809,6 @@ function buildSignalReason({
   }
 
   return parts.join(" · ");
-}
-
-function computeCurrentStreak(dateSet: Set<string>, today: string) {
-  if (!dateSet.has(today)) {
-    return 0;
-  }
-
-  let streak = 0;
-  let cursor = today;
-
-  while (dateSet.has(cursor)) {
-    streak += 1;
-    cursor = offsetLocalDate(cursor, -1);
-  }
-
-  return streak;
-}
-
-function computeLongestStreak(sortedDates: string[]) {
-  if (sortedDates.length === 0) {
-    return 0;
-  }
-
-  let current = 1;
-  let longest = 1;
-
-  for (let index = 1; index < sortedDates.length; index += 1) {
-    if (sortedDates[index] === offsetLocalDate(sortedDates[index - 1], 1)) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 1;
-    }
-  }
-
-  return longest;
 }
 
 function getWeekStart(localDate: string) {

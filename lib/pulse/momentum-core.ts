@@ -1,4 +1,5 @@
 import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-core";
 
 export type QuestStreak = {
   questId: string;
@@ -23,47 +24,6 @@ export type MomentumData = {
   longestStreakEver: number;
   atRiskCount: number;
 };
-
-function computeCurrentStreak(
-  dateSet: Set<string>,
-  today: string,
-): { current: number; isAtRisk: boolean } {
-  const yesterday = offsetLocalDate(today, -1);
-  const hasToday = dateSet.has(today);
-  const hasYesterday = dateSet.has(yesterday);
-
-  if (!hasToday && !hasYesterday) return { current: 0, isAtRisk: false };
-
-  let streak = 0;
-  let cursor = hasToday ? today : yesterday;
-  const isAtRisk = !hasToday;
-
-  while (dateSet.has(cursor)) {
-    streak++;
-    cursor = offsetLocalDate(cursor, -1);
-  }
-
-  return { current: streak, isAtRisk };
-}
-
-function computeLongestStreak(sortedAscDates: string[]): number {
-  if (sortedAscDates.length === 0) return 0;
-
-  let longest = 1;
-  let current = 1;
-
-  for (let i = 1; i < sortedAscDates.length; i++) {
-    const expected = offsetLocalDate(sortedAscDates[i - 1], 1);
-    if (sortedAscDates[i] === expected) {
-      current++;
-      if (current > longest) longest = current;
-    } else {
-      current = 1;
-    }
-  }
-
-  return longest;
-}
 
 function getTier(score: number): MomentumTier {
   if (score <= 25) return "Warming Up";
@@ -97,7 +57,9 @@ export function computeMomentum(
   for (const quest of activeQuests) {
     const rows = byQuest.get(quest.id) ?? [];
 
-    const uniqueDates = [...new Set(rows.map((r) => r.localDate))].sort();
+    const uniqueDates = [
+      ...new Set(rows.filter((r) => r.outcome === "win").map((r) => r.localDate)),
+    ].sort();
     const dateSet = new Set(uniqueDates);
 
     const { current, isAtRisk } = computeCurrentStreak(dateSet, today);

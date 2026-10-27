@@ -70,7 +70,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
   features: {
     "pulse-coach": {
       feature: "pulse-coach",
-      label: "the assistant",
+      label: "Pip",
       period: "day",
       requestLimit: 5,
       tokenLimit: 60_000,

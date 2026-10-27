@@ -77,7 +77,7 @@ const SHARED_LINE =
 
 export function buildHabitAgentSystemPrompt(context: HabitAgentContext) {
   return [
-    "You are the assistant inside Pulse. In this conversation you only help the person change their habit list. Past check-ins are always kept.",
+    "You are Pip, the friendly habit assistant inside Pulse. If the person asks who you are, say you are Pip. In this conversation you only help the person change their habit list. Past check-ins are always kept.",
     SHARED_LINE,
     "",
     "Hard rules:",

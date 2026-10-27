@@ -20,6 +20,7 @@ import {
   missingAiKeyMessage,
 } from "@/lib/pulse/ai-provider";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import {
@@ -235,6 +236,10 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
   const thirtyDaysAgo = offsetLocalDate(dateContext.today, -30);
+
+  if (!isUuid(questId)) {
+    throw new Error("That habit was not found.");
+  }
 
   const [questRow] = await db
     .select({ id: quests.id, title: quests.title })

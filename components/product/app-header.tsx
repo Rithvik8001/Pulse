@@ -72,7 +72,7 @@ export function AppHeader({ showAssistant = true }: { showAssistant?: boolean })
           />
           {showAssistant ? (
             <IconButton
-              label="Assistant"
+              label="Ask Pip"
               icon={Sparkle}
               shortcut={["A"]}
               onClick={() => toggle("assistant")}

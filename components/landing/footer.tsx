@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GithubLogo } from "@phosphor-icons/react/dist/ssr";
+import { GithubLogo, Heart } from "@phosphor-icons/react/dist/ssr";
 
 import { Mascot } from "@/components/landing/mascot";
 
@@ -11,7 +11,18 @@ export function Footer() {
       <div className="mx-auto flex w-full max-w-page-wide flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-6 max-sm:px-4">
         <div className="flex items-center gap-3">
           <Mascot width={24} />
-          <p className="type-small text-fg-3">Made by Rithvik.</p>
+          <p className="flex items-center gap-1.5 type-small text-fg-3">
+            Made by
+            <a
+              href="https://github.com/Rithvik8001"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-key font-medium text-fg-2 underline decoration-fg-3 underline-offset-4 outline-none transition-colors duration-(--dur-1) hover:text-ink hover:decoration-ink focus-visible:text-ink"
+            >
+              Rithvik
+            </a>
+            <Heart size={14} className="text-brand-fg" aria-hidden />
+          </p>
         </div>
         <nav aria-label="Footer" className="-mx-3 flex flex-wrap items-center">
           <Link href="/sign-in" className={linkClassName}>

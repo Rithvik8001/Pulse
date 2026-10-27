@@ -12,8 +12,8 @@ import {
   parseHabitProposal,
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
+import { Pip, pipName } from "@/components/product/pip";
 import { useShell } from "@/components/product/shell";
-import { FeatureChip } from "@/components/ui/feature-chip";
 import { Tray, TrayContent, TrayHeader } from "@/components/ui/tray";
 import type { CoachAction } from "@/lib/pulse/coach-core";
 import type { HabitAgentAction } from "@/lib/pulse/habit-agent-core";
@@ -101,9 +101,11 @@ export function AssistantTray({ showHabits = true }: { showHabits?: boolean }) {
   const empty = (
     <div className="grid gap-6 py-1">
       <div className="grid justify-items-center gap-2 text-center">
-        <FeatureChip feature="assistant" size="lg" />
+        <Pip size={72} />
+        <p className="type-subhead">Hi, I&apos;m {pipName}</p>
         <p className="mx-auto max-w-lead type-caption text-fg-2">
-          Ask about your habits or change them. Nothing changes until you confirm.
+          I know your habits, check-ins and journal. Ask me anything about them, or ask me to change
+          something. Nothing changes until you confirm.
         </p>
       </div>
       <StarterGroup
@@ -124,7 +126,15 @@ export function AssistantTray({ showHabits = true }: { showHabits?: boolean }) {
   return (
     <Tray open={panel === "assistant"} onOpenChange={(o) => !o && close()}>
       <TrayContent width="wide" className="h-[min(40rem,calc(100dvh-2rem))]">
-        <TrayHeader title="Assistant" description="Ask about your habits or change them. Nothing changes until you confirm." />
+        <TrayHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Pip size={28} />
+              {pipName}
+            </span>
+          }
+          description="Pip, your habit assistant. Ask about your habits or change them. Nothing changes until you confirm."
+        />
         <AssistantPane
           config={config}
           confirmAction={confirm}

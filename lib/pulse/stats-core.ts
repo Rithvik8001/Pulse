@@ -1,3 +1,5 @@
+import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-core";
+
 export const statsWindowWeeks = 12;
 export const statsMinimumSampleSize = 3;
 
@@ -151,46 +153,6 @@ function buildWeekSkeleton(baseDate: Date, weeks: number): WeeklyTrendPoint[] {
   });
 }
 
-function computeCurrentStreak(dateSet: Set<string>, today: string): number {
-  if (!dateSet.has(today)) {
-    return 0;
-  }
-
-  let streak = 0;
-  let cursor = today;
-
-  while (dateSet.has(cursor)) {
-    streak += 1;
-    cursor = formatLocalDate(offsetDate(parseLocalDate(cursor), -1));
-  }
-
-  return streak;
-}
-
-function computeLongestStreak(sortedAscDates: string[]) {
-  if (sortedAscDates.length === 0) {
-    return 0;
-  }
-
-  let longest = 1;
-  let current = 1;
-
-  for (let index = 1; index < sortedAscDates.length; index += 1) {
-    const expected = formatLocalDate(
-      offsetDate(parseLocalDate(sortedAscDates[index - 1]), 1),
-    );
-
-    if (sortedAscDates[index] === expected) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 1;
-    }
-  }
-
-  return longest;
-}
-
 function toInsightQuest(quest: QuestStat, reason: string): StatsInsightQuest {
   return {
     questId: quest.questId,
@@ -325,7 +287,9 @@ export function computeStatsData({
     }
 
     week.totalCount += 1;
-    bucket.dates.add(checkIn.localDate);
+    if (outcome === "win") {
+      bucket.dates.add(checkIn.localDate);
+    }
     bucket.lastCheckInDate =
       bucket.lastCheckInDate === null ||
       checkIn.localDate > bucket.lastCheckInDate
@@ -366,7 +330,7 @@ export function computeStatsData({
         passCount,
         totalCount,
         winRate: toWinRate(winCount, totalCount),
-        currentStreak: computeCurrentStreak(dateSet, today),
+        currentStreak: computeCurrentStreak(dateSet, today).current,
         longestStreak: computeLongestStreak(sortedDates),
         lastCheckInDate: bucket?.lastCheckInDate ?? null,
       };

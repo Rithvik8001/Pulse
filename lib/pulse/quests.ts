@@ -5,6 +5,7 @@ import { and, asc, count, desc, eq, isNull, max, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 
 export const activeQuestLimit = 12;
 export const questTitleMaxLength = 96;
@@ -183,6 +184,13 @@ export async function updateQuestTitle(
     };
   }
 
+  if (!isUuid(questId)) {
+    return {
+      status: "error",
+      message: "This habit could not be found. Reload the page and try again.",
+    };
+  }
+
   const [quest] = await db
     .update(quests)
     .set({
@@ -311,6 +319,13 @@ export async function archiveQuest(
 ): Promise<QuestMutationResult> {
   const userId = await requireUserId();
 
+  if (!isUuid(questId)) {
+    return {
+      status: "error",
+      message: "This habit could not be found. Reload the page and try again.",
+    };
+  }
+
   const [quest] = await db
     .update(quests)
     .set({
@@ -375,6 +390,13 @@ export async function restoreQuest(
   questId: string,
 ): Promise<QuestMutationResult> {
   const userId = await requireUserId();
+
+  if (!isUuid(questId)) {
+    return {
+      status: "error",
+      message: "This habit could not be found. Reload the page and try again.",
+    };
+  }
 
   try {
     const result = await db.transaction(async (tx) => {
@@ -523,6 +545,10 @@ function isActiveQuestLimitError(error: unknown) {
 }
 
 async function getOwnedQuestWithProofCount(userId: string, questId: string) {
+  if (!isUuid(questId)) {
+    return null;
+  }
+
   const [quest] = await db
     .select({
       id: quests.id,

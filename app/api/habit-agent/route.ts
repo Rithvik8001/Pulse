@@ -158,7 +158,7 @@ export async function POST(request: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: chatValidation.messages,
-    onError: () => "The assistant could not answer. Try again.",
+    onError: () => "Pip could not answer. Try again.",
   });
 }
 

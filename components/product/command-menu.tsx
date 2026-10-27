@@ -126,9 +126,9 @@ export function CommandMenu() {
                 </Item>
               ))}
             </Group>
-            <Group heading="Assistant">
-              <Item icon={Sparkle} shortcut={["A"]} keywords={["coach", "ask", "help"]} onSelect={() => open("assistant")}>
-                Ask the assistant
+            <Group heading="Pip">
+              <Item icon={Sparkle} shortcut={["A"]} keywords={["assistant", "coach", "ask", "help"]} onSelect={() => open("assistant")}>
+                Ask Pip
               </Item>
             </Group>
           </Command.List>

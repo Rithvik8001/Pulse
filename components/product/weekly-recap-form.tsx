@@ -10,10 +10,12 @@ import { SummaryBar } from "@/components/ui/summary-bar";
 export function WeeklyRecapForm({
   disabled = false,
   hasRecap,
+  isPreviousWeek = false,
   caption,
 }: {
   disabled?: boolean;
   hasRecap: boolean;
+  isPreviousWeek?: boolean;
   caption: string;
 }) {
   const initialState: WeeklyStoryFormState = { status: "idle" };
@@ -24,7 +26,7 @@ export function WeeklyRecapForm({
       {state.status === "error" ? <Notice tone="bad">{state.message}</Notice> : null}
       <SummaryBar caption={caption}>
         <SubmitButton variant="primary" disabled={disabled} pendingLabel="Writing recap">
-          {hasRecap ? "Rewrite recap" : "Write this week's recap"}
+          {hasRecap ? "Rewrite recap" : isPreviousWeek ? "Write last week's recap" : "Write this week's recap"}
         </SubmitButton>
       </SummaryBar>
     </form>

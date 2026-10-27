@@ -13,6 +13,7 @@ import {
   type ParsedProposal,
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
+import { Pip } from "@/components/product/pip";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
@@ -20,7 +21,7 @@ import { toast } from "@/components/ui/toast";
 
 function errorText(error: Error) {
   const raw = error.message?.trim();
-  if (!raw) return "The assistant could not answer. Try again.";
+  if (!raw) return "Pip could not answer. Try again.";
   if (raw.startsWith("{")) {
     try {
       const parsed = JSON.parse(raw) as { error?: unknown };
@@ -149,7 +150,7 @@ export function AssistantPane({
         ref={logRef}
         role="log"
         aria-live="polite"
-        aria-label="Assistant conversation"
+        aria-label="Conversation with Pip"
         className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1"
       >
         {!hasMessages ? (
@@ -175,8 +176,9 @@ export function AssistantPane({
               />
             ))}
             {session.isStreaming ? (
-              <p className="type-small text-fg-3" aria-live="polite">
-                Thinking
+              <p className="flex items-center gap-2 type-small text-fg-3" aria-live="polite">
+                <Pip size={20} className="motion-safe:animate-pip-bob" />
+                Pip is thinking
               </p>
             ) : null}
           </div>
@@ -190,13 +192,13 @@ export function AssistantPane({
       ) : null}
 
       <form className="grid gap-3" onSubmit={submitMessage}>
-        <Field label="Message the assistant" labelHidden>
+        <Field label="Message Pip" labelHidden>
           <Textarea
             autoGrow
             rows={2}
             className="max-h-40"
             disabled={session.isStreaming}
-            placeholder="Ask about your habits, or ask to change one"
+            placeholder="Ask Pip about your habits, or ask to change one"
             value={session.input}
             onChange={(event) => session.setInput(event.target.value)}
             onKeyDown={(event) => {

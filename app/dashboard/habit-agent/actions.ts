@@ -28,7 +28,7 @@ export async function confirmHabitAgentAction(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "This change could not be made. Ask the assistant again.",
+      message: "This change could not be made. Ask Pip again.",
     };
   }
 

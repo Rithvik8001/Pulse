@@ -12,6 +12,7 @@ import {
   type ProposalAction,
   redactPrivateIdentifiers,
 } from "@/components/product/assistant/assistant-proposals";
+import { Pip, pipName } from "@/components/product/pip";
 import type { Feature } from "@/components/ui/features";
 import { cn } from "@/lib/utils";
 
@@ -36,8 +37,8 @@ export function AssistantMessage({
 }) {
   const isUser = message.role === "user";
 
-  return (
-    <div className={cn("grid gap-2", isUser ? "justify-items-end" : "justify-items-start")}>
+  const parts = (
+    <div className={cn("grid min-w-0 flex-1 gap-2", isUser ? "justify-items-end" : "justify-items-start")}>
       {message.parts.map((part, index) => {
         if (part.type === "text" && part.text.trim()) {
           return isUser ? (
@@ -50,7 +51,7 @@ export function AssistantMessage({
             </div>
           ) : (
             <div key={`${message.id}-${index}`} className="max-w-measure type-body">
-              <span className="sr-only">Assistant said </span>
+              <span className="sr-only">{pipName} said </span>
               <AssistantMarkdown text={part.text} />
             </div>
           );
@@ -74,6 +75,15 @@ export function AssistantMessage({
 
         return null;
       })}
+    </div>
+  );
+
+  if (isUser) return parts;
+
+  return (
+    <div className="flex items-start gap-3">
+      <Pip size={28} className="mt-0.5" />
+      {parts}
     </div>
   );
 }

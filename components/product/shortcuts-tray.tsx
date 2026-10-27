@@ -10,7 +10,7 @@ const groups: { title: string; rows: { keys: string[][]; label: string }[] }[] =
     rows: [
       { keys: [["⌘", "K"], ["/"]], label: "Search or go to a page" },
       { keys: [["?"]], label: "Keyboard shortcuts" },
-      { keys: [["A"]], label: "Open the assistant" },
+      { keys: [["A"]], label: "Open Pip" },
       { keys: [["Esc"]], label: "Close a tray or menu" },
     ],
   },

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { EnvelopeSimple, Keyboard, MoonStars } from "@phosphor-icons/react/dist/ssr";
 
+import { Pip } from "@/components/product/pip";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import type { Feature, Tint } from "@/components/ui/features";
 import type { IconComponent } from "@/components/ui/icon";
@@ -73,18 +74,20 @@ const features: { feature: Feature; title: string; body: string }[] = [
 
 const extras: { icon: IconComponent; tint: Tint; title: string; body: string }[] = [
   { icon: EnvelopeSimple, tint: "pink", title: "Weekly summary email", body: "Your week in one email, with an unsubscribe link." },
-  { icon: Keyboard, tint: "blue", title: "Keyboard first", body: "Command menu, G plus a letter to move around, A for the assistant." },
+  { icon: Keyboard, tint: "blue", title: "Keyboard first", body: "Command menu, G plus a letter to move around, A to open Pip." },
   { icon: MoonStars, tint: "indigo", title: "Light and dark", body: "Follows your device, or pick one in Settings." },
 ];
 
 function FeatureCard({
   feature,
+  badge,
   title,
   body,
   aside,
   className,
 }: {
   feature: Feature;
+  badge?: ReactNode;
   title: string;
   body: string;
   aside?: ReactNode;
@@ -93,7 +96,7 @@ function FeatureCard({
   return (
     <article className={cn("grid content-start gap-4 rounded-card bg-fill p-6", className)}>
       <div className="grid gap-4">
-        <FeatureChip feature={feature} size="lg" />
+        {badge ?? <FeatureChip feature={feature} size="lg" />}
         <div className="grid gap-2">
           <h3 className="type-heading text-balance">{title}</h3>
           <p className="type-body text-fg-2 text-pretty">{body}</p>
@@ -113,18 +116,22 @@ export function FeatureSections() {
       <div className="grid gap-4 md:grid-cols-3">
         <FeatureCard
           feature="assistant"
-          title="An assistant that answers and acts"
-          body="Ask which habit is slipping or what to focus on. Or tell it to add, rename, shrink, archive, restore or delete a habit, check you in, or save a journal entry. Every change is a proposal you confirm first."
+          badge={<Pip size={56} />}
+          title="Meet Pip, your habit assistant"
+          body="Ask Pip which habit is slipping or what to focus on. Or ask it to add, rename, shrink, archive, restore or delete a habit, check you in, or save a journal entry. Pip knows only your own check-ins and journal, and every change is a proposal you confirm first."
           className="md:col-span-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center md:gap-x-8"
           aside={
             <div inert className="grid gap-3 rounded-row bg-bg p-4">
               <div className="justify-self-end rounded-row bg-fill-2 px-3 py-2 type-caption">
                 Make my walk smaller
               </div>
-              <p className="type-caption text-ink">
-                Four skipped days this week after two weeks of done. A shorter
-                version may hold up better.
-              </p>
+              <div className="flex items-start gap-2.5">
+                <Pip size={24} />
+                <p className="type-caption text-ink">
+                  Four skipped days this week after two weeks of done. A shorter
+                  version may hold up better.
+                </p>
+              </div>
               <div className="flex items-center justify-between gap-3 rounded-item bg-fill px-3 py-2">
                 <span className="grid gap-0.5">
                   <span className="type-caption font-medium">Rename habit</span>

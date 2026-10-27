@@ -5,12 +5,14 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, checkIns, journalEntries, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 import { parseLocalDate } from "@/lib/pulse/local-date-core";
 import {
   getJournalHistoryStart,
   normalizeJournalBody,
   normalizeJournalDate,
   validateJournalBody,
+  validateJournalDate,
 } from "@/lib/pulse/journal-core";
 import {
   getUserLocalDateContextForUser,
@@ -168,9 +170,10 @@ export async function upsertJournalEntry(
 ): Promise<JournalMutationResult> {
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const selectedDate = normalizeJournalDate(localDate, dateContext.today);
+  const selectedDate = localDate.trim() || dateContext.today;
   const cleanBody = normalizeJournalBody(body);
-  const validationError = validateJournalBody(cleanBody);
+  const validationError =
+    validateJournalDate(selectedDate, dateContext.today) ?? validateJournalBody(cleanBody);
 
   if (validationError) {
     return {
@@ -224,7 +227,7 @@ export async function deleteJournalEntry(
   const userId = await requireUserId();
   const cleanEntryId = entryId.trim();
 
-  if (!cleanEntryId) {
+  if (!isUuid(cleanEntryId)) {
     return {
       status: "error",
       message: "This entry could not be found. Reload the page and try again.",

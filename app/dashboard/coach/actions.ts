@@ -7,7 +7,9 @@ import { db } from "@/lib/db";
 import { checkIns, quests } from "@/lib/db/schema";
 import { coachActionSchema, type CoachAction } from "@/lib/pulse/coach-core";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 import { upsertJournalEntry } from "@/lib/pulse/journal";
+import { isLocalDate } from "@/lib/pulse/local-date-core";
 import {
   archiveQuest,
   createQuest,
@@ -29,7 +31,7 @@ export async function confirmPulseCoachAction(
   if (!parsed.success) {
     return {
       status: "error",
-      message: "This change could not be made. Ask the assistant again.",
+      message: "This change could not be made. Ask Pip again.",
     };
   }
 
@@ -69,10 +71,22 @@ async function saveCoachCheckIn(
 ): Promise<CoachConfirmResult> {
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const localDate = /^\d{4}-\d{2}-\d{2}$/.test(action.localDate)
-    ? action.localDate
-    : dateContext.today;
+  const localDate = action.localDate;
   const cleanNote = action.note?.trim().replace(/\s+/g, " ") || null;
+
+  if (!isLocalDate(localDate) || localDate > dateContext.today) {
+    return {
+      status: "error",
+      message: "Check-ins can only be saved for today or an earlier day.",
+    };
+  }
+
+  if (!isUuid(action.questId)) {
+    return {
+      status: "error",
+      message: "This habit is no longer active. Reload the page and try again.",
+    };
+  }
 
   if (cleanNote && cleanNote.length > 240) {
     return {

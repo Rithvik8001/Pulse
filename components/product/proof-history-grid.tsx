@@ -22,10 +22,12 @@ export function ProofHistoryGrid({
   days,
   cellClassName,
   locale = "en-US",
+  legend = "full",
 }: {
   days: ProofHistoryDay[];
   cellClassName?: string;
   locale?: string;
+  legend?: "full" | "compact";
 }) {
   const last = days[days.length - 1]?.localDate;
   const weeks = Math.ceil(days.length / 7);
@@ -56,18 +58,18 @@ export function ProofHistoryGrid({
           </Tip>
         ))}
       </div>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 type-small text-fg-2">
+      <ul className={cn("flex flex-wrap gap-y-1 type-small text-fg-2", legend === "full" ? "gap-x-5" : "gap-x-4")}>
         <li className="flex items-center gap-2">
           <span aria-hidden className="size-3 rounded-cell bg-ok" />
-          At least one habit done. Darker means more.
+          {legend === "full" ? "At least one habit done. Bolder means more." : "Done"}
         </li>
         <li className="flex items-center gap-2">
           <span aria-hidden className="size-3 rounded-cell bg-fg-3" />
-          Checked in, all skipped
+          {legend === "full" ? "Checked in, all skipped" : "Skipped"}
         </li>
         <li className="flex items-center gap-2">
           <span aria-hidden className="size-3 rounded-cell bg-fill-2" />
-          No check-ins
+          {legend === "full" ? "No check-ins" : "None"}
         </li>
       </ul>
     </div>

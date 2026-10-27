@@ -23,7 +23,7 @@ import {
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
-import { parseLocalDate } from "@/lib/pulse/local-date-core";
+import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { buildWeeklyStoryPrompt } from "@/lib/pulse/story-core";
 import {
   getUserLocalDateContextForUser,
@@ -52,6 +52,7 @@ export type WeeklyStoryData =
       isSetupComplete: false;
       character: null;
       week: WeekRange;
+      isPreviousWeek: false;
       currentWeekProof: [];
       currentWeekJournal: [];
       currentWeekStory: null;
@@ -65,6 +66,7 @@ export type WeeklyStoryData =
         name: string;
       };
       week: WeekRange;
+      isPreviousWeek: boolean;
       currentWeekProof: WeeklyProof[];
       currentWeekJournal: WeeklyJournalReflection[];
       currentWeekStory: WeeklyStory | null;
@@ -129,7 +131,7 @@ export async function getWeeklyStoryDataForUser(
   dateContext: UserLocalDateContext,
   selectedStoryId?: string,
 ): Promise<WeeklyStoryData> {
-  const week = getWeekRange(parseLocalDate(dateContext.today));
+  const thisWeek = getWeekRange(parseLocalDate(dateContext.today));
   const [character] = await db
     .select({
       id: characters.id,
@@ -143,7 +145,8 @@ export async function getWeeklyStoryDataForUser(
     return {
       isSetupComplete: false,
       character: null,
-      week,
+      week: thisWeek,
+      isPreviousWeek: false,
       currentWeekProof: [],
       currentWeekJournal: [],
       currentWeekStory: null,
@@ -152,16 +155,21 @@ export async function getWeeklyStoryDataForUser(
     };
   }
 
-  const [storyRows, currentWeekProof, currentWeekJournal] = await Promise.all([
+  const [storyRows, recapWeek] = await Promise.all([
     db
       .select()
       .from(weeklyStories)
       .where(eq(weeklyStories.userId, userId))
       .orderBy(desc(weeklyStories.weekStart), desc(weeklyStories.updatedAt))
       .limit(10),
-    getProofForWeek(userId, week),
-    getJournalForWeek(userId, week),
+    resolveRecapWeek(userId, thisWeek),
   ]);
+  const {
+    week,
+    isPreviousWeek,
+    proof: currentWeekProof,
+    journal: currentWeekJournal,
+  } = recapWeek;
 
   const stories = storyRows.map(toWeeklyStory);
   const currentWeekStory =
@@ -176,6 +184,7 @@ export async function getWeeklyStoryDataForUser(
     isSetupComplete: true,
     character,
     week,
+    isPreviousWeek,
     currentWeekProof,
     currentWeekJournal,
     currentWeekStory,
@@ -191,7 +200,7 @@ export async function generateAndSaveWeeklyStory() {
 
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const week = getWeekRange(parseLocalDate(dateContext.today));
+  const thisWeek = getWeekRange(parseLocalDate(dateContext.today));
   const [character] = await db
     .select({
       id: characters.id,
@@ -205,7 +214,7 @@ export async function generateAndSaveWeeklyStory() {
     return null;
   }
 
-  const [userQuests, proof, journal] = await Promise.all([
+  const [userQuests, { week, proof, journal }] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -221,8 +230,7 @@ export async function generateAndSaveWeeklyStory() {
         ),
       )
       .orderBy(asc(quests.position)),
-    getProofForWeek(userId, week),
-    getJournalForWeek(userId, week),
+    resolveRecapWeek(userId, thisWeek),
   ]);
 
   if (proof.length === 0 && journal.length === 0) {
@@ -340,6 +348,45 @@ export function getWeekRange(date = new Date()): WeekRange {
     start: getLocalDate(startDate),
     end: getLocalDate(endDate),
   };
+}
+
+async function resolveRecapWeek(userId: string, thisWeek: WeekRange) {
+  const [proof, journal] = await Promise.all([
+    getProofForWeek(userId, thisWeek),
+    getJournalForWeek(userId, thisWeek),
+  ]);
+
+  if (proof.length > 0 || journal.length > 0) {
+    return { week: thisWeek, isPreviousWeek: false, proof, journal };
+  }
+
+  const previousStart = offsetLocalDate(thisWeek.start, -7);
+  const previousWeek = { start: previousStart, end: offsetLocalDate(previousStart, 6) };
+  const [previousProof, previousJournal, [previousStory]] = await Promise.all([
+    getProofForWeek(userId, previousWeek),
+    getJournalForWeek(userId, previousWeek),
+    db
+      .select({ id: weeklyStories.id })
+      .from(weeklyStories)
+      .where(
+        and(
+          eq(weeklyStories.userId, userId),
+          eq(weeklyStories.weekStart, previousWeek.start),
+        ),
+      )
+      .limit(1),
+  ]);
+
+  if (!previousStory && (previousProof.length > 0 || previousJournal.length > 0)) {
+    return {
+      week: previousWeek,
+      isPreviousWeek: true,
+      proof: previousProof,
+      journal: previousJournal,
+    };
+  }
+
+  return { week: thisWeek, isPreviousWeek: false, proof, journal };
 }
 
 async function getProofForWeek(

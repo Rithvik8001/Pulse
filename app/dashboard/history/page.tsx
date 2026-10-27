@@ -61,7 +61,7 @@ export default async function HistoryPage() {
         />
         <p className="max-w-measure type-small text-fg-2">
           Consistency mixes how often you marked habits done in the last 30 days with how many
-          days in a row you have checked in.
+          days in a row you have done them.
         </p>
       </div>
 

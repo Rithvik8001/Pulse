@@ -55,7 +55,7 @@ export const features: Record<
   history: { label: "History", tint: "green", icon: SealCheck, href: "/dashboard/history" },
   review: { label: "Review", tint: "violet", icon: BookOpenText, href: "/dashboard/review" },
   journal: { label: "Journal", tint: "amber", icon: Notebook, href: "/dashboard/journal" },
-  assistant: { label: "Assistant", tint: "cyan", icon: Sparkle, href: "/dashboard" },
+  assistant: { label: "Pip", tint: "cyan", icon: Sparkle, href: "/dashboard" },
   suggestions: { label: "Suggestions", tint: "indigo", icon: Lightbulb, href: "/dashboard/habits" },
   settings: { label: "Settings", tint: "neutral", icon: GearSix, href: "/dashboard/settings" },
 };

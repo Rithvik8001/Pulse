@@ -9,6 +9,7 @@ import { characters, checkIns, quests } from "@/lib/db/schema";
 import { sendWelcomeEmailAfterSetup } from "@/lib/email/welcome";
 import { logError } from "@/lib/observability/logger";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type SetupFormState = {
@@ -137,7 +138,7 @@ export async function upsertCheckInAction(
   const outcome = normalizeOutcome(formData.get("outcome"));
   const note = normalizeOptionalText(formData.get("note"));
 
-  if (!questId || !outcome) {
+  if (!isUuid(questId) || !outcome) {
     return {
       status: "error",
       message: "Choose Done or Skipped first.",

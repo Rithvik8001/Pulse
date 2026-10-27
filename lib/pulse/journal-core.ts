@@ -1,3 +1,5 @@
+import { isLocalDate } from "@/lib/pulse/local-date-core";
+
 export const journalBodyMaxLength = 2000;
 export const journalHistoryDays = 30;
 
@@ -7,7 +9,15 @@ export function normalizeJournalDate(
 ) {
   const text = typeof value === "string" ? value.trim() : "";
 
-  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : fallback;
+  return isLocalDate(text) && text <= fallback ? text : fallback;
+}
+
+export function validateJournalDate(localDate: string, today: string) {
+  if (!isLocalDate(localDate) || localDate > today) {
+    return "Pick today or an earlier day, then save again.";
+  }
+
+  return null;
 }
 
 export function normalizeJournalBody(value: string) {

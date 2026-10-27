@@ -5,6 +5,7 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
+import { isUuid } from "@/lib/pulse/id-core";
 import { offsetLocalDate } from "@/lib/pulse/local-date-core";
 import {
   getUserLocalDateContextForUser,
@@ -161,7 +162,14 @@ export async function updateProofEntry(
   const cleanOutcome = normalizeOutcome(outcome);
   const cleanNote = normalizeOptionalText(note);
 
-  if (!cleanCheckInId || !cleanOutcome) {
+  if (!isUuid(cleanCheckInId)) {
+    return {
+      status: "error",
+      message: "This check-in could not be found. Reload the page and try again.",
+    };
+  }
+
+  if (!cleanOutcome) {
     return {
       status: "error",
       message: "Choose Done or Skipped before saving.",
@@ -206,7 +214,7 @@ export async function deleteProofEntry(
   const userId = await requireUserId();
   const cleanCheckInId = normalizeText(checkInId);
 
-  if (!cleanCheckInId) {
+  if (!isUuid(cleanCheckInId)) {
     return {
       status: "error",
       message: "This check-in could not be found. Reload the page and try again.",
