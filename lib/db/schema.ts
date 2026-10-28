@@ -28,7 +28,10 @@ export type AiUsageFeature =
   | "weekly-story"
   | "reword-suggestions"
   | "identity-timeline"
-  | "journal-check-ins";
+  | "journal-check-ins"
+  | "reminder-nudge";
+export type ReminderDeliveryKind = "daily" | "evening" | "test";
+export type ReminderDeliveryStatus = "pending" | "sent" | "error" | "skipped";
 export type AiUsagePeriod = "day" | "week";
 export type AiUsageEventStatus =
   | "allowed"
@@ -561,7 +564,7 @@ export const aiUsageBuckets = pgTable(
     ),
     check(
       "ai_usage_buckets_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins', 'reminder-nudge')`,
     ),
     check(
       "ai_usage_buckets_period_check",
@@ -616,7 +619,7 @@ export const aiUsageEvents = pgTable(
     index("ai_usage_events_period_idx").on(table.period, table.periodStart),
     check(
       "ai_usage_events_feature_check",
-      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins')`,
+      sql`${table.feature} in ('pulse-coach', 'habit-agent', 'weekly-story', 'reword-suggestions', 'identity-timeline', 'journal-check-ins', 'reminder-nudge')`,
     ),
     check(
       "ai_usage_events_status_check",
@@ -665,6 +668,137 @@ export const userSettings = pgTable(
       to: authenticatedRole,
       using: sql`${authUid} = ${table.userId}`,
       withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const reminderSettings = pgTable(
+  "reminder_settings",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    dailyEnabled: boolean("daily_enabled").default(false).notNull(),
+    dailyMinute: integer("daily_minute").default(1200).notNull(),
+    eveningEnabled: boolean("evening_enabled").default(false).notNull(),
+    eveningMinute: integer("evening_minute").default(1230).notNull(),
+    softPromptDismissedAt: timestamp("soft_prompt_dismissed_at", {
+      withTimezone: true,
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "reminder_settings_daily_minute_check",
+      sql`${table.dailyMinute} between 0 and 1425 and ${table.dailyMinute} % 15 = 0`,
+    ),
+    check(
+      "reminder_settings_evening_minute_check",
+      sql`${table.eveningMinute} between 0 and 1425 and ${table.eveningMinute} % 15 = 0`,
+    ),
+    check(
+      "reminder_settings_order_check",
+      sql`${table.eveningMinute} > ${table.dailyMinute}`,
+    ),
+    pgPolicy("reminder_settings_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("reminder_settings_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("reminder_settings_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    deviceLabel: text("device_label").notNull(),
+    failureCount: integer("failure_count").default(0).notNull(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("push_subscriptions_user_id_idx").on(table.userId),
+    uniqueIndex("push_subscriptions_endpoint_unique").on(table.endpoint),
+    pgPolicy("push_subscriptions_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("push_subscriptions_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const reminderDeliveries = pgTable(
+  "reminder_deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<ReminderDeliveryKind>().notNull(),
+    localDate: date("local_date").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    status: text("status").$type<ReminderDeliveryStatus>().notNull(),
+    habitCount: integer("habit_count").default(0).notNull(),
+    aiUsed: boolean("ai_used").default(false).notNull(),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("reminder_deliveries_user_created_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
+    uniqueIndex("reminder_deliveries_dedupe_key_unique").on(table.dedupeKey),
+    check(
+      "reminder_deliveries_kind_check",
+      sql`${table.kind} in ('daily', 'evening', 'test')`,
+    ),
+    check(
+      "reminder_deliveries_status_check",
+      sql`${table.status} in ('pending', 'sent', 'error', 'skipped')`,
+    ),
+    pgPolicy("reminder_deliveries_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
     }),
   ],
 ).enableRLS();
@@ -776,3 +910,6 @@ export type EmailDelivery = typeof emailDeliveries.$inferSelect;
 export type AiUsageBucket = typeof aiUsageBuckets.$inferSelect;
 export type AiUsageEvent = typeof aiUsageEvents.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
+export type ReminderSettings = typeof reminderSettings.$inferSelect;
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type ReminderDelivery = typeof reminderDeliveries.$inferSelect;

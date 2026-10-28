@@ -25,6 +25,8 @@ import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { computeMomentum } from "@/lib/pulse/momentum-core";
 import { getProofArchiveDataForUser } from "@/lib/pulse/proof";
 import { activeQuestLimit } from "@/lib/pulse/quests";
+import { getReminderSettingsForUser, hasPushDevice } from "@/lib/pulse/reminders";
+import { formatMinuteLabel, parseClockTime, snapReminderMinute } from "@/lib/pulse/reminders-core";
 import { dailySchedule, formatScheduleLabel, scheduleFromInput, scheduleInputSchema } from "@/lib/pulse/schedule-core";
 import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { computeStatsData, statsWindowWeeks } from "@/lib/pulse/stats-core";
@@ -302,6 +304,11 @@ export async function getPulseCoachContextForUser(
     histories,
   });
 
+  const [{ settings: reminderValues }, hasDevice] = await Promise.all([
+    getReminderSettingsForUser(userId),
+    hasPushDevice(userId),
+  ]);
+
   return compressPulseCoachContext({
     today,
     isSetupComplete: true,
@@ -385,6 +392,7 @@ export async function getPulseCoachContextForUser(
     journal: journalRows,
     stories: storyRows,
     latestIdentitySnapshot: identitySnapshotRows[0] ?? null,
+    reminders: { ...reminderValues, locale: dateContext.locale, hasDevice },
   });
 }
 
@@ -425,6 +433,53 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
           "Change schedule",
           `Make "${quest?.title ?? "this habit"}" due ${formatScheduleLabel(scheduleFromInput(schedule)).toLowerCase()}, starting today. Past days keep their old schedule.`,
           { type: "updateQuestSchedule", questId, schedule },
+        );
+      },
+    }),
+    proposeUpdateReminders: tool({
+      description:
+        "Propose turning reminders on or off or changing their times. Times are 24-hour local times like 20:00 and are rounded to the quarter hour. The daily reminder and the last call are only sent when a habit due today is still open. Leave out anything the person did not ask to change.",
+      inputSchema: z.object({
+        dailyEnabled: z.boolean().optional(),
+        dailyTime: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/).optional(),
+        eveningEnabled: z.boolean().optional(),
+        eveningTime: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/).optional(),
+      }),
+      execute: async ({ dailyEnabled, dailyTime, eveningEnabled, eveningTime }) => {
+        const current = context.reminders ?? {
+          dailyEnabled: false,
+          dailyMinute: 1200,
+          eveningEnabled: false,
+          eveningMinute: 1230,
+          locale: "en",
+          hasDevice: false,
+        };
+        const dailyClock = dailyTime ? parseClockTime(dailyTime) : null;
+        const eveningClock = eveningTime ? parseClockTime(eveningTime) : null;
+        let dailyMinute = dailyClock === null ? current.dailyMinute : snapReminderMinute(dailyClock);
+        let eveningMinute = eveningClock === null ? current.eveningMinute : snapReminderMinute(eveningClock);
+        if (eveningMinute <= dailyMinute) eveningMinute = Math.min(dailyMinute + 30, 1425);
+        if (eveningMinute <= dailyMinute) dailyMinute = eveningMinute - 15;
+        const next = {
+          dailyEnabled: dailyEnabled ?? (dailyClock !== null ? true : current.dailyEnabled),
+          dailyMinute,
+          eveningEnabled: eveningEnabled ?? (eveningClock !== null ? true : current.eveningEnabled),
+          eveningMinute,
+        };
+        const daily = next.dailyEnabled
+          ? `Daily reminder at ${formatMinuteLabel(next.dailyMinute, current.locale)}`
+          : "Daily reminder off";
+        const evening = next.eveningEnabled
+          ? `last call at ${formatMinuteLabel(next.eveningMinute, current.locale)}`
+          : "last call off";
+        const device = current.hasDevice
+          ? ""
+          : " Turn on notifications in Settings to get them on this device.";
+
+        return proposal(
+          "Set reminders",
+          `${daily}, ${evening}. Reminders only go out when a habit due today is still open.${device}`,
+          { type: "updateReminders", ...next },
         );
       },
     }),

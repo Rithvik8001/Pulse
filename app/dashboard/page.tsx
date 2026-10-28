@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 
 import { CheckInList } from "@/components/product/check-in-list";
+import { ReminderPromptRow } from "@/components/product/reminders/reminder-prompt-row";
 import { SetupGate } from "@/components/product/setup-gate";
 import { Notice } from "@/components/ui/notice";
 import { Page, PageHeader, PageLead, PageTitle } from "@/components/ui/page";
 import { NavRow } from "@/components/ui/row";
 import { getDashboardDataForUser, requireUserId } from "@/lib/pulse/dashboard";
+import { getReminderPromptForUser } from "@/lib/pulse/reminders";
+import { formatMinuteLabel } from "@/lib/pulse/reminders-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const metadata: Metadata = {
@@ -24,7 +27,11 @@ function summary(done: number, due: number, total: number) {
 export default async function TodayPage() {
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const dashboard = await getDashboardDataForUser(userId, dateContext);
+  const [dashboard, reminderPrompt] = await Promise.all([
+    getDashboardDataForUser(userId, dateContext),
+    getReminderPromptForUser(userId, dateContext.timeZone, dateContext.today),
+  ]);
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
   if (!dashboard.isSetupComplete) {
     return <SetupGate isSetupComplete={false}>{null}</SetupGate>;
@@ -51,6 +58,14 @@ export default async function TodayPage() {
           You have no active habits.
         </Notice>
       )}
+
+      {reminderPrompt && vapidPublicKey ? (
+        <ReminderPromptRow
+          publicKey={vapidPublicKey}
+          minute={reminderPrompt.minute}
+          label={formatMinuteLabel(reminderPrompt.minute, dateContext.locale)}
+        />
+      ) : null}
 
       <NavRow
         as="div"

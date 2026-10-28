@@ -16,6 +16,7 @@ const inter = localFont({
 export const metadata: Metadata = {
   title: "Pulse",
   description: "A habit app. Check in on a few small habits on the days you plan and get a weekly recap of who you are becoming.",
+  appleWebApp: { capable: true, title: "Pulse", statusBarStyle: "default" },
 };
 
 export default function RootLayout({

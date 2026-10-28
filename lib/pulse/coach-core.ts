@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { formatMinuteLabel, reminderMinuteSchema } from "@/lib/pulse/reminders-core";
 import { scheduleInputSchema } from "@/lib/pulse/schedule-core";
 
 export const pulseCoachModel = "claude-haiku-5-5";
@@ -12,6 +13,7 @@ export const pulseCoachToolNames = [
   "proposeSaveCheckIn",
   "proposeSaveJournal",
   "proposeUpdateQuestSchedule",
+  "proposeUpdateReminders",
 ] as const;
 
 export const coachRecentProofLimit = 14;
@@ -54,6 +56,13 @@ export const coachActionSchema = z.discriminatedUnion("type", [
     type: z.literal("saveJournal"),
     localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     body: z.string().min(1).max(2000),
+  }),
+  z.object({
+    type: z.literal("updateReminders"),
+    dailyEnabled: z.boolean(),
+    dailyMinute: reminderMinuteSchema,
+    eveningEnabled: z.boolean(),
+    eveningMinute: reminderMinuteSchema,
   }),
 ]);
 
@@ -141,7 +150,31 @@ export type PulseCoachContext = {
     periodEnd: string;
     identityStatement: string;
   } | null;
+  reminders?: CoachReminders | null;
 };
+
+export type CoachReminders = {
+  dailyEnabled: boolean;
+  dailyMinute: number;
+  eveningEnabled: boolean;
+  eveningMinute: number;
+  locale: string;
+  hasDevice: boolean;
+};
+
+export function describeCoachReminders(reminders: CoachReminders) {
+  const daily = reminders.dailyEnabled
+    ? `daily reminder on at ${formatMinuteLabel(reminders.dailyMinute, reminders.locale)}`
+    : "daily reminder off";
+  const evening = reminders.eveningEnabled
+    ? `last call on at ${formatMinuteLabel(reminders.eveningMinute, reminders.locale)}`
+    : "last call off";
+  const device = reminders.hasDevice
+    ? "notifications are on for at least one device"
+    : "notifications are not turned on for any device yet";
+
+  return `${daily}; ${evening}; ${device}`;
+}
 
 export function truncateCoachText(value: string | null | undefined) {
   const text = (value ?? "").trim().replace(/\s+/g, " ");
@@ -218,7 +251,9 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
     "",
     "Schedules: a habit is due every day, on specific weekdays, or a number of times a week. Weeks start on Monday. Done rate counts only due days. For day schedules, the first missed due day each week is forgiven and does not break days in a row. Weekly habits count weeks in a row when the weekly target is met. A habit that is not due today is not behind.",
     "",
-    "You can propose: add a habit (with a schedule), rename, archive or restore a habit, change a habit's schedule; check in on a habit as done or skipped; save a journal entry. When the person says things like three times a week or on weekdays, propose that schedule.",
+    "You can propose: add a habit (with a schedule), rename, archive or restore a habit, change a habit's schedule; check in on a habit as done or skipped; save a journal entry; set reminders. When the person says things like three times a week or on weekdays, propose that schedule.",
+    "Reminders: Pulse can send a daily reminder and a later last call as notifications, at local times on the quarter hour, only when a habit due today is still open. The last call must be later than the daily reminder. When the person asks to be reminded at a time, propose it with the reminders tool, passing 24-hour times like 20:00. Notifications for a device are turned on in Settings.",
+    `Current reminders: ${context.reminders ? describeCoachReminders(context.reminders) : "unknown"}.`,
     "You cannot edit or delete past check-ins, delete habits, or write weekly recaps. If asked, say where to do it: History for past check-ins, Review for the weekly recap. To delete a habit, they can select Start over and choose Change my habits.",
     "Private ids below are for tool calls only. User-facing replies must refer to habits by name, never by id.",
     "",

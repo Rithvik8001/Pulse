@@ -8,7 +8,8 @@ export type AiFeature =
   | "weekly-story"
   | "reword-suggestions"
   | "identity-timeline"
-  | "journal-check-ins";
+  | "journal-check-ins"
+  | "reminder-nudge";
 
 export type AiLimitPeriod = "day";
 
@@ -88,6 +89,7 @@ export const defaultAiLimitConfig: AiLimitConfig = {
     "weekly-story": { feature: "weekly-story", maxOutputTokens: 1200 },
     "identity-timeline": { feature: "identity-timeline", maxOutputTokens: 1200 },
     "journal-check-ins": { feature: "journal-check-ins", maxOutputTokens: 600 },
+    "reminder-nudge": { feature: "reminder-nudge", maxOutputTokens: 120 },
   },
 };
 

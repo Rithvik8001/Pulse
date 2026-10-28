@@ -64,7 +64,7 @@ const destinations: { key: Feature; keywords: string[] }[] = [
   { key: "history", keywords: ["proof", "check-ins", "stats", "consistency"] },
   { key: "review", keywords: ["recap", "story", "identity", "milestones", "statement"] },
   { key: "journal", keywords: ["entry", "write"] },
-  { key: "settings", keywords: ["theme", "dark", "sign out", "email"] },
+  { key: "settings", keywords: ["theme", "dark", "sign out", "email", "reminders", "notifications"] },
 ];
 
 const goKeyFor = Object.fromEntries(

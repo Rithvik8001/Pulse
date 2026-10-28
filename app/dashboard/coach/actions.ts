@@ -17,6 +17,8 @@ import {
   updateQuestSchedule,
   updateQuestTitle,
 } from "@/lib/pulse/quests";
+import { hasPushDevice, saveReminderSettingsForUser } from "@/lib/pulse/reminders";
+import { reminderSettingsSchema } from "@/lib/pulse/reminders-core";
 import { scheduleFromInput } from "@/lib/pulse/schedule-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
@@ -70,6 +72,9 @@ export async function confirmPulseCoachAction(
         parsed.data.localDate,
         parsed.data.body,
       );
+      break;
+    case "updateReminders":
+      result = await saveCoachReminders(parsed.data);
       break;
   }
 
@@ -154,6 +159,30 @@ async function saveCoachCheckIn(
   return {
     status: "success",
     message: `Saved ${quest.title} as ${action.outcome === "win" ? "done" : "skipped"}.`,
+  };
+}
+
+async function saveCoachReminders(
+  action: Extract<CoachAction, { type: "updateReminders" }>,
+): Promise<CoachConfirmResult> {
+  const userId = await requireUserId();
+  const parsed = reminderSettingsSchema.safeParse(action);
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Those reminder times could not be saved. Ask Pip again.",
+    };
+  }
+
+  await saveReminderSettingsForUser(userId, parsed.data, { dismissPrompt: true });
+  revalidatePath("/dashboard/settings");
+
+  return {
+    status: "success",
+    message: (await hasPushDevice(userId))
+      ? "Reminders saved."
+      : "Reminders saved. Turn on notifications in Settings to get them.",
   };
 }
 

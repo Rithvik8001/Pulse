@@ -157,6 +157,8 @@ function formatCoachActionLabel(action: CoachAction["type"]) {
       return "Journal";
     case "updateQuestSchedule":
       return "Schedule";
+    case "updateReminders":
+      return "Reminders";
   }
 }
 
@@ -218,6 +220,11 @@ export function getProposalTarget(action: ProposalAction, createdQuestId?: strin
         href: withHighlight(`/dashboard/journal?date=${action.localDate}`, "journal-entry"),
         highlightId: "journal-entry",
       };
+    case "updateReminders":
+      return {
+        href: withHighlight("/dashboard/settings", "reminders"),
+        highlightId: "reminders",
+      };
     default:
       return habits(action.questId);
   }
@@ -232,6 +239,7 @@ const confirmedVerbs: Record<string, string> = {
   Schedule: "New schedule for",
   "Check in": "Checked in",
   Journal: "Saved journal entry",
+  Reminders: "Reminders updated",
 };
 
 export function formatConfirmedLine(proposal: ParsedProposal) {

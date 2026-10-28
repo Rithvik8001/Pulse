@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { signOutAction } from "@/app/(auth)/auth/actions";
 import { getEmailPreferenceRow } from "@/app/dashboard/_data";
+import { RemindersSettings } from "@/components/product/reminders/reminders-settings";
 import { ShortcutsButton } from "@/components/product/settings/shortcuts-button";
 import { ThemeControl } from "@/components/product/settings/theme-control";
 import { Notice } from "@/components/ui/notice";
@@ -11,12 +12,15 @@ import { DetailRow, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
+import { getLocalDateInTimeZone } from "@/lib/pulse/local-date-core";
+import { getReminderStateForUser } from "@/lib/pulse/reminders";
+import { formatMinuteLabel, getReminderSlots } from "@/lib/pulse/reminders-core";
 import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Settings - Pulse",
-  description: "Appearance, region and email preferences.",
+  description: "Appearance, reminders, region and email preferences.",
 };
 
 function Value({ children }: { children: React.ReactNode }) {
@@ -36,13 +40,22 @@ export default async function SettingsPage() {
     getUserSettingsForUser(userId),
     email ? getEmailPreferenceRow(userId, email) : Promise.resolve(null),
   ]);
+  const reminders = await getReminderStateForUser(
+    userId,
+    settings.timeZone,
+    getLocalDateInTimeZone(new Date(), settings.timeZone),
+  );
+  const slots = getReminderSlots().map((minute) => ({
+    value: minute,
+    label: formatMinuteLabel(minute, settings.locale),
+  }));
 
   return (
     <Page>
       <PageHeader>
         <Breadcrumb items={[{ href: "/dashboard", label: "Today" }]} />
         <PageTitle>Settings</PageTitle>
-        <PageLead>Appearance, region, email and your account.</PageLead>
+        <PageLead>Appearance, reminders, region, email and your account.</PageLead>
       </PageHeader>
 
       <Section title="Appearance">
@@ -58,6 +71,27 @@ export default async function SettingsPage() {
             className="max-sm:flex-col max-sm:items-stretch"
           />
         </RowList>
+      </Section>
+
+      <Section title="Reminders" id="reminders">
+        <RemindersSettings
+          publicKey={reminders.pushConfigured ? (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null) : null}
+          initialSettings={reminders.settings}
+          slots={slots}
+          devices={reminders.devices.map((device) => ({
+            endpoint: device.endpoint,
+            deviceLabel: device.deviceLabel,
+          }))}
+          suggestion={
+            reminders.suggestion
+              ? {
+                  typicalLabel: formatMinuteLabel(reminders.suggestion.typicalMinute, settings.locale),
+                  suggestedMinute: reminders.suggestion.suggestedMinute,
+                  suggestedLabel: formatMinuteLabel(reminders.suggestion.suggestedMinute, settings.locale),
+                }
+              : null
+          }
+        />
       </Section>
 
       <Section title="Region">
