@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getEmailPreferenceRow } from "@/app/dashboard/_data";
+import { AiQuotaProvider } from "@/components/product/ai-quota";
 import { AppHeader } from "@/components/product/app-header";
 import { AssistantTray } from "@/components/product/assistant-tray";
 import { CommandMenu } from "@/components/product/command-menu";
@@ -9,6 +10,7 @@ import { RouteFocus } from "@/components/product/route-focus";
 import { ShellProvider } from "@/components/product/shell";
 import { ShortcutsTray } from "@/components/product/shortcuts-tray";
 import { UserSettingsSync } from "@/components/product/user-settings-sync";
+import { getAiQuotaForUser } from "@/lib/pulse/ai-limits";
 import { getCharacterNameForUser } from "@/lib/pulse/dashboard";
 import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import { createClient } from "@/lib/supabase/server";
@@ -33,25 +35,28 @@ export default async function DashboardLayout({
   const settings = userId ? await getUserSettingsForUser(userId) : null;
   const characterName = userId ? await getCharacterNameForUser(userId) : null;
   const showHabits = Boolean(characterName);
+  const aiQuota = userId ? await getAiQuotaForUser(userId) : null;
 
   return (
-    <ShellProvider>
-      {settings ? (
-        <UserSettingsSync locale={settings.locale} timeZone={settings.timeZone} />
-      ) : null}
-      <AppHeader />
-      <main
-        id="main"
-        tabIndex={-1}
-        className="mx-auto w-full max-w-page flex-1 px-5 py-10 outline-none max-sm:px-4"
-      >
-        {children}
-      </main>
-      <RouteFocus />
-      <NavTray />
-      <CommandMenu />
-      <ShortcutsTray />
-      <AssistantTray showHabits={showHabits} />
-    </ShellProvider>
+    <AiQuotaProvider initialQuota={aiQuota}>
+      <ShellProvider>
+        {settings ? (
+          <UserSettingsSync locale={settings.locale} timeZone={settings.timeZone} />
+        ) : null}
+        <AppHeader />
+        <main
+          id="main"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-page flex-1 px-5 py-10 outline-none max-sm:px-4"
+        >
+          {children}
+        </main>
+        <RouteFocus />
+        <NavTray />
+        <CommandMenu />
+        <ShortcutsTray />
+        <AssistantTray showHabits={showHabits} />
+      </ShellProvider>
+    </AiQuotaProvider>
   );
 }

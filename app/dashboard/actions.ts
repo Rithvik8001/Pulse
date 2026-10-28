@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
 import { sendWelcomeEmailAfterSetup } from "@/lib/email/welcome";
 import { logError } from "@/lib/observability/logger";
+import { getAiQuotaForUser } from "@/lib/pulse/ai-limits";
+import type { AiQuota } from "@/lib/pulse/ai-limits-core";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { isUuid } from "@/lib/pulse/id-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
@@ -219,4 +221,10 @@ function normalizeOptionalText(value: FormDataEntryValue | null) {
   const text = normalizeText(value);
 
   return text.length > 0 ? text : null;
+}
+
+export async function getAiQuotaAction(): Promise<AiQuota> {
+  const userId = await requireUserId();
+
+  return getAiQuotaForUser(userId);
 }

@@ -1,8 +1,6 @@
-import {
-  formatLocalDate,
-  offsetDate,
-  parseLocalDate,
-} from "@/lib/pulse/local-date-core";
+import { getLocalDateInTimeZone, offsetLocalDate } from "@/lib/pulse/local-date-core";
+
+export const aiGlobalTimeZone = "UTC";
 
 export type AiFeature =
   | "pulse-coach"
@@ -12,19 +10,18 @@ export type AiFeature =
   | "identity-timeline"
   | "journal-check-ins";
 
-export type AiLimitPeriod = "day" | "week";
+export type AiLimitPeriod = "day";
 
 export type AiFeatureLimit = {
   feature: AiFeature;
-  label: string;
-  period: AiLimitPeriod;
-  requestLimit: number;
-  tokenLimit: number;
   maxOutputTokens: number;
 };
 
 export type AiLimitConfig = {
   enabled: boolean;
+  userDailyRequestLimit: number;
+  userDailyTokenLimit: number;
+  requestInputTokenLimit: number;
   globalDailyRequestLimit: number;
   globalDailyTokenLimit: number;
   features: Record<AiFeature, AiFeatureLimit>;
@@ -32,8 +29,7 @@ export type AiLimitConfig = {
 
 export type AiLimitSnapshot = {
   requestCount: number;
-  estimatedTokenCount: number;
-  totalTokenCount: number;
+  tokenCount: number;
 };
 
 export type AiLimitBlockReason =
@@ -58,73 +54,59 @@ export type AiLimitDecision =
       message: string;
     };
 
+export type AiQuota = {
+  limit: number;
+  used: number;
+  remaining: number;
+  resetAt: string;
+};
+
 type EnvLike = Record<string, string | undefined>;
 
 export const aiChatMaxMessages = 12;
-export const aiChatMaxSingleUserTextChars = 2000;
-export const aiChatMaxTotalUserTextChars = 8000;
+export const aiChatMaxUserTextChars = 1000;
+export const aiChatMaxAssistantTextChars = 4000;
+export const aiChatMaxToolJsonChars = 2000;
+export const aiChatMaxTotalChars = 16000;
+export const aiChatMaxBodyBytes = 64 * 1024;
+const aiChatMaxIdChars = 100;
+
+export const aiInputTooLargeMessage =
+  "This conversation is too long. Select Start over to begin a new one.";
 
 export const defaultAiLimitConfig: AiLimitConfig = {
   enabled: true,
-  globalDailyRequestLimit: 50,
-  globalDailyTokenLimit: 500_000,
+  userDailyRequestLimit: 30,
+  userDailyTokenLimit: 150_000,
+  requestInputTokenLimit: 12_000,
+  globalDailyRequestLimit: 1_000,
+  globalDailyTokenLimit: 5_000_000,
   features: {
-    "pulse-coach": {
-      feature: "pulse-coach",
-      label: "Pip",
-      period: "day",
-      requestLimit: 5,
-      tokenLimit: 60_000,
-      maxOutputTokens: 700,
-    },
-    "habit-agent": {
-      feature: "habit-agent",
-      label: "habit changes",
-      period: "day",
-      requestLimit: 3,
-      tokenLimit: 30_000,
-      maxOutputTokens: 500,
-    },
-    "reword-suggestions": {
-      feature: "reword-suggestions",
-      label: "wording suggestions",
-      period: "day",
-      requestLimit: 5,
-      tokenLimit: 10_000,
-      maxOutputTokens: 250,
-    },
-    "weekly-story": {
-      feature: "weekly-story",
-      label: "weekly recaps",
-      period: "week",
-      requestLimit: 2,
-      tokenLimit: 25_000,
-      maxOutputTokens: 1200,
-    },
-    "identity-timeline": {
-      feature: "identity-timeline",
-      label: "statement refreshes",
-      period: "week",
-      requestLimit: 2,
-      tokenLimit: 35_000,
-      maxOutputTokens: 1200,
-    },
-    "journal-check-ins": {
-      feature: "journal-check-ins",
-      label: "check-ins from your journal",
-      period: "day",
-      requestLimit: 5,
-      tokenLimit: 20_000,
-      maxOutputTokens: 600,
-    },
+    "pulse-coach": { feature: "pulse-coach", maxOutputTokens: 700 },
+    "habit-agent": { feature: "habit-agent", maxOutputTokens: 500 },
+    "reword-suggestions": { feature: "reword-suggestions", maxOutputTokens: 250 },
+    "weekly-story": { feature: "weekly-story", maxOutputTokens: 1200 },
+    "identity-timeline": { feature: "identity-timeline", maxOutputTokens: 1200 },
+    "journal-check-ins": { feature: "journal-check-ins", maxOutputTokens: 600 },
   },
 };
 
 export function getAiLimitConfig(env: EnvLike = process.env): AiLimitConfig {
-  const enabled = parseBooleanEnv(env.AI_LIMITS_ENABLED, true);
-
   return {
-    enabled,
+    ...defaultAiLimitConfig,
+    enabled: parseBooleanEnv(env.AI_LIMITS_ENABLED, true),
+    userDailyRequestLimit: parsePositiveIntEnv(
+      env.AI_USER_DAILY_REQUEST_LIMIT,
+      defaultAiLimitConfig.userDailyRequestLimit,
+    ),
+    userDailyTokenLimit: parsePositiveIntEnv(
+      env.AI_USER_DAILY_TOKEN_LIMIT,
+      defaultAiLimitConfig.userDailyTokenLimit,
+    ),
+    requestInputTokenLimit: parsePositiveIntEnv(
+      env.AI_REQUEST_INPUT_TOKEN_LIMIT,
+      defaultAiLimitConfig.requestInputTokenLimit,
+    ),
     globalDailyRequestLimit: parsePositiveIntEnv(
       env.AI_GLOBAL_DAILY_REQUEST_LIMIT,
       defaultAiLimitConfig.globalDailyRequestLimit,
@@ -133,143 +115,219 @@ export function getAiLimitConfig(env: EnvLike = process.env): AiLimitConfig {
       env.AI_GLOBAL_DAILY_TOKEN_LIMIT,
       defaultAiLimitConfig.globalDailyTokenLimit,
     ),
-    features: {
-      "pulse-coach": withEnvLimit(
-        defaultAiLimitConfig.features["pulse-coach"],
-        env.AI_PULSE_COACH_DAILY_REQUEST_LIMIT,
-        env.AI_PULSE_COACH_DAILY_TOKEN_LIMIT,
-      ),
-      "habit-agent": withEnvLimit(
-        defaultAiLimitConfig.features["habit-agent"],
-        env.AI_HABIT_AGENT_DAILY_REQUEST_LIMIT,
-        env.AI_HABIT_AGENT_DAILY_TOKEN_LIMIT,
-      ),
-      "reword-suggestions": withEnvLimit(
-        defaultAiLimitConfig.features["reword-suggestions"],
-        env.AI_REWORD_DAILY_REQUEST_LIMIT,
-        env.AI_REWORD_DAILY_TOKEN_LIMIT,
-      ),
-      "weekly-story": withEnvLimit(
-        defaultAiLimitConfig.features["weekly-story"],
-        env.AI_WEEKLY_STORY_WEEKLY_REQUEST_LIMIT,
-        env.AI_WEEKLY_STORY_WEEKLY_TOKEN_LIMIT,
-      ),
-      "identity-timeline": withEnvLimit(
-        defaultAiLimitConfig.features["identity-timeline"],
-        env.AI_IDENTITY_TIMELINE_WEEKLY_REQUEST_LIMIT,
-        env.AI_IDENTITY_TIMELINE_WEEKLY_TOKEN_LIMIT,
-      ),
-      "journal-check-ins": withEnvLimit(
-        defaultAiLimitConfig.features["journal-check-ins"],
-        env.AI_JOURNAL_CHECK_INS_DAILY_REQUEST_LIMIT,
-        env.AI_JOURNAL_CHECK_INS_DAILY_TOKEN_LIMIT,
-      ),
-    },
   };
 }
 
-export function getPeriodStart(date: Date, period: AiLimitPeriod) {
-  if (period === "day") {
-    return formatLocalDate(date);
-  }
-
-  const startDate = new Date(date);
-  const day = startDate.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  startDate.setDate(startDate.getDate() + mondayOffset);
-
-  return formatLocalDate(startDate);
+export function getPeriodStart(date: Date, timeZone: string) {
+  return getLocalDateInTimeZone(date, timeZone);
 }
 
-export function getPeriodResetAt(periodStart: string, period: AiLimitPeriod) {
-  const resetDate = offsetDate(
-    parseLocalDate(periodStart),
-    period === "day" ? 1 : 7,
-  );
-  resetDate.setHours(0, 0, 0, 0);
+export function getPeriodResetAt(periodStart: string, timeZone: string) {
+  return getZonedMidnight(offsetLocalDate(periodStart, 1), timeZone);
+}
 
-  return resetDate;
+export function getZonedMidnight(localDate: string, timeZone: string) {
+  const [year, month, day] = localDate.split("-").map(Number);
+  const midnightAsUtc = Date.UTC(year, month - 1, day);
+  const firstGuess = midnightAsUtc - getTimeZoneOffsetMs(new Date(midnightAsUtc), timeZone);
+
+  return new Date(midnightAsUtc - getTimeZoneOffsetMs(new Date(firstGuess), timeZone));
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const wallClockAsUtc = Date.UTC(
+    value("year"),
+    value("month") - 1,
+    value("day"),
+    value("hour"),
+    value("minute"),
+    value("second"),
+  );
+
+  return wallClockAsUtc - Math.floor(date.getTime() / 1000) * 1000;
 }
 
 export function estimateTokens(text: string) {
   const cleanText = text.trim();
 
-  return cleanText ? Math.ceil(cleanText.length / 4) : 0;
+  return cleanText ? Math.ceil(cleanText.length / 3) : 0;
 }
 
-export function estimateMessagesTokens(messages: MinimalUiMessage[]) {
-  return estimateTokens(getUiMessageText(messages));
+export function isAiInputTooLarge(config: AiLimitConfig, estimatedTokens: number) {
+  return config.enabled && estimatedTokens > config.requestInputTokenLimit;
 }
 
-export function trimAiChatMessages<T>(messages: T[]) {
-  return messages.slice(-aiChatMaxMessages);
-}
+export type SanitizedChatPart =
+  | { type: "text"; text: string }
+  | { type: "step-start" }
+  | {
+      type: `tool-${string}`;
+      toolCallId: string;
+      state: "output-available";
+      input: unknown;
+      output: unknown;
+    };
 
-export type MinimalUiMessage = {
-  role: string;
-  parts: { type: string; text?: string }[];
+export type SanitizedChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  parts: SanitizedChatPart[];
 };
 
-export function getUiMessageText(messages: MinimalUiMessage[]) {
-  return messages
-    .flatMap((message) =>
-      message.parts
-        .filter((part) => part.type === "text" && typeof part.text === "string")
-        .map((part) => part.text ?? ""),
-    )
-    .join("\n");
-}
+export type SanitizedChatResult =
+  | { valid: false; message: string }
+  | { valid: true; messages: SanitizedChatMessage[]; characterCount: number };
 
-export function validateAiChatMessages(messages: MinimalUiMessage[]) {
-  let totalUserTextChars = 0;
+export function sanitizeAiChatMessages(
+  rawMessages: unknown,
+  allowedToolNames: readonly string[],
+): SanitizedChatResult {
+  if (!Array.isArray(rawMessages)) {
+    return { valid: false, message: "Your message did not arrive. Try again." };
+  }
 
-  for (const message of messages) {
-    if (message.role !== "user") {
+  const allowedToolTypes = new Set(allowedToolNames.map((name) => `tool-${name}`));
+  const messages: SanitizedChatMessage[] = [];
+
+  for (const raw of rawMessages.slice(-aiChatMaxMessages)) {
+    if (!isRecord(raw) || (raw.role !== "user" && raw.role !== "assistant") || !Array.isArray(raw.parts)) {
       continue;
     }
 
-    for (const part of message.parts) {
-      if (part.type !== "text" || typeof part.text !== "string") {
+    const role = raw.role;
+    const parts: SanitizedChatPart[] = [];
+
+    for (const part of raw.parts) {
+      if (!isRecord(part) || typeof part.type !== "string") {
         continue;
       }
 
-      if (part.text.length > aiChatMaxSingleUserTextChars) {
-        return {
-          valid: false as const,
-          message: `Keep each message to ${aiChatMaxSingleUserTextChars.toLocaleString()} characters or fewer.`,
-        };
+      if (part.type === "text" && typeof part.text === "string") {
+        if (role === "user" && part.text.length > aiChatMaxUserTextChars) {
+          return {
+            valid: false,
+            message: `Keep each message to ${aiChatMaxUserTextChars.toLocaleString("en")} characters or fewer.`,
+          };
+        }
+
+        if (role === "assistant" && part.text.length > aiChatMaxAssistantTextChars) {
+          continue;
+        }
+
+        parts.push({ type: "text", text: part.text });
+        continue;
       }
 
-      totalUserTextChars += part.text.length;
+      if (role !== "assistant") {
+        continue;
+      }
+
+      if (part.type === "step-start") {
+        parts.push({ type: "step-start" });
+        continue;
+      }
+
+      if (
+        allowedToolTypes.has(part.type) &&
+        part.state === "output-available" &&
+        typeof part.toolCallId === "string" &&
+        part.toolCallId.length <= aiChatMaxIdChars &&
+        jsonLength(part.input) <= aiChatMaxToolJsonChars &&
+        jsonLength(part.output) <= aiChatMaxToolJsonChars
+      ) {
+        parts.push({
+          type: part.type as `tool-${string}`,
+          toolCallId: part.toolCallId,
+          state: "output-available",
+          input: part.input,
+          output: part.output,
+        });
+      }
+    }
+
+    if (parts.some((part) => part.type !== "step-start")) {
+      messages.push({
+        id: typeof raw.id === "string" ? raw.id.slice(0, aiChatMaxIdChars) : `m${messages.length}`,
+        role,
+        parts,
+      });
     }
   }
 
-  if (totalUserTextChars > aiChatMaxTotalUserTextChars) {
-    return {
-      valid: false as const,
-      message: `This conversation is too long. Select Start over to begin a new one.`,
-    };
+  const last = messages.at(-1);
+  const lastText = last?.role === "user" ? getChatText([last]).trim() : "";
+
+  if (!lastText) {
+    return { valid: false, message: "Write a message first." };
   }
 
-  return { valid: true as const };
+  let characterCount = messages.reduce((total, message) => total + jsonLength(message.parts), 0);
+
+  while (characterCount > aiChatMaxTotalChars && messages.length > 1) {
+    const dropped = messages.shift();
+    characterCount -= dropped ? jsonLength(dropped.parts) : 0;
+  }
+
+  if (characterCount > aiChatMaxTotalChars) {
+    return { valid: false, message: aiInputTooLargeMessage };
+  }
+
+  return { valid: true, messages, characterCount };
+}
+
+export function estimateChatTokens(messages: SanitizedChatMessage[]) {
+  return Math.ceil(messages.reduce((total, message) => total + jsonLength(message.parts), 0) / 3);
+}
+
+function getChatText(messages: SanitizedChatMessage[]) {
+  return messages
+    .flatMap((message) => message.parts.flatMap((part) => (part.type === "text" ? [part.text] : [])))
+    .join("\n");
+}
+
+function jsonLength(value: unknown) {
+  if (value === undefined) {
+    return 0;
+  }
+
+  try {
+    return JSON.stringify(value)?.length ?? 0;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function decideAiLimit({
   config,
-  featureLimit,
   userSnapshot,
   globalSnapshot,
   estimatedTokens,
   resetAt,
   globalResetAt,
+  timeZone,
 }: {
   config: AiLimitConfig;
-  featureLimit: AiFeatureLimit;
   userSnapshot: AiLimitSnapshot;
   globalSnapshot: AiLimitSnapshot;
   estimatedTokens: number;
   resetAt: Date;
   globalResetAt: Date;
+  timeZone: string;
 }): AiLimitDecision {
   if (!config.enabled) {
     return {
@@ -280,76 +338,48 @@ export function decideAiLimit({
     };
   }
 
-  const nextUserRequests = userSnapshot.requestCount + 1;
-  const nextUserTokens =
-    Math.max(userSnapshot.estimatedTokenCount, userSnapshot.totalTokenCount) +
-    estimatedTokens;
-  const nextGlobalRequests = globalSnapshot.requestCount + 1;
-  const nextGlobalTokens =
-    Math.max(
-      globalSnapshot.estimatedTokenCount,
-      globalSnapshot.totalTokenCount,
-    ) + estimatedTokens;
-
-  if (nextGlobalRequests > config.globalDailyRequestLimit) {
-    return blockedDecision({
-      featureLimit,
-      limit: config.globalDailyRequestLimit,
-      remaining: 0,
-      resetAt: globalResetAt,
-      reason: "global_requests",
-    });
+  if (globalSnapshot.requestCount + 1 > config.globalDailyRequestLimit) {
+    return blockedDecision("global_requests", config.globalDailyRequestLimit, globalResetAt, timeZone);
   }
 
-  if (nextGlobalTokens > config.globalDailyTokenLimit) {
-    return blockedDecision({
-      featureLimit,
-      limit: config.globalDailyTokenLimit,
-      remaining: Math.max(
-        config.globalDailyTokenLimit -
-          Math.max(
-            globalSnapshot.estimatedTokenCount,
-            globalSnapshot.totalTokenCount,
-          ),
-        0,
-      ),
-      resetAt: globalResetAt,
-      reason: "global_tokens",
-    });
+  if (globalSnapshot.tokenCount + estimatedTokens > config.globalDailyTokenLimit) {
+    return blockedDecision("global_tokens", config.globalDailyTokenLimit, globalResetAt, timeZone);
   }
 
-  if (nextUserRequests > featureLimit.requestLimit) {
-    return blockedDecision({
-      featureLimit,
-      limit: featureLimit.requestLimit,
-      remaining: 0,
-      resetAt,
-      reason: "user_requests",
-    });
+  if (userSnapshot.requestCount + 1 > config.userDailyRequestLimit) {
+    return blockedDecision("user_requests", config.userDailyRequestLimit, resetAt, timeZone);
   }
 
-  if (nextUserTokens > featureLimit.tokenLimit) {
-    return blockedDecision({
-      featureLimit,
-      limit: featureLimit.tokenLimit,
-      remaining: Math.max(
-        featureLimit.tokenLimit -
-          Math.max(
-            userSnapshot.estimatedTokenCount,
-            userSnapshot.totalTokenCount,
-          ),
-        0,
-      ),
-      resetAt,
-      reason: "user_tokens",
-    });
+  if (userSnapshot.tokenCount + estimatedTokens > config.userDailyTokenLimit) {
+    return blockedDecision("user_tokens", config.userDailyRequestLimit, resetAt, timeZone);
   }
 
   return {
     allowed: true,
-    limit: featureLimit.requestLimit,
-    remaining: Math.max(featureLimit.requestLimit - nextUserRequests, 0),
+    limit: config.userDailyRequestLimit,
+    remaining: Math.max(config.userDailyRequestLimit - userSnapshot.requestCount - 1, 0),
     resetAt,
+  };
+}
+
+export function buildAiQuota({
+  config,
+  userSnapshot,
+  resetAt,
+}: {
+  config: AiLimitConfig;
+  userSnapshot: AiLimitSnapshot;
+  resetAt: Date;
+}): AiQuota {
+  const limit = config.userDailyRequestLimit;
+  const used = Math.min(userSnapshot.requestCount, limit);
+  const tokensSpent = userSnapshot.tokenCount >= config.userDailyTokenLimit;
+
+  return {
+    limit,
+    used,
+    remaining: tokensSpent ? 0 : Math.max(limit - used, 0),
+    resetAt: resetAt.toISOString(),
   };
 }
 
@@ -357,57 +387,43 @@ export function getRetryAfterSeconds(resetAt: Date, now = new Date()) {
   return Math.max(Math.ceil((resetAt.getTime() - now.getTime()) / 1000), 1);
 }
 
-function blockedDecision({
-  featureLimit,
-  limit,
-  remaining,
-  resetAt,
-  reason,
-}: {
-  featureLimit: AiFeatureLimit;
-  limit: number;
-  remaining: number;
-  resetAt: Date;
-  reason: AiLimitBlockReason;
-}): AiLimitDecision {
+export function formatAiResetTime(resetAt: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("en", { timeZone, hour: "numeric", minute: "2-digit" }).format(resetAt);
+}
+
+function blockedDecision(
+  reason: AiLimitBlockReason,
+  limit: number,
+  resetAt: Date,
+  timeZone: string,
+): AiLimitDecision {
   return {
     allowed: false,
     limit,
-    remaining,
+    remaining: 0,
     resetAt,
     reason,
-    message: formatLimitMessage(featureLimit, resetAt, reason),
+    message: formatLimitMessage(reason, limit, resetAt, timeZone),
   };
 }
 
 function formatLimitMessage(
-  featureLimit: AiFeatureLimit,
-  resetAt: Date,
   reason: AiLimitBlockReason,
+  limit: number,
+  resetAt: Date,
+  timeZone: string,
 ) {
-  const resetLabel = new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(resetAt);
-  if (reason === "global_requests" || reason === "global_tokens") {
-    return `Pulse has reached its AI limit for today. Try again after ${resetLabel}.`;
-  }
-  const window = featureLimit.period === "week" ? "this week's" : "today's";
-  return `You have reached ${window} limit for ${featureLimit.label}. Try again after ${resetLabel}.`;
-}
+  const time = formatAiResetTime(resetAt, timeZone);
 
-function withEnvLimit(
-  limit: AiFeatureLimit,
-  requestValue: string | undefined,
-  tokenValue: string | undefined,
-): AiFeatureLimit {
-  return {
-    ...limit,
-    requestLimit: parsePositiveIntEnv(requestValue, limit.requestLimit),
-    tokenLimit: parsePositiveIntEnv(tokenValue, limit.tokenLimit),
-  };
+  if (reason === "global_requests" || reason === "global_tokens") {
+    return `Pulse has reached its AI limit for today. Try again after ${time}.`;
+  }
+
+  if (reason === "user_tokens") {
+    return `You have used today's AI allowance. It resets at ${time}.`;
+  }
+
+  return `You have used today's ${limit} AI uses. They reset at ${time}.`;
 }
 
 function parseBooleanEnv(value: string | undefined, fallback: boolean) {

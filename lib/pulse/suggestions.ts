@@ -65,6 +65,8 @@ export type SuggestionsRawData = {
   thirtyDaysAgo: string;
 };
 
+export const rewordModel = "claude-haiku-5-5";
+
 export class MissingAiKeyError extends Error {
   constructor() {
     super(missingAiKeyMessage);
@@ -290,7 +292,7 @@ export async function getRewordOptions(questId: string): Promise<string[]> {
 
   try {
     const { output, totalUsage, finishReason } = await generateText({
-      model: aiModel("openai/gpt-5.4-nano"),
+      model: aiModel(rewordModel),
       output: Output.object({ schema: rewordSchema }),
       system,
       prompt,

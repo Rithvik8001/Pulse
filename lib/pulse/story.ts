@@ -30,7 +30,7 @@ import {
   type UserLocalDateContext,
 } from "@/lib/pulse/user-settings";
 
-export const weeklyStoryModel = "openai/gpt-5.4-nano";
+export const weeklyStoryModel = "claude-haiku-5-5";
 
 export type WeeklyStory = {
   id: string;

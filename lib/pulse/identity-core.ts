@@ -7,7 +7,7 @@ import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-c
 
 export const identityDefaultWindowDays = 90;
 export const identityAllWindowDays = 3650;
-export const identitySnapshotModel = "openai/gpt-5.4-nano";
+export const identitySnapshotModel = "claude-haiku-5-5";
 export const identityMaxPromptProof = 80;
 export const identityMaxPromptProofNotes = 30;
 export const identityMaxPromptJournals = 24;

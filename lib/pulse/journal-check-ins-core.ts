@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const journalCheckInModel = "openai/gpt-5.4-nano";
+export const journalCheckInModel = "claude-haiku-5-5";
 export const journalCheckInMaxItems = 12;
 export const journalCheckInNoteMaxLength = 240;
 const modelNoteMaxLength = 120;

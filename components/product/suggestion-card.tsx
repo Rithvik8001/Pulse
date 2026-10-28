@@ -9,6 +9,7 @@ import {
   getRewordOptionsAction,
   type RewordOptionsState,
 } from "@/app/dashboard/suggestions/actions";
+import { useAiQuota, useRefreshAiQuotaOnChange } from "@/components/product/ai-quota";
 import { Button } from "@/components/ui/button";
 import { ChoiceCards } from "@/components/ui/choice-cards";
 import { ConfirmTray } from "@/components/ui/confirm-tray";
@@ -36,6 +37,8 @@ export function SuggestionList({
     initialRewordState,
   );
   const [rewordingQuestId, setRewordingQuestId] = useState<string | null>(null);
+  const { exhausted, exhaustedMessage } = useAiQuota();
+  useRefreshAiQuotaOnChange(rewordState);
 
   const visible = suggestions.filter((s) => !dismissedIds.has(s.questId)).slice(0, 3);
   if (visible.length === 0) return null;
@@ -85,6 +88,7 @@ export function SuggestionList({
                       type="submit"
                       variant="text"
                       size="sm"
+                      disabled={exhausted}
                       pending={rewordPending && rewordingQuestId === suggestion.questId}
                       pendingLabel="Finding wording"
                     >
@@ -100,6 +104,9 @@ export function SuggestionList({
               <p className="w-full type-small text-fg-2 sm:pl-14">
                 Archive an active habit to restore this one.
               </p>
+            ) : null}
+            {suggestion.type === "reword" && exhausted ? (
+              <p className="w-full type-small text-fg-2 sm:pl-14">{exhaustedMessage}</p>
             ) : null}
             {suggestion.type === "reword" &&
             rewordingQuestId === suggestion.questId &&

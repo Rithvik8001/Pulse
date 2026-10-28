@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 
+import { useAiQuota } from "@/components/product/ai-quota";
 import { AssistantMessage } from "@/components/product/assistant/assistant-message";
 import {
   type ConfirmationState,
@@ -18,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { toast } from "@/components/ui/toast";
+import { aiChatMaxUserTextChars } from "@/lib/pulse/ai-limits-core";
+import { cn } from "@/lib/utils";
 
 function errorText(error: Error) {
   const raw = error.message?.trim();
@@ -60,8 +63,14 @@ export function useAssistantChat(api: string): AssistantSession {
   const [confirmations, setConfirmations] = useState<Record<string, ConfirmationState>>({});
   const [isConfirming, startConfirming] = useTransition();
   const transport = useMemo(() => new DefaultChatTransport({ api }), [api]);
+  const { refresh: refreshAiQuota } = useAiQuota();
   const { clearError, error, messages, regenerate, sendMessage, setMessages, status, stop } =
-    useChat({ transport, experimental_throttle: 80 });
+    useChat({
+      transport,
+      experimental_throttle: 80,
+      onFinish: refreshAiQuota,
+      onError: refreshAiQuota,
+    });
 
   return {
     clearError,
@@ -95,7 +104,9 @@ export function AssistantPane({
   onReset: () => void;
 }) {
   const router = useRouter();
+  const { exhausted, exhaustedMessage } = useAiQuota();
   const hasMessages = session.messages.length > 0;
+  const remainingChars = aiChatMaxUserTextChars - session.input.length;
   const logRef = React.useRef<HTMLDivElement>(null);
 
   const awaitingConfirmation = session.messages.some((message) =>
@@ -114,7 +125,7 @@ export function AssistantPane({
   function submitMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = session.input.trim();
-    if (!text || session.isStreaming) return;
+    if (!text || session.isStreaming || exhausted || text.length > aiChatMaxUserTextChars) return;
     session.setInput("");
     void session.sendMessage({ text });
   }
@@ -192,12 +203,23 @@ export function AssistantPane({
       ) : null}
 
       <form className="grid gap-3" onSubmit={submitMessage}>
-        <Field label="Message Pip" labelHidden>
+        <Field
+          label="Message Pip"
+          labelHidden
+          hint={
+            session.input.length > aiChatMaxUserTextChars * 0.8 ? (
+              <span className={cn("tabular-nums", remainingChars < 0 && "text-bad")}>
+                {session.input.length} of {aiChatMaxUserTextChars}
+              </span>
+            ) : undefined
+          }
+        >
           <Textarea
             autoGrow
             rows={2}
             className="max-h-40"
-            disabled={session.isStreaming}
+            maxLength={aiChatMaxUserTextChars}
+            disabled={session.isStreaming || exhausted}
             placeholder="Ask Pip about your habits, or ask to change one"
             value={session.input}
             onChange={(event) => session.setInput(event.target.value)}
@@ -210,14 +232,21 @@ export function AssistantPane({
           />
         </Field>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="type-small text-fg-3">Nothing changes until you confirm.</p>
+          <p className={cn("type-small", exhausted ? "text-bad" : "text-fg-3")}>
+            {exhausted ? exhaustedMessage : "Nothing changes until you confirm."}
+          </p>
           <div className="flex items-center gap-2">
             {session.isStreaming ? (
               <Button variant="secondary" size="sm" onClick={() => void session.stop()}>
                 Stop
               </Button>
             ) : (
-              <Button type="submit" variant={awaitingConfirmation ? "secondary" : "primary"} size="sm">
+              <Button
+                type="submit"
+                variant={awaitingConfirmation ? "secondary" : "primary"}
+                size="sm"
+                disabled={exhausted}
+              >
                 Send
               </Button>
             )}

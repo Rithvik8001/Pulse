@@ -1,41 +1,40 @@
 import "server-only";
 
 import type { LanguageModelUsage } from "ai";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, sum } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { aiUsageBuckets, aiUsageEvents } from "@/lib/db/schema";
+import { aiUsageBuckets, aiUsageEvents, type AiUsagePeriod } from "@/lib/db/schema";
+import { aiProviderOptions } from "@/lib/pulse/ai-provider";
+import { getUserSettingsForUser } from "@/lib/pulse/user-settings";
 import {
+  aiChatMaxBodyBytes,
+  aiGlobalTimeZone,
+  aiInputTooLargeMessage,
+  buildAiQuota,
   decideAiLimit,
-  estimateMessagesTokens,
   estimateTokens,
   getAiLimitConfig,
   getPeriodResetAt,
   getPeriodStart,
   getRetryAfterSeconds,
-  trimAiChatMessages,
-  validateAiChatMessages,
+  isAiInputTooLarge,
   type AiFeature,
-  type AiLimitPeriod,
   type AiLimitSnapshot,
-  type MinimalUiMessage,
+  type AiQuota,
 } from "@/lib/pulse/ai-limits-core";
 
 type AiReservationAllowed = {
   allowed: true;
   eventId: string | null;
   maxOutputTokens: number;
-  providerOptions: {
-    gateway: {
-      user: string;
-      tags: string[];
-    };
-  };
+  providerOptions: typeof aiProviderOptions;
+  remaining: number;
 };
 
 type AiReservationBlocked = {
   allowed: false;
-  status: 429;
+  status: 400 | 429;
   message: string;
   limit: number;
   remaining: number;
@@ -57,24 +56,6 @@ export class AiLimitReachedError extends Error {
   }
 }
 
-export function validateAndTrimAiChatMessages<T extends MinimalUiMessage>(
-  messages: T[],
-) {
-  const validation = validateAiChatMessages(messages);
-
-  if (!validation.valid) {
-    return validation;
-  }
-
-  const trimmedMessages = trimAiChatMessages(messages);
-
-  return {
-    valid: true as const,
-    messages: trimmedMessages,
-    estimatedInputTokens: estimateMessagesTokens(trimmedMessages),
-  };
-}
-
 export function estimateAiTextTokens(text: string) {
   return estimateTokens(text);
 }
@@ -93,11 +74,7 @@ export async function reserveAiUsage({
   const config = getAiLimitConfig();
   const featureLimit = config.features[feature];
   const now = new Date();
-  const periodStart = getPeriodStart(now, featureLimit.period);
-  const globalPeriodStart = getPeriodStart(now, "day");
-  const resetAt = getPeriodResetAt(periodStart, featureLimit.period);
-  const globalResetAt = getPeriodResetAt(globalPeriodStart, "day");
-  const providerOptions = getGatewayProviderOptions(userId, feature);
+  const providerOptions = aiProviderOptions;
 
   if (!config.enabled) {
     return {
@@ -105,41 +82,48 @@ export async function reserveAiUsage({
       eventId: null,
       maxOutputTokens: featureLimit.maxOutputTokens,
       providerOptions,
+      remaining: config.userDailyRequestLimit,
+    };
+  }
+
+  const { timeZone } = await getUserSettingsForUser(userId);
+  const periodStart = getPeriodStart(now, timeZone);
+  const globalPeriodStart = getPeriodStart(now, aiGlobalTimeZone);
+  const resetAt = getPeriodResetAt(periodStart, timeZone);
+  const globalResetAt = getPeriodResetAt(globalPeriodStart, aiGlobalTimeZone);
+
+  if (isAiInputTooLarge(config, estimatedInputTokens)) {
+    return {
+      allowed: false,
+      status: 400,
+      message: aiInputTooLargeMessage,
+      limit: config.requestInputTokenLimit,
+      remaining: 0,
+      resetAt,
+      retryAfterSeconds: 1,
     };
   }
 
   return db.transaction(async (tx) => {
-    await acquireAiLimitLock(tx, userId, feature);
+    await acquireUserAiLimitLock(tx, userId);
+    await acquireGlobalAiLimitLock(tx);
 
-    const userSnapshot = await getBucketSnapshot(tx, {
-      scopeType: "user",
-      scopeId: userId,
-      feature,
-      period: featureLimit.period,
-      periodStart,
-    });
-    const globalSnapshot = await getBucketSnapshot(tx, {
-      scopeType: "global",
-      scopeId: "site",
-      feature,
-      period: "day",
-      periodStart: globalPeriodStart,
-    });
+    const userSnapshot = await getUserSnapshot(tx, userId, periodStart);
+    const globalSnapshot = await getGlobalSnapshot(tx, globalPeriodStart);
     const decision = decideAiLimit({
       config,
-      featureLimit,
       userSnapshot,
       globalSnapshot,
       estimatedTokens: estimatedInputTokens,
       resetAt,
       globalResetAt,
+      timeZone,
     });
 
     if (!decision.allowed) {
       await incrementBlockedCount(tx, {
         userId,
         feature,
-        userPeriod: featureLimit.period,
         userPeriodStart: periodStart,
         globalPeriodStart,
       });
@@ -147,7 +131,7 @@ export async function reserveAiUsage({
         userId,
         feature,
         status: "blocked",
-        period: featureLimit.period,
+        period: "day",
         periodStart,
         estimatedInputTokens,
         error: decision.reason,
@@ -170,7 +154,6 @@ export async function reserveAiUsage({
       userId,
       feature,
       estimatedInputTokens,
-      userPeriod: featureLimit.period,
       userPeriodStart: periodStart,
       globalPeriodStart,
     });
@@ -180,7 +163,7 @@ export async function reserveAiUsage({
         userId,
         feature,
         status: "allowed",
-        period: featureLimit.period,
+        period: "day",
         periodStart,
         estimatedInputTokens,
         metadata,
@@ -193,8 +176,22 @@ export async function reserveAiUsage({
       eventId: event.id,
       maxOutputTokens: featureLimit.maxOutputTokens,
       providerOptions,
+      remaining: decision.remaining,
     };
   });
+}
+
+export async function getAiQuotaForUser(userId: string): Promise<AiQuota> {
+  const config = getAiLimitConfig();
+  const { timeZone } = await getUserSettingsForUser(userId);
+  const periodStart = getPeriodStart(new Date(), timeZone);
+  const resetAt = getPeriodResetAt(periodStart, timeZone);
+
+  if (!config.enabled) {
+    return buildAiQuota({ config, userSnapshot: { requestCount: 0, tokenCount: 0 }, resetAt });
+  }
+
+  return buildAiQuota({ config, userSnapshot: await getUserSnapshot(db, userId, periodStart), resetAt });
 }
 
 export async function completeAiUsage({
@@ -206,22 +203,52 @@ export async function completeAiUsage({
   usage: LanguageModelUsage | null | undefined;
   finishReason?: string;
 }) {
+  await settleAiUsage({ eventId, tokens: normalizeUsage(usage), finishReason });
+}
+
+export async function abortAiUsage({
+  eventId,
+  stepUsages,
+}: {
+  eventId: string | null;
+  stepUsages: LanguageModelUsage[];
+}) {
+  const tokens = stepUsages.map(normalizeUsage).reduce(
+    (total, usage) => ({
+      inputTokens: total.inputTokens + usage.inputTokens,
+      outputTokens: total.outputTokens + usage.outputTokens,
+      totalTokens: total.totalTokens + usage.totalTokens,
+    }),
+    { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+  );
+
+  await settleAiUsage({ eventId, tokens, finishReason: "aborted" });
+}
+
+async function settleAiUsage({
+  eventId,
+  tokens,
+  finishReason,
+}: {
+  eventId: string | null;
+  tokens: ReturnType<typeof normalizeUsage>;
+  finishReason?: string;
+}) {
   if (!eventId) {
     return;
   }
 
-  const normalizedUsage = normalizeUsage(usage);
   const [event] = await db
     .update(aiUsageEvents)
     .set({
       status: "completed",
-      inputTokens: normalizedUsage.inputTokens,
-      outputTokens: normalizedUsage.outputTokens,
-      totalTokens: normalizedUsage.totalTokens,
+      inputTokens: tokens.inputTokens,
+      outputTokens: tokens.outputTokens,
+      totalTokens: tokens.totalTokens,
       finishReason,
       updatedAt: new Date(),
     })
-    .where(eq(aiUsageEvents.id, eventId))
+    .where(and(eq(aiUsageEvents.id, eventId), eq(aiUsageEvents.status, "allowed")))
     .returning({
       userId: aiUsageEvents.userId,
       feature: aiUsageEvents.feature,
@@ -239,10 +266,10 @@ export async function completeAiUsage({
     feature: event.feature,
     userPeriod: event.period,
     userPeriodStart: event.periodStart,
-    globalPeriodStart: getPeriodStart(event.createdAt, "day"),
-    inputTokens: normalizedUsage.inputTokens,
-    outputTokens: normalizedUsage.outputTokens,
-    totalTokens: normalizedUsage.totalTokens,
+    globalPeriodStart: getPeriodStart(event.createdAt, aiGlobalTimeZone),
+    inputTokens: tokens.inputTokens,
+    outputTokens: tokens.outputTokens,
+    totalTokens: tokens.totalTokens,
   });
 }
 
@@ -295,64 +322,55 @@ export async function failAiUsage({
       scopeId: "site",
       feature: event.feature,
       period: "day",
-      periodStart: getPeriodStart(event.createdAt, "day"),
+      periodStart: getPeriodStart(event.createdAt, aiGlobalTimeZone),
       requestDelta: -1,
       estimatedTokenDelta: -event.estimatedInputTokens,
     });
   });
 }
 
-function getGatewayProviderOptions(userId: string, feature: AiFeature) {
-  const environment = process.env.VERCEL_ENV ?? process.env.NODE_ENV;
-  const tags = [`feature:${feature}`];
-
-  if (environment) {
-    tags.push(`env:${environment}`);
-  }
-
-  return {
-    gateway: {
-      user: userId,
-      tags,
-    },
-  };
+async function getGlobalSnapshot(
+  client: Pick<typeof db, "select">,
+  periodStart: string,
+): Promise<AiLimitSnapshot> {
+  return sumBuckets(client, "global", "site", periodStart);
 }
 
-async function getBucketSnapshot(
+async function getUserSnapshot(
   client: Pick<typeof db, "select">,
-  key: {
-    scopeType: "user" | "global";
-    scopeId: string;
-    feature: AiFeature;
-    period: AiLimitPeriod;
-    periodStart: string;
-  },
+  userId: string,
+  periodStart: string,
 ): Promise<AiLimitSnapshot> {
-  const [bucket] = await client
+  return sumBuckets(client, "user", userId, periodStart);
+}
+
+async function sumBuckets(
+  client: Pick<typeof db, "select">,
+  scopeType: "user" | "global",
+  scopeId: string,
+  periodStart: string,
+): Promise<AiLimitSnapshot> {
+  const [row] = await client
     .select({
-      requestCount: aiUsageBuckets.requestCount,
-      estimatedTokenCount: aiUsageBuckets.estimatedTokenCount,
-      totalTokenCount: aiUsageBuckets.totalTokenCount,
+      requestCount: sum(aiUsageBuckets.requestCount).mapWith(Number),
+      tokenCount: sum(
+        sql`greatest(${aiUsageBuckets.estimatedTokenCount}, ${aiUsageBuckets.totalTokenCount})`,
+      ).mapWith(Number),
     })
     .from(aiUsageBuckets)
     .where(
       and(
-        eq(aiUsageBuckets.scopeType, key.scopeType),
-        eq(aiUsageBuckets.scopeId, key.scopeId),
-        eq(aiUsageBuckets.feature, key.feature),
-        eq(aiUsageBuckets.period, key.period),
-        eq(aiUsageBuckets.periodStart, key.periodStart),
+        eq(aiUsageBuckets.scopeType, scopeType),
+        eq(aiUsageBuckets.scopeId, scopeId),
+        eq(aiUsageBuckets.period, "day"),
+        eq(aiUsageBuckets.periodStart, periodStart),
       ),
-    )
-    .limit(1);
+    );
 
-  return (
-    bucket ?? {
-      requestCount: 0,
-      estimatedTokenCount: 0,
-      totalTokenCount: 0,
-    }
-  );
+  return {
+    requestCount: row?.requestCount ?? 0,
+    tokenCount: row?.tokenCount ?? 0,
+  };
 }
 
 async function incrementAllowedUsage(
@@ -361,14 +379,12 @@ async function incrementAllowedUsage(
     userId,
     feature,
     estimatedInputTokens,
-    userPeriod,
     userPeriodStart,
     globalPeriodStart,
   }: {
     userId: string;
     feature: AiFeature;
     estimatedInputTokens: number;
-    userPeriod: AiLimitPeriod;
     userPeriodStart: string;
     globalPeriodStart: string;
   },
@@ -378,7 +394,7 @@ async function incrementAllowedUsage(
     scopeType: "user",
     scopeId: userId,
     feature,
-    period: userPeriod,
+    period: "day",
     periodStart: userPeriodStart,
     requestDelta: 1,
     estimatedTokenDelta: estimatedInputTokens,
@@ -400,13 +416,11 @@ async function incrementBlockedCount(
   {
     userId,
     feature,
-    userPeriod,
     userPeriodStart,
     globalPeriodStart,
   }: {
     userId: string;
     feature: AiFeature;
-    userPeriod: AiLimitPeriod;
     userPeriodStart: string;
     globalPeriodStart: string;
   },
@@ -416,7 +430,7 @@ async function incrementBlockedCount(
     scopeType: "user",
     scopeId: userId,
     feature,
-    period: userPeriod,
+    period: "day",
     periodStart: userPeriodStart,
     blockedDelta: 1,
   });
@@ -443,7 +457,7 @@ async function addActualTokenUsage({
 }: {
   userId: string;
   feature: AiFeature;
-  userPeriod: AiLimitPeriod;
+  userPeriod: AiUsagePeriod;
   userPeriodStart: string;
   globalPeriodStart: string;
   inputTokens: number;
@@ -496,7 +510,7 @@ async function upsertBucketDelta(
     scopeType: "user" | "global";
     scopeId: string;
     feature: AiFeature;
-    period: AiLimitPeriod;
+    period: AiUsagePeriod;
     periodStart: string;
     requestDelta?: number;
     estimatedTokenDelta?: number;
@@ -545,14 +559,12 @@ async function upsertBucketDelta(
     });
 }
 
-async function acquireAiLimitLock(
-  client: Pick<typeof db, "execute">,
-  userId: string,
-  feature: AiFeature,
-) {
-  await client.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`ai:${userId}:${feature}`}, 12013))`,
-  );
+async function acquireGlobalAiLimitLock(client: Pick<typeof db, "execute">) {
+  await client.execute(sql`select pg_advisory_xact_lock(hashtextextended('ai:global', 12013))`);
+}
+
+async function acquireUserAiLimitLock(client: Pick<typeof db, "execute">, userId: string) {
+  await client.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`ai:${userId}`}, 12013))`);
 }
 
 function normalizeUsage(usage: LanguageModelUsage | null | undefined) {
@@ -573,4 +585,28 @@ function getErrorMessage(error: unknown) {
   }
 
   return "AI request failed.";
+}
+
+export async function readAiChatMessages(request: Request) {
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+
+  if (declaredLength > aiChatMaxBodyBytes) {
+    return { ok: false as const, message: aiInputTooLargeMessage };
+  }
+
+  const text = await request.text();
+
+  if (new TextEncoder().encode(text).length > aiChatMaxBodyBytes) {
+    return { ok: false as const, message: aiInputTooLargeMessage };
+  }
+
+  try {
+    const body: unknown = JSON.parse(text);
+    const messages =
+      typeof body === "object" && body !== null && "messages" in body ? body.messages : undefined;
+
+    return { ok: true as const, messages };
+  } catch {
+    return { ok: false as const, message: "Your message did not arrive. Try again." };
+  }
 }

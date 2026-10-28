@@ -12,6 +12,7 @@ import {
   parseHabitProposal,
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
+import { useAiQuota } from "@/components/product/ai-quota";
 import { Pip, pipName } from "@/components/product/pip";
 import { useShell } from "@/components/product/shell";
 import { Tray, TrayContent, TrayHeader } from "@/components/ui/tray";
@@ -48,10 +49,12 @@ function StarterGroup({
   title,
   prompts,
   onPick,
+  disabled,
 }: {
   title: string;
   prompts: string[];
   onPick: (prompt: string) => void;
+  disabled: boolean;
 }) {
   return (
     <section aria-label={title} className="grid gap-1">
@@ -61,8 +64,9 @@ function StarterGroup({
           <li key={prompt}>
             <button
               type="button"
+              disabled={disabled}
               onClick={() => onPick(prompt)}
-              className="-mx-3 flex min-h-control w-[calc(100%+1.5rem)] items-center rounded-row px-3 py-2.5 text-left type-body font-medium outline-none transition-colors duration-(--dur-1) hover:bg-fill"
+              className="-mx-3 flex min-h-control w-[calc(100%+1.5rem)] items-center rounded-row px-3 py-2.5 text-left type-body font-medium outline-none transition-colors duration-(--dur-1) hover:bg-fill disabled:pointer-events-none disabled:opacity-(--muted)"
             >
               {prompt}
             </button>
@@ -75,6 +79,7 @@ function StarterGroup({
 
 export function AssistantTray({ showHabits = true }: { showHabits?: boolean }) {
   const { panel, close } = useShell();
+  const { exhausted } = useAiQuota();
   const coach = useAssistantChat(coachConfig.api);
   const habits = useAssistantChat(habitConfig.api);
 
@@ -111,12 +116,14 @@ export function AssistantTray({ showHabits = true }: { showHabits?: boolean }) {
       <StarterGroup
         title="Ask about my habits"
         prompts={askStarters}
+        disabled={exhausted}
         onPick={(prompt) => void coach.sendMessage({ text: prompt })}
       />
       {showHabits ? (
         <StarterGroup
           title="Change my habits"
           prompts={changeStarters}
+          disabled={exhausted}
           onPick={(prompt) => void habits.sendMessage({ text: prompt })}
         />
       ) : null}

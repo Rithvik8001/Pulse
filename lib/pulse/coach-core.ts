@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const pulseCoachModel = "openai/gpt-5.4-nano";
+export const pulseCoachModel = "claude-haiku-5-5";
+
+export const pulseCoachToolNames = [
+  "proposeCreateQuest",
+  "proposeUpdateQuest",
+  "proposeArchiveQuest",
+  "proposeRestoreQuest",
+  "proposeSaveCheckIn",
+  "proposeSaveJournal",
+] as const;
 
 export const coachRecentProofLimit = 14;
 export const coachJournalLimit = 7;

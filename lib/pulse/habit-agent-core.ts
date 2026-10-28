@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-export const habitAgentModel = "openai/gpt-5.4-nano";
+export const habitAgentModel = "claude-haiku-5-5";
+
+export const habitAgentToolNames = [
+  "proposeCreateHabit",
+  "proposeUpdateHabit",
+  "proposeArchiveHabit",
+  "proposeRestoreHabit",
+  "proposeDeleteHabit",
+] as const;
 export const habitAgentTextLimit = 180;
 
 export const habitAgentActionSchema = z.discriminatedUnion("type", [

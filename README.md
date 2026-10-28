@@ -21,7 +21,7 @@ A daily habit app for who you are becoming. Say who you want to be ("I am a writ
 - Radix primitives (`radix-ui`), cmdk, next-themes, Phosphor icons, Recharts
 - Supabase Auth and Supabase Postgres
 - Drizzle ORM with SQL migrations in `drizzle/`
-- Vercel AI SDK with OpenAI
+- Vercel AI SDK with Anthropic: every AI feature runs on Claude Haiku 5.5 (`claude-haiku-5-5`) with thinking off
 - Resend and React Email
 - Vercel Cron for the weekly summary
 
@@ -51,8 +51,8 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# AI (recaps, statements, Pip, wording suggestions)
-OPENAI_API_KEY=
+# AI (recaps, statements, Pip, wording suggestions, journal check-ins)
+CLAUDE_API_KEY=
 
 # Email
 RESEND_API_KEY=
@@ -63,23 +63,23 @@ EMAIL_REPLY_TO=hello@yourdomain.com
 CRON_SECRET=
 ```
 
-Without `OPENAI_API_KEY` the app still works. AI features show a notice instead.
+Without `CLAUDE_API_KEY` the app still works. AI features show a notice instead.
 
 ### AI limits
 
-Every AI feature has its own limit, and a site-wide limit sits on top. These are the defaults. Override any of them with the variables below.
+Each person gets one shared allowance of AI uses a day. A Pip message, a weekly recap, a statement refresh, wording suggestions and Find check-ins each cost 1. The header shows how many are left. The allowance resets at midnight in the person's own time zone.
 
-| Feature                    | Limit                             | Request variable                            | Token variable                            |
-| -------------------------- | --------------------------------- | ------------------------------------------- | ----------------------------------------- |
-| Pip, questions             | 5 a day                           | `AI_PULSE_COACH_DAILY_REQUEST_LIMIT`        | `AI_PULSE_COACH_DAILY_TOKEN_LIMIT`        |
-| Pip, habit changes         | 3 a day                           | `AI_HABIT_AGENT_DAILY_REQUEST_LIMIT`        | `AI_HABIT_AGENT_DAILY_TOKEN_LIMIT`        |
-| Wording suggestions        | 5 a day                           | `AI_REWORD_DAILY_REQUEST_LIMIT`             | `AI_REWORD_DAILY_TOKEN_LIMIT`             |
-| Weekly recap               | 2 a week                          | `AI_WEEKLY_STORY_WEEKLY_REQUEST_LIMIT`      | `AI_WEEKLY_STORY_WEEKLY_TOKEN_LIMIT`      |
-| Check-ins from the journal | 5 a day                           | `AI_JOURNAL_CHECK_INS_DAILY_REQUEST_LIMIT`  | `AI_JOURNAL_CHECK_INS_DAILY_TOKEN_LIMIT`  |
-| Who you are becoming       | 2 a week                          | `AI_IDENTITY_TIMELINE_WEEKLY_REQUEST_LIMIT` | `AI_IDENTITY_TIMELINE_WEEKLY_TOKEN_LIMIT` |
-| Whole site                 | 50 requests, 500,000 tokens a day | `AI_GLOBAL_DAILY_REQUEST_LIMIT`             | `AI_GLOBAL_DAILY_TOKEN_LIMIT`             |
+| Limit | Default | Variable |
+| --- | --- | --- |
+| AI uses per person per day | 30 | `AI_USER_DAILY_REQUEST_LIMIT` |
+| Tokens per person per day (hidden) | 150,000 | `AI_USER_DAILY_TOKEN_LIMIT` |
+| Input tokens per request | 12,000 | `AI_REQUEST_INPUT_TOKEN_LIMIT` |
+| AI uses across the whole site per day | 1,000 | `AI_GLOBAL_DAILY_REQUEST_LIMIT` |
+| Tokens across the whole site per day | 5,000,000 | `AI_GLOBAL_DAILY_TOKEN_LIMIT` |
 
-Set `AI_LIMITS_ENABLED=false` to turn limits off in development. A failed AI call does not count against a limit.
+The site-wide limits reset at midnight UTC. Pip messages are limited to 1,000 characters, and the server strips anything in the chat history that Pip didn't produce (other roles, files, oversized or unknown tool data) before counting tokens. Requests over the input limit are rejected before they cost a use.
+
+Set `AI_LIMITS_ENABLED=false` to turn limits off in development. A failed AI call does not count against a limit. A Pip reply stopped part way still counts as one use.
 
 ## Commands
 

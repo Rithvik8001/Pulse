@@ -15,6 +15,9 @@ export type StoryPromptWeekRange = {
   end: string;
 };
 
+const storyPromptNoteChars = 160;
+const storyPromptJournalChars = 800;
+
 const SHARED_LINE =
   'Words to use with the person: habit (not quest), check-in (not proof), done and skipped (not win and pass), weekly recap (not story), consistency (not momentum), "N days in a row" (not streak). Never use quest, proof, win, pass, momentum, character or streak in replies.';
 
@@ -33,14 +36,14 @@ export function buildWeeklyStoryPrompt({
 }) {
   const proofLines = proof
     .map((entry) => {
-      const note = entry.note ? ` Note: ${entry.note}` : "";
+      const note = entry.note ? ` Note: ${truncateStoryText(entry.note, storyPromptNoteChars)}` : "";
       return `- ${entry.localDate}: ${entry.questTitle}: ${entry.outcome === "win" ? "done" : "skipped"}.${note}`;
     })
     .join("\n");
   const journalSection =
     journal.length > 0
       ? `\n\nJournal entries this week:\n${journal
-          .map((entry) => `- ${entry.localDate}: ${entry.body}`)
+          .map((entry) => `- ${entry.localDate}: ${truncateStoryText(entry.body, storyPromptJournalChars)}`)
           .join("\n")}`
       : "";
 
@@ -61,4 +64,10 @@ Return a concise, emotionally intelligent reflection with:
 - a letter body in second person, 2-4 short paragraphs
 - 2-4 pattern bullets grounded in the check-ins and journal entries above
 - one small, concrete habit to try next week`;
+}
+
+function truncateStoryText(value: string, maxLength: number) {
+  const text = value.trim().replace(/\s+/g, " ");
+
+  return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1).trim()}…`;
 }

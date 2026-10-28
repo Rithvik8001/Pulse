@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { GearSix, List, MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
 
 import { Mascot } from "@/components/landing/mascot";
+import { AiQuotaChip } from "@/components/product/ai-quota";
 import { useShell } from "@/components/product/shell";
 import { features, type Feature } from "@/components/ui/features";
 import { IconButton } from "@/components/ui/icon-button";
@@ -70,6 +71,7 @@ export function AppHeader({ showAssistant = true }: { showAssistant?: boolean })
             className="md:hidden"
             onClick={() => open("command")}
           />
+          {showAssistant ? <AiQuotaChip /> : null}
           {showAssistant ? (
             <IconButton
               label="Ask Pip"

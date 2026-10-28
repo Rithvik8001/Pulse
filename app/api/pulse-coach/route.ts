@@ -6,19 +6,21 @@ import {
 } from "ai";
 
 import { getPulseCoachPromptAndToolsForUser } from "@/lib/pulse/coach";
-import { pulseCoachModel } from "@/lib/pulse/coach-core";
+import { pulseCoachModel, pulseCoachToolNames } from "@/lib/pulse/coach-core";
 import {
   createRequestId,
   logWarn,
   logError,
 } from "@/lib/observability/logger";
 import {
+  abortAiUsage,
   completeAiUsage,
   estimateAiTextTokens,
   failAiUsage,
+  readAiChatMessages,
   reserveAiUsage,
-  validateAndTrimAiChatMessages,
 } from "@/lib/pulse/ai-limits";
+import { estimateChatTokens, sanitizeAiChatMessages } from "@/lib/pulse/ai-limits-core";
 import { aiModel, hasAiKey, missingAiKeyMessage } from "@/lib/pulse/ai-provider";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
@@ -45,21 +47,21 @@ export async function POST(request: Request) {
 
   const userId = await requireUserId();
   const dateContext = await getUserLocalDateContextForUser(userId);
-  const { messages }: { messages?: UIMessage[] } = await request.json();
+  const body = await readAiChatMessages(request);
 
-  if (!Array.isArray(messages)) {
+  if (!body.ok) {
     logWarn({
       event: "ai_invalid_messages",
-      message: "Pulse Coach request did not include messages.",
+      message: body.message,
       route: "/api/pulse-coach",
       feature: "pulse-coach",
       userId,
       requestId,
     });
-    return Response.json({ error: "Your message did not arrive. Try again." }, { status: 400 });
+    return Response.json({ error: body.message }, { status: 400 });
   }
 
-  const chatValidation = validateAndTrimAiChatMessages(messages);
+  const chatValidation = sanitizeAiChatMessages(body.messages, pulseCoachToolNames);
 
   if (!chatValidation.valid) {
     logWarn({
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
     dateContext,
   );
   const estimatedInputTokens =
-    estimateAiTextTokens(system) + chatValidation.estimatedInputTokens;
+    estimateAiTextTokens(system) + estimateChatTokens(chatValidation.messages);
   const reservation = await reserveAiUsage({
     userId,
     feature: "pulse-coach",
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
     return rateLimitedResponse(reservation);
   }
 
-  const modelMessages = await convertToModelMessages(chatValidation.messages, {
+  const modelMessages = await convertToModelMessages(chatValidation.messages as UIMessage[], {
     tools,
     ignoreIncompleteToolCalls: true,
   });
@@ -118,7 +120,12 @@ export async function POST(request: Request) {
     providerOptions: reservation.providerOptions,
     maxOutputTokens: reservation.maxOutputTokens,
     stopWhen: stepCountIs(2),
-    temperature: 0.45,
+    abortSignal: request.signal,
+    onAbort: ({ steps }) =>
+      abortAiUsage({
+        eventId: reservation.eventId,
+        stepUsages: steps.map((step) => step.usage),
+      }),
     onFinish: ({ totalUsage, finishReason }) =>
       completeAiUsage({
         eventId: reservation.eventId,
@@ -140,7 +147,8 @@ export async function POST(request: Request) {
   });
 
   return result.toUIMessageStreamResponse({
-    originalMessages: chatValidation.messages,
+    originalMessages: chatValidation.messages as UIMessage[],
+    headers: { "X-AI-Remaining": reservation.remaining.toString() },
     onError: () => "Pip could not answer. Try again.",
   });
 }
@@ -152,7 +160,7 @@ function rateLimitedResponse(reservation: Extract<Awaited<ReturnType<typeof rese
       retryAfter: reservation.retryAfterSeconds,
     },
     {
-      status: 429,
+      status: reservation.status,
       headers: {
         "Retry-After": reservation.retryAfterSeconds.toString(),
         "X-RateLimit-Limit": reservation.limit.toString(),

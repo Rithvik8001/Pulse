@@ -6,6 +6,7 @@ import {
   findJournalCheckInsAction,
   saveJournalCheckInsAction,
 } from "@/app/dashboard/journal/actions";
+import { useAiQuota } from "@/components/product/ai-quota";
 import { Pip, pipName } from "@/components/product/pip";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,8 +53,9 @@ export function JournalCheckIns({
   const [finding, startFinding] = useTransition();
   const [saving, startSaving] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { exhausted, exhaustedMessage, refresh: refreshAiQuota } = useAiQuota();
 
-  const canFind = hasSavedEntry && !isDirty && !finding;
+  const canFind = hasSavedEntry && !isDirty && !finding && !exhausted;
   const drafts = view.kind === "result" ? view.drafts : [];
   const selected = drafts.filter((draft) => draft.selected && draft.status !== "same");
   const allCheckedIn = drafts.length > 0 && drafts.every((draft) => draft.status === "same");
@@ -62,6 +64,7 @@ export function JournalCheckIns({
     setSaveError(null);
     startFinding(async () => {
       const result = await findJournalCheckInsAction(localDate);
+      refreshAiQuota();
       if (result.status === "error") {
         setView({ kind: "error", message: result.message });
       } else if (result.drafts.length === 0) {
@@ -205,11 +208,13 @@ export function JournalCheckIns({
     );
   }
 
-  const caption = !hasSavedEntry
-    ? "Save an entry first. Pip reads it and suggests check-ins."
-    : isDirty
-      ? "Save the entry first so Pip reads the latest version."
-      : "Pip reads this entry and suggests Done or Skipped for the habits it mentions.";
+  const caption = exhausted
+    ? exhaustedMessage
+    : !hasSavedEntry
+      ? "Save an entry first. Pip reads it and suggests check-ins."
+      : isDirty
+        ? "Save the entry first so Pip reads the latest version."
+        : "Pip reads this entry and suggests Done or Skipped for the habits it mentions.";
 
   return (
     <div className="grid gap-3">
