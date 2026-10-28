@@ -18,9 +18,9 @@ import { Pip } from "@/components/product/pip";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
-import { toast } from "@/components/ui/toast";
 import { aiChatMaxUserTextChars } from "@/lib/pulse/ai-limits-core";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 function errorText(error: Error) {
   const raw = error.message?.trim();

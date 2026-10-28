@@ -9,8 +9,8 @@ import { Field, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { RowList } from "@/components/ui/row";
 import { Segmented } from "@/components/ui/segmented";
-import { toast } from "@/components/ui/toast";
 import type { DashboardQuest } from "@/lib/pulse/dashboard";
+import { toast } from "sonner";
 
 type Outcome = "win" | "pass";
 
@@ -81,7 +81,7 @@ function CheckInRow({
         const noteChanged = nextNote !== savedNote;
         setSavedNote(nextNote);
         setEditingNote(false);
-        toast.show(
+        toast.success(
           noteChanged && !optimistic
             ? "Note saved"
             : outcome === "win"

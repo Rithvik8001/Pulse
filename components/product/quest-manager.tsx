@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, DotsThree, PencilSimple, Trash, TrayArrowDown } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 import {
   createQuestAction,
@@ -23,7 +24,6 @@ import { Row, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
-import { toast } from "@/components/ui/toast";
 import type { ManagedQuest } from "@/lib/pulse/quests";
 
 const initialFormState: QuestFormState = { status: "idle" };
@@ -54,6 +54,24 @@ export function QuestManager({
   const activeCount = activeQuests.length;
   const isAtLimit = activeCount >= activeQuestLimit;
   const [deleting, setDeleting] = useState<ManagedQuest | null>(null);
+
+  async function deleteHabit(formData: FormData) {
+    try {
+      await removeQuestAction(formData);
+      toast.success("Habit deleted");
+    } catch {
+      toast.error("The habit was not deleted. Try again.");
+    }
+  }
+
+  async function restoreHabit(formData: FormData) {
+    try {
+      await restoreQuestAction(formData);
+      toast.success("Habit restored");
+    } catch {
+      toast.error("The habit was not restored. Try again.");
+    }
+  }
 
   return (
     <div className="grid gap-10">
@@ -90,7 +108,7 @@ export function QuestManager({
                   <div className="truncate type-body font-medium">{quest.title}</div>
                   <div className="type-caption text-fg-2">{checkInCount(quest.checkInCount)}</div>
                 </div>
-                <form action={restoreQuestAction}>
+                <form action={restoreHabit}>
                   <input type="hidden" name="questId" value={quest.id} />
                   <SubmitButton variant="text" size="sm" disabled={isAtLimit} pendingLabel="Restoring">
                     Restore
@@ -112,7 +130,7 @@ export function QuestManager({
         body="It has no check-ins, so nothing else is lost. This cannot be undone."
         confirmLabel="Delete habit"
         pendingLabel="Deleting"
-        formAction={removeQuestAction}
+        formAction={deleteHabit}
         hidden={{ questId: deleting?.id ?? "" }}
       />
     </div>
@@ -130,6 +148,9 @@ function CreateQuestForm({
 }) {
   const [state, action] = useActionState(createQuestAction, initialFormState);
   const [formKey, setFormKey] = useState(0);
+  useEffect(() => {
+    if (state.status === "success") toast.success("Habit added");
+  }, [state]);
   const [handled, setHandled] = useState(state);
   if (handled !== state) {
     setHandled(state);
@@ -190,17 +211,29 @@ function QuestRow({
     const fd = new FormData();
     fd.set("questId", quest.id);
     startTransition(async () => {
-      await removeQuestAction(fd);
+      try {
+        await removeQuestAction(fd);
+      } catch {
+        toast.error(`${quest.title} was not archived. Try again.`);
+        return;
+      }
       announce(`${quest.title} archived`);
-      toast.show("Habit archived", {
+      toast("Habit archived", {
+        description: "Its check-ins stay in your history.",
+        duration: 10000,
         action: {
           label: "Undo",
           onClick: () => {
             const undo = new FormData();
             undo.set("questId", quest.id);
             startTransition(async () => {
-              await restoreQuestAction(undo);
-              announce(`${quest.title} restored`);
+              try {
+                await restoreQuestAction(undo);
+                announce(`${quest.title} restored`);
+                toast.success("Habit restored");
+              } catch {
+                toast.error(`${quest.title} was not restored. Restore it from Archived.`);
+              }
             });
           },
         },
@@ -249,6 +282,9 @@ function QuestRow({
 function RenameForm({ quest, onDone }: { quest: ManagedQuest; onDone: () => void }) {
   const [state, action] = useActionState(updateQuestTitleAction, initialFormState);
   const [handled, setHandled] = useState(state);
+  useEffect(() => {
+    if (state.status === "success") toast.success("Habit renamed");
+  }, [state]);
   if (handled !== state) {
     setHandled(state);
     if (state.status === "success") onDone();

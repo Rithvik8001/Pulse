@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ToastViewport } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = localFont({
@@ -39,7 +39,7 @@ export default function RootLayout({
               Skip to content
             </a>
             {children}
-            <ToastViewport />
+            <Toaster />
           </TooltipProvider>
         </ThemeProvider>
       </body>

@@ -14,12 +14,12 @@ import { Field, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { Segmented } from "@/components/ui/segmented";
 import { SummaryBar } from "@/components/ui/summary-bar";
-import { toast } from "@/components/ui/toast";
 import {
   journalCheckInNoteMaxLength,
   type JournalCheckInDraft,
   type JournalCheckInOutcome,
 } from "@/lib/pulse/journal-check-ins-core";
+import { toast } from "sonner";
 
 type View =
   | { kind: "idle" }
@@ -100,7 +100,7 @@ export function JournalCheckIns({
         })),
       });
       if (result.status === "success") {
-        toast.show(result.message.replace(/\.$/, ""));
+        toast.success(result.message.replace(/\.$/, ""));
         setView({ kind: "idle" });
       } else {
         setSaveError(result.message);

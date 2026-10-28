@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils";
 
 export type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label"> & {
   label: string;
-  icon: IconComponent;
+  icon?: IconComponent;
+  glyph?: React.ReactNode;
+  tipLeading?: React.ReactNode;
   size?: "md" | "sm";
   variant?: "ghost" | "secondary";
   shortcut?: string[];
@@ -21,6 +23,8 @@ export type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label">
 export function IconButton({
   label,
   icon,
+  glyph: customGlyph,
+  tipLeading,
   size = "md",
   variant = "ghost",
   shortcut,
@@ -32,7 +36,7 @@ export function IconButton({
   ...props
 }: IconButtonProps) {
   const Comp = asChild ? Slot.Root : "button";
-  const glyph = <Icon icon={icon} size="md" />;
+  const glyph = customGlyph ?? (icon ? <Icon icon={icon} size="md" /> : null);
   const content =
     asChild && React.isValidElement(children)
       ? React.cloneElement(children as React.ReactElement, undefined, glyph)
@@ -56,7 +60,7 @@ export function IconButton({
   );
   if (noTooltip) return button;
   return (
-    <Tip label={label} shortcut={shortcut}>
+    <Tip label={label} shortcut={shortcut} leading={tipLeading}>
       {button}
     </Tip>
   );

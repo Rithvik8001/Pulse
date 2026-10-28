@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GearSix, List, MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
+import { GearSix, List, MagnifyingGlass } from "@phosphor-icons/react";
 
 import { Mascot } from "@/components/landing/mascot";
 import { AiQuotaChip } from "@/components/product/ai-quota";
+import { Pip } from "@/components/product/pip";
 import { useShell } from "@/components/product/shell";
 import { features, type Feature } from "@/components/ui/features";
 import { IconButton } from "@/components/ui/icon-button";
@@ -75,8 +76,9 @@ export function AppHeader({ showAssistant = true }: { showAssistant?: boolean })
           {showAssistant ? (
             <IconButton
               label="Ask Pip"
-              icon={Sparkle}
-              shortcut={["A"]}
+              glyph={<Pip size={26} />}
+              tipLeading={<Pip size={18} />}
+              aria-keyshortcuts="a"
               onClick={() => toggle("assistant")}
             />
           ) : null}

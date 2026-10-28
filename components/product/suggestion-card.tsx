@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { X } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 import { removeQuestAction, restoreQuestAction } from "@/app/dashboard/habits/actions";
 import {
@@ -43,6 +44,24 @@ export function SuggestionList({
   const visible = suggestions.filter((s) => !dismissedIds.has(s.questId)).slice(0, 3);
   if (visible.length === 0) return null;
 
+  async function archiveHabit(formData: FormData) {
+    try {
+      await removeQuestAction(formData);
+      toast.success("Habit archived", { description: "Its check-ins stay in your history." });
+    } catch {
+      toast.error("The habit was not archived. Try again.");
+    }
+  }
+
+  async function restoreHabit(formData: FormData) {
+    try {
+      await restoreQuestAction(formData);
+      toast.success("Habit restored");
+    } catch {
+      toast.error("The habit was not restored. Try again.");
+    }
+  }
+
   function dismiss(questId: string) {
     setDismissedIds((prev) => new Set([...prev, questId]));
   }
@@ -69,12 +88,12 @@ export function SuggestionList({
                     body="If it has check-ins, it leaves Today and they stay in your history. If it has none, it is deleted."
                     confirmLabel="Archive habit"
                     pendingLabel="Archiving"
-                    formAction={removeQuestAction}
+                    formAction={archiveHabit}
                     hidden={{ questId: suggestion.questId }}
                   />
                 ) : null}
                 {suggestion.type === "restore" ? (
-                  <form action={restoreQuestAction}>
+                  <form action={restoreHabit}>
                     <input type="hidden" name="questId" value={suggestion.questId} />
                     <SubmitButton variant="text" size="sm" disabled={isAtQuestLimit} pendingLabel="Restoring">
                       Restore
@@ -140,6 +159,16 @@ function RewordTray({
   onClose: () => void;
 }) {
   const open = Boolean(suggestion && alternatives && alternatives.length > 0);
+
+  async function applyWording(formData: FormData) {
+    try {
+      await applyRewordAction(formData);
+      toast.success("Habit renamed");
+      onClose();
+    } catch {
+      toast.error("The new wording was not saved. Try again.");
+    }
+  }
   return (
     <Tray open={open} onOpenChange={(o) => !o && onClose()}>
       <TrayContent>
@@ -148,7 +177,7 @@ function RewordTray({
           description="Choose one. Nothing changes until you save."
         />
         {suggestion && alternatives ? (
-          <form action={applyRewordAction} className="grid gap-4">
+          <form action={applyWording} className="grid gap-4">
             <input type="hidden" name="questId" value={suggestion.questId} />
             <TrayBody>
               <ChoiceCards

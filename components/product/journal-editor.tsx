@@ -4,6 +4,7 @@ import * as React from "react";
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 import {
   deleteJournalEntryAction,
@@ -23,7 +24,6 @@ import { ActionRow, NavRow, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
-import { toast } from "@/components/ui/toast";
 import { journalBodyMaxLength, normalizeJournalBody } from "@/lib/pulse/journal-core";
 import type { JournalEntrySummary, JournalProof } from "@/lib/pulse/journal";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
@@ -72,7 +72,7 @@ export function JournalEditor({
   React.useEffect(() => {
     if (lastState.current === state) return;
     lastState.current = state;
-    if (state.status === "success") toast.show("Entry saved");
+    if (state.status === "success") toast.success("Entry saved");
   }, [state]);
 
   const goToDate = React.useCallback(
@@ -94,6 +94,15 @@ export function JournalEditor({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedDate, goToDate]);
+
+  async function deleteEntry(formData: FormData) {
+    try {
+      await deleteJournalEntryAction(formData);
+      toast.success("Entry deleted");
+    } catch {
+      toast.error("The entry was not deleted. Try again.");
+    }
+  }
 
   function insertPrompt(prompt: string) {
     const el = textareaRef.current;
@@ -201,7 +210,7 @@ export function JournalEditor({
                 body={`The entry for ${formatDay(selectedEntry.localDate)} is deleted. This cannot be undone.`}
                 confirmLabel="Delete entry"
                 pendingLabel="Deleting"
-                formAction={deleteJournalEntryAction}
+                formAction={deleteEntry}
                 hidden={{ entryId: selectedEntry.id }}
               />
             ) : null}

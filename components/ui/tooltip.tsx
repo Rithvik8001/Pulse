@@ -64,11 +64,13 @@ function TooltipContent({
 function Tip({
   label,
   shortcut,
+  leading,
   side,
   children,
 }: {
   label: string;
   shortcut?: string[];
+  leading?: React.ReactNode;
   side?: React.ComponentProps<typeof TooltipPrimitive.Content>["side"];
   children: React.ReactElement;
 }) {
@@ -76,6 +78,7 @@ function Tip({
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side={side}>
+        {leading}
         {label}
         {shortcut ? <Kbd keys={shortcut} className="-mr-1" /> : null}
       </TooltipContent>

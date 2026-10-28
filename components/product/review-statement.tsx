@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { generateIdentitySnapshotAction, type IdentitySnapshotFormState } from "@/app/dashboard/review/actions";
 import { useAiQuota, useRefreshAiQuotaOnChange } from "@/components/product/ai-quota";
@@ -26,6 +27,9 @@ export function ReviewStatement({
   const [state, action] = useActionState(generateIdentitySnapshotAction, initialState);
   const { exhausted, exhaustedMessage } = useAiQuota();
   useRefreshAiQuotaOnChange(state);
+  useEffect(() => {
+    if (state.status === "success") toast.success("Statement updated");
+  }, [state]);
 
   const caption = exhausted
     ? exhaustedMessage

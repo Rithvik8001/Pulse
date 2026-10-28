@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { generateWeeklyStoryAction, type WeeklyStoryFormState } from "@/app/dashboard/review/actions";
 import { useAiQuota, useRefreshAiQuotaOnChange } from "@/components/product/ai-quota";
@@ -23,6 +24,9 @@ export function WeeklyRecapForm({
   const [state, action] = useActionState(generateWeeklyStoryAction, initialState);
   const { exhausted, exhaustedMessage } = useAiQuota();
   useRefreshAiQuotaOnChange(state);
+  useEffect(() => {
+    if (state.status === "success") toast.success("Recap written");
+  }, [state]);
 
   return (
     <form action={action} className="grid gap-3">

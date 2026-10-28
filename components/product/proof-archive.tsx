@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { DotsThree, MagnifyingGlass, PencilSimple, Trash } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 import { deleteProofAction, updateProofAction, type ProofFormState } from "@/app/dashboard/history/actions";
 import { ProofOutcome } from "@/components/product/proof-outcome";
@@ -38,6 +39,15 @@ export function ProofArchive({
   const [limit, setLimit] = useState(pageSize);
   const [editing, setEditing] = useState<ProofEntry | null>(null);
   const [deleting, setDeleting] = useState<ProofEntry | null>(null);
+
+  async function deleteCheckIn(formData: FormData) {
+    try {
+      await deleteProofAction(formData);
+      toast.success("Check-in deleted");
+    } catch {
+      toast.error("The check-in was not deleted. Try again.");
+    }
+  }
 
   const hasFilters = questFilter !== "all" || search.trim() !== "";
 
@@ -194,7 +204,7 @@ export function ProofArchive({
         }
         confirmLabel="Delete check-in"
         pendingLabel="Deleting"
-        formAction={deleteProofAction}
+        formAction={deleteCheckIn}
         hidden={{ checkInId: deleting?.id ?? "" }}
       />
     </Section>
@@ -203,6 +213,9 @@ export function ProofArchive({
 
 function EditProofTray({ entry, onClose }: { entry: ProofEntry | null; onClose: () => void }) {
   const [state, action] = useActionState(updateProofAction, initialFormState);
+  useEffect(() => {
+    if (state.status === "success") toast.success("Check-in updated");
+  }, [state]);
   const [handled, setHandled] = useState(state);
   if (handled !== state) {
     setHandled(state);

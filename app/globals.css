@@ -128,7 +128,6 @@
   --press: 0.98;
   --settle: 0.96;
   --tray-rise: 0.5rem;
-  --toast-rise: 0.875rem;
 
   --soft: 0.7;
   --muted: 0.45;
@@ -351,7 +350,6 @@
   --animate-fade-in: fade-in var(--dur-3) var(--ease) both;
   --animate-badge-pop: badge-pop var(--dur-badge) var(--ease-spring) both;
   --animate-rise: rise var(--dur-3) var(--ease) both;
-  --animate-toast-rise: toast-rise var(--dur-3) var(--ease) both;
   --animate-sweep: sweep 1.2s var(--ease) infinite;
   --animate-pip-bob: pip-bob var(--dur-loop) var(--ease) infinite;
   --animate-fade-out: fade-out var(--dur-2) var(--ease) both;
@@ -374,10 +372,6 @@
   @keyframes rise {
     from { opacity: 0; transform: translateY(var(--tray-rise)); }
     to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes toast-rise {
-    from { opacity: 0; transform: translateY(var(--toast-rise)) scale(var(--settle)); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes wipe {
     from { transform: scaleX(0); }
