@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { scheduleInputSchema } from "@/lib/pulse/schedule-core";
+
 export const habitAgentModel = "claude-haiku-5-5";
 
 export const habitAgentToolNames = [
@@ -8,6 +10,7 @@ export const habitAgentToolNames = [
   "proposeArchiveHabit",
   "proposeRestoreHabit",
   "proposeDeleteHabit",
+  "proposeUpdateHabitSchedule",
 ] as const;
 export const habitAgentTextLimit = 180;
 
@@ -15,6 +18,12 @@ export const habitAgentActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("createHabit"),
     title: z.string().min(1).max(96),
+    schedule: scheduleInputSchema.optional(),
+  }),
+  z.object({
+    type: z.literal("updateHabitSchedule"),
+    questId: z.string().min(1),
+    schedule: scheduleInputSchema,
   }),
   z.object({
     type: z.literal("updateHabit"),
@@ -51,6 +60,7 @@ export type HabitAgentHabit = {
   winCount: number;
   passCount: number;
   lastCheckInDate: string | null;
+  scheduleLabel: string;
   archivedAt: string | null;
 };
 
@@ -89,7 +99,8 @@ export function buildHabitAgentSystemPrompt(context: HabitAgentContext) {
     SHARED_LINE,
     "",
     "Hard rules:",
-    "- You may only help with these changes: add, rename, archive, restore, and delete habits that have no check-ins.",
+    "- You may only help with these changes: add (with a schedule), rename, archive, restore, change a habit's schedule, and delete habits that have no check-ins.",
+    "- Schedules: every day, specific weekdays, or 1 to 6 times a week. Weeks start Monday. When the person says things like three times a week or on weekdays, use that schedule. A new habit is every day unless they say otherwise. A schedule change applies from today; past days keep their old schedule.",
     "- For any change, call a proposal tool. The person must confirm each card before Pulse changes anything.",
     "- Never claim you added, renamed, archived, restored, or deleted anything unless a confirmed result appears in the conversation.",
     "- Never reveal ids, UUIDs, database keys, API keys, access tokens, emails, or other private identifiers.",
@@ -159,7 +170,7 @@ function formatHabitLine(habit: HabitAgentHabit) {
     : "last check-in none";
   const archived = habit.archivedAt ? `, archived ${habit.archivedAt}` : "";
 
-  return `${habit.title} [id:${habit.id}] - ${habit.status}; ${proof}; ${last}${archived}`;
+  return `${habit.title} [id:${habit.id}] - ${habit.status}; schedule ${habit.scheduleLabel}; ${proof}; ${last}${archived}`;
 }
 
 function formatLines(lines: string[]) {

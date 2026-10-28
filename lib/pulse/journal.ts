@@ -30,6 +30,7 @@ export {
 
 export type JournalProof = {
   id: string;
+  questId: string;
   questTitle: string;
   outcome: "win" | "pass";
   note: string | null;
@@ -124,6 +125,7 @@ export async function getJournalDataForUser(
     db
       .select({
         id: checkIns.id,
+        questId: checkIns.questId,
         outcome: checkIns.outcome,
         note: checkIns.note,
         questTitle: quests.title,
@@ -156,6 +158,7 @@ export async function getJournalDataForUser(
     selectedEntry: entryRows[0] ?? null,
     selectedProof: proofRows.map((row) => ({
       id: row.id,
+      questId: row.questId,
       questTitle: row.questTitle,
       outcome: row.outcome === "pass" ? "pass" : "win",
       note: row.note,

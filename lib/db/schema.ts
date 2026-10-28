@@ -8,6 +8,7 @@ import {
   jsonb,
   pgPolicy,
   pgTable,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -17,6 +18,7 @@ import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 export type QuestStatus = "active" | "archived";
 export type CheckInOutcome = "win" | "pass";
+export type QuestScheduleKind = "daily" | "weekdays" | "weekly" | "paused";
 export type EmailDeliveryType = "welcome" | "weekly_digest";
 export type EmailDeliveryStatus = "pending" | "sent" | "error" | "skipped";
 export type AiUsageScopeType = "user" | "global";
@@ -191,6 +193,66 @@ export const checkIns = pgTable(
       withCheck: sql`${authUid} = ${table.userId}`,
     }),
     pgPolicy("check_ins_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const questSchedules = pgTable(
+  "quest_schedules",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    questId: uuid("quest_id")
+      .notNull()
+      .references(() => quests.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<QuestScheduleKind>().notNull(),
+    weekdays: smallint("weekdays"),
+    timesPerWeek: smallint("times_per_week"),
+    effectiveFrom: date("effective_from").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("quest_schedules_user_id_idx").on(table.userId),
+    uniqueIndex("quest_schedules_quest_effective_unique").on(
+      table.questId,
+      table.effectiveFrom,
+    ),
+    check(
+      "quest_schedules_kind_check",
+      sql`${table.kind} in ('daily', 'weekdays', 'weekly', 'paused')`,
+    ),
+    check(
+      "quest_schedules_shape_check",
+      sql`(
+        (${table.kind} = 'weekdays' and ${table.weekdays} between 1 and 127 and ${table.timesPerWeek} is null)
+        or (${table.kind} = 'weekly' and ${table.timesPerWeek} between 1 and 6 and ${table.weekdays} is null)
+        or (${table.kind} in ('daily', 'paused') and ${table.weekdays} is null and ${table.timesPerWeek} is null)
+      )`,
+    ),
+    pgPolicy("quest_schedules_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("quest_schedules_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("quest_schedules_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy("quest_schedules_delete_own", {
       for: "delete",
       to: authenticatedRole,
       using: sql`${authUid} = ${table.userId}`,

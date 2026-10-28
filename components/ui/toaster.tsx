@@ -10,7 +10,7 @@ export function Toaster() {
   return (
     <Sonner
       theme={resolvedTheme === "dark" ? "dark" : "light"}
-      position="bottom-center"
+      position="bottom-right"
       duration={5000}
       visibleToasts={3}
       containerAriaLabel="Notifications"

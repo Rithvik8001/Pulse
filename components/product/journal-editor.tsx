@@ -163,7 +163,7 @@ export function JournalEditor({
           ) : null}
         </div>
 
-        <form ref={formRef} action={action} className="grid gap-4">
+        <form ref={formRef} action={action} className="grid gap-4" data-highlight-id="journal-entry">
           <input name="localDate" type="hidden" value={selectedDate} />
           <div className="flex flex-wrap gap-3">
             {prompts.map((prompt) => (
@@ -237,6 +237,7 @@ export function JournalEditor({
             {selectedProof.map((proof) => (
               <ActionRow
                 key={proof.id}
+                highlightId={proof.questId}
                 leading={<FeatureChip feature="history" />}
                 title={proof.questTitle}
                 caption={proof.note ?? "No note"}

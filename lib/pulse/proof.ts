@@ -7,6 +7,8 @@ import { characters, checkIns, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { isUuid } from "@/lib/pulse/id-core";
 import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import { countDueByDate, evaluateHabit, groupCheckInsByQuest } from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import {
   getUserLocalDateContextForUser,
   type UserLocalDateContext,
@@ -31,6 +33,7 @@ export type ProofHistoryDay = {
   winCount: number;
   passCount: number;
   totalCount: number;
+  dueCount?: number;
 };
 
 export type ProofQuestOption = {
@@ -100,7 +103,7 @@ export async function getProofArchiveDataForUser(
     end: dateContext.today,
     days: proofWindowDays,
   };
-  const emptyDays = buildProofHistory([], dateContext.today);
+  const emptyDays = buildProofHistory([], dateContext.today, new Map());
   const emptyStats = buildProofStats([]);
   const [character] = await db
     .select({
@@ -123,30 +126,44 @@ export async function getProofArchiveDataForUser(
     };
   }
 
-  const rows = await db
-    .select({
-      id: checkIns.id,
-      questId: checkIns.questId,
-      localDate: checkIns.localDate,
-      outcome: checkIns.outcome,
-      note: checkIns.note,
-      updatedAt: checkIns.updatedAt,
-      questTitle: quests.title,
-      questStatus: quests.status,
-    })
-    .from(checkIns)
-    .innerJoin(quests, eq(checkIns.questId, quests.id))
-    .where(and(eq(checkIns.userId, userId), gte(checkIns.localDate, range.start)))
-    .orderBy(desc(checkIns.localDate), desc(checkIns.updatedAt));
+  const [rows, histories] = await Promise.all([
+    db
+      .select({
+        id: checkIns.id,
+        questId: checkIns.questId,
+        localDate: checkIns.localDate,
+        outcome: checkIns.outcome,
+        note: checkIns.note,
+        updatedAt: checkIns.updatedAt,
+        questTitle: quests.title,
+        questStatus: quests.status,
+      })
+      .from(checkIns)
+      .innerJoin(quests, eq(checkIns.questId, quests.id))
+      .where(and(eq(checkIns.userId, userId), gte(checkIns.localDate, range.start)))
+      .orderBy(desc(checkIns.localDate), desc(checkIns.updatedAt)),
+    getScheduleHistoriesForUser(userId),
+  ]);
 
   const entries = rows.map(toProofEntry);
+  const checkInsByQuest = groupCheckInsByQuest(entries);
+  const dueByDate = countDueByDate(
+    [...histories.entries()].map(([questId, history]) =>
+      evaluateHabit({
+        history,
+        checkIns: checkInsByQuest.get(questId) ?? new Map<string, "win" | "pass">(),
+        today: dateContext.today,
+        windowStart: range.start,
+      }),
+    ),
+  );
 
   return {
     isSetupComplete: true,
     character,
     range,
     entries,
-    days: buildProofHistory(entries, dateContext.today),
+    days: buildProofHistory(entries, dateContext.today, dueByDate),
     questOptions: buildQuestOptions(entries),
     stats: buildProofStats(entries),
   };
@@ -263,7 +280,7 @@ function toProofEntry(row: {
   };
 }
 
-function buildProofHistory(entries: ProofEntry[], today: string) {
+function buildProofHistory(entries: ProofEntry[], today: string, dueByDate: Map<string, number>) {
   const byDate = new Map<string, ProofHistoryDay>();
 
   for (let index = proofWindowDays - 1; index >= 0; index -= 1) {
@@ -273,6 +290,7 @@ function buildProofHistory(entries: ProofEntry[], today: string) {
       winCount: 0,
       passCount: 0,
       totalCount: 0,
+      dueCount: dueByDate.get(localDate) ?? 0,
     });
   }
 

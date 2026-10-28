@@ -47,3 +47,21 @@ export function offsetDate(date: Date, days: number) {
 export function offsetLocalDate(value: string, days: number) {
   return formatLocalDate(offsetDate(parseLocalDate(value), days));
 }
+
+export function getWeekdayIndex(localDate: string) {
+  return (parseLocalDate(localDate).getDay() + 6) % 7;
+}
+
+export function getWeekStart(localDate: string) {
+  return offsetLocalDate(localDate, -getWeekdayIndex(localDate));
+}
+
+export function enumerateLocalDates(from: string, to: string) {
+  const dates: string[] = [];
+
+  for (let cursor = from; cursor <= to; cursor = offsetLocalDate(cursor, 1)) {
+    dates.push(cursor);
+  }
+
+  return dates;
+}

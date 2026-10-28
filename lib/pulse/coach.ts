@@ -25,6 +25,8 @@ import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { computeMomentum } from "@/lib/pulse/momentum-core";
 import { getProofArchiveDataForUser } from "@/lib/pulse/proof";
 import { activeQuestLimit } from "@/lib/pulse/quests";
+import { dailySchedule, formatScheduleLabel, scheduleFromInput, scheduleInputSchema } from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { computeStatsData, statsWindowWeeks } from "@/lib/pulse/stats-core";
 import {
   computeSuggestions,
@@ -106,6 +108,7 @@ export async function getPulseCoachContextForUser(
     journalRows,
     storyRows,
     identitySnapshotRows,
+    histories,
   ] = await Promise.all([
     db
       .select({
@@ -235,6 +238,7 @@ export async function getPulseCoachContextForUser(
         desc(identitySnapshots.updatedAt),
       )
       .limit(1),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   const activeQuestRows = questRows.filter(
@@ -278,6 +282,7 @@ export async function getPulseCoachContextForUser(
             id: quest.id,
             title: quest.title,
           })),
+          histories,
           checkInRows90,
           today,
         )
@@ -294,6 +299,7 @@ export async function getPulseCoachContextForUser(
       status: quest.status === "archived" ? "archived" : "active",
       position: quest.position,
     })),
+    histories,
   });
 
   return compressPulseCoachContext({
@@ -321,7 +327,12 @@ export async function getPulseCoachContextForUser(
         lastCheckInDate: proof?.lastCheckInDate ?? null,
         currentStreak: streak?.currentStreak ?? 0,
         longestStreak: streak?.longestStreak ?? 0,
+        runUnit: streak?.runUnit ?? "days",
         isAtRisk: streak?.isAtRisk ?? false,
+        scheduleLabel: streak?.scheduleLabel ?? "Every day",
+        dueToday: streak?.dueToday ?? true,
+        thisWeek: streak?.thisWeek ?? null,
+        doneRate30d: streak ? Math.round(streak.winRate30d * 100) : null,
       };
     }),
     archivedQuests: archivedRows.map((quest) => ({
@@ -389,15 +400,33 @@ export function buildPulseCoachTools(context: PulseCoachContext) {
   return {
     proposeCreateQuest: tool({
       description:
-        "Propose adding a new active habit. Use only when the person wants a new repeatable habit or asks for a concrete plan.",
+        "Propose adding a new active habit. Use only when the person wants a new repeatable habit or asks for a concrete plan. Include a schedule when they say how often; leave it out for every day.",
       inputSchema: z.object({
         title: z.string().min(1).max(96),
+        schedule: scheduleInputSchema.optional(),
       }),
-      execute: async ({ title }) =>
-        proposal("Add habit", `Add "${title}" to your habits.`, {
-          type: "createQuest",
-          title,
-        }),
+      execute: async ({ title, schedule }) =>
+        proposal(
+          "Add habit",
+          `Add "${title}" to your habits, due ${formatScheduleLabel(schedule ? scheduleFromInput(schedule) : dailySchedule).toLowerCase()}.`,
+          { type: "createQuest", title, schedule },
+        ),
+    }),
+    proposeUpdateQuestSchedule: tool({
+      description:
+        "Propose changing when an active habit is due: every day, specific weekdays, or 1 to 6 times a week. The change applies from today.",
+      inputSchema: z.object({
+        questId: z.string().min(1),
+        schedule: scheduleInputSchema,
+      }),
+      execute: async ({ questId, schedule }) => {
+        const quest = findQuest(context, questId);
+        return proposal(
+          "Change schedule",
+          `Make "${quest?.title ?? "this habit"}" due ${formatScheduleLabel(scheduleFromInput(schedule)).toLowerCase()}, starting today. Past days keep their old schedule.`,
+          { type: "updateQuestSchedule", questId, schedule },
+        );
+      },
     }),
     proposeUpdateQuest: tool({
       description: "Propose renaming an existing habit.",

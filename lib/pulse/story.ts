@@ -23,7 +23,9 @@ import {
   reserveAiUsage,
 } from "@/lib/pulse/ai-limits";
 import { getLocalDate, requireUserId } from "@/lib/pulse/dashboard";
-import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
+import { getWeekStart, offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
+import { formatScheduleLabel, latestHabitSchedule } from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { buildWeeklyStoryPrompt } from "@/lib/pulse/story-core";
 import {
   getUserLocalDateContextForUser,
@@ -214,7 +216,7 @@ export async function generateAndSaveWeeklyStory() {
     return null;
   }
 
-  const [userQuests, { week, proof, journal }] = await Promise.all([
+  const [userQuests, { week, proof, journal }, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -231,6 +233,7 @@ export async function generateAndSaveWeeklyStory() {
       )
       .orderBy(asc(quests.position)),
     resolveRecapWeek(userId, thisWeek),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   if (proof.length === 0 && journal.length === 0) {
@@ -243,7 +246,9 @@ export async function generateAndSaveWeeklyStory() {
     characterName: character.name,
     journal,
     proof,
-    quests: userQuests.map((quest) => quest.title),
+    quests: userQuests.map(
+      (quest) => `${quest.title} (${formatScheduleLabel(latestHabitSchedule(histories.get(quest.id) ?? []))})`,
+    ),
     week,
   });
   const reservation = await reserveAiUsage({
@@ -336,17 +341,11 @@ export async function generateAndSaveWeeklyStory() {
 }
 
 export function getWeekRange(date = new Date()): WeekRange {
-  const startDate = new Date(date);
-  const day = startDate.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  startDate.setDate(startDate.getDate() + mondayOffset);
-
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 6);
+  const start = getWeekStart(getLocalDate(date));
 
   return {
-    start: getLocalDate(startDate),
-    end: getLocalDate(endDate),
+    start,
+    end: offsetLocalDate(start, 6),
   };
 }
 

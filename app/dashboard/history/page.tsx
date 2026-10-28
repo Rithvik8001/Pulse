@@ -36,9 +36,6 @@ export default async function HistoryPage() {
   const format = (date: string) =>
     formatLocalDateForLocale(date, locale, { month: "short", day: "numeric" });
   const doneRate = stats.summary.overallWinRate;
-  const streakByQuestId = Object.fromEntries(
-    (momentum?.questStreaks ?? []).map((quest) => [quest.questId, quest.currentStreak]),
-  );
 
   return (
     <Page>
@@ -60,8 +57,8 @@ export default async function HistoryPage() {
           ]}
         />
         <p className="max-w-measure type-small text-fg-2">
-          Consistency mixes how often you marked habits done in the last 30 days with how many
-          days in a row you have done them.
+          Done rate and consistency count only the days a habit was due. The first missed due day
+          each week is forgiven, so one off day does not break a run.
         </p>
       </div>
 
@@ -72,7 +69,6 @@ export default async function HistoryPage() {
       <StatsDashboard
         weeklyTrend={stats.weeklyTrend}
         questStats={stats.questStats}
-        streakByQuestId={streakByQuestId}
         locale={locale}
       />
 

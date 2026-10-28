@@ -1,14 +1,16 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { Check } from "@phosphor-icons/react";
 
 import {
   type ConfirmationState,
+  formatConfirmedLine,
   type ParsedProposal,
   type ProposalAction,
+  type ProposalTarget,
   redactPrivateIdentifiers,
 } from "@/components/product/assistant/assistant-proposals";
+import { Pip } from "@/components/product/pip";
 import { Button } from "@/components/ui/button";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import type { Feature } from "@/components/ui/features";
@@ -20,6 +22,7 @@ export function AssistantProposalCard({
   feature,
   onCancel,
   onConfirm,
+  onShow,
   parseProposal,
   part,
   pendingText,
@@ -29,6 +32,7 @@ export function AssistantProposalCard({
   feature: Feature;
   onCancel: (toolCallId: string) => void;
   onConfirm: (toolCallId: string, action: ProposalAction) => void;
+  onShow: (target: ProposalTarget) => void;
   parseProposal: (output: unknown) => ParsedProposal | null;
   part: Extract<UIMessage["parts"][number], { type: `tool-${string}` }>;
   pendingText: string;
@@ -47,21 +51,30 @@ export function AssistantProposalCard({
   const isCanceled = confirmation?.status === "canceled";
   const isError = confirmation?.status === "error";
 
+  if (isConfirmed) {
+    const target = confirmation?.target;
+
+    return (
+      <div className="flex w-full max-w-measure items-center gap-3 rounded-notice bg-fill px-3 py-2.5">
+        <Pip size={24} />
+        <p className="min-w-0 flex-1 truncate type-small font-medium" aria-live="polite">
+          {redactPrivateIdentifiers(formatConfirmedLine(proposal))}
+        </p>
+        {target ? (
+          <Button size="xs" variant="text" onClick={() => onShow(target)}>
+            Show
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div
-      className={cn(
-        "grid w-full max-w-measure gap-3 rounded-notice bg-fill p-4",
-        isConfirmed && "bg-ok-bg",
-      )}
+      className="grid w-full max-w-measure gap-3 rounded-notice bg-fill p-4"
     >
       <div className="flex items-start gap-3">
-        {isConfirmed ? (
-          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-inner bg-ok text-on-brand">
-            <Check size={20} weight="bold" aria-hidden />
-          </span>
-        ) : (
-          <FeatureChip feature={feature} />
-        )}
+        <FeatureChip feature={feature} />
         <div className="grid min-w-0 flex-1 gap-0.5">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="type-body font-medium">
@@ -70,10 +83,10 @@ export function AssistantProposalCard({
             <span
               className={cn(
                 "type-small",
-                isConfirmed ? "text-ok" : proposal.destructive ? "text-bad" : "text-fg-3",
+                proposal.destructive ? "text-bad" : "text-fg-3",
               )}
             >
-              {isConfirmed ? "Confirmed" : proposal.actionLabel}
+              {proposal.actionLabel}
             </span>
           </div>
           <p className="type-caption text-fg-2">{redactPrivateIdentifiers(proposal.summary)}</p>
@@ -92,7 +105,6 @@ export function AssistantProposalCard({
           className={cn(
             "type-small",
             isError && "text-bad",
-            isConfirmed && "text-ok",
             isCanceled && "text-fg-2",
           )}
         >

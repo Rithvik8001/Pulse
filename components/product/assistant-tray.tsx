@@ -41,6 +41,7 @@ const askStarters = [
 const changeStarters = [
   "Tidy up my habits",
   "Make one of my habits smaller",
+  "Make one of my habits three times a week",
   "Add a habit for a goal",
   "Which habits should I archive or restore?",
 ];

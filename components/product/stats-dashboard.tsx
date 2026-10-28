@@ -10,6 +10,7 @@ import { Row, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import type { QuestStat, WeeklyTrendPoint } from "@/lib/pulse/stats-core";
 import { formatLocalDateForLocale } from "@/lib/pulse/local-date-core";
+import { formatRunLabel } from "@/lib/pulse/schedule-core";
 
 type WeeklyChartPoint = WeeklyTrendPoint & { displayWinRate: number };
 
@@ -20,12 +21,10 @@ function formatRate(rate: number | null) {
 export function StatsDashboard({
   weeklyTrend,
   questStats,
-  streakByQuestId,
   locale,
 }: {
   weeklyTrend: WeeklyTrendPoint[];
   questStats: QuestStat[];
-  streakByQuestId: Record<string, number>;
   locale: string;
 }) {
   const trend: WeeklyChartPoint[] = weeklyTrend.map((week) => ({
@@ -97,7 +96,7 @@ export function StatsDashboard({
         {rows.length > 0 ? (
           <RowList>
             {rows.map((quest) => {
-              const streak = streakByQuestId[quest.questId] ?? 0;
+              const runLabel = formatRunLabel(quest.currentStreak, quest.runUnit);
               return (
                 <Row key={quest.questId} className="items-start">
                   <FeatureChip feature="habits" />
@@ -111,8 +110,8 @@ export function StatsDashboard({
                           ) : null}
                         </div>
                         <div className="type-caption text-fg-2">
-                          {quest.winCount} done, {quest.passCount} skipped
-                          {streak >= 2 ? ` · ${streak} days in a row` : ""}
+                          {quest.scheduleLabel} · {quest.winCount} done, {quest.passCount} skipped
+                          {runLabel ? ` · ${runLabel}` : ""}
                         </div>
                       </div>
                       <span className="shrink-0 type-body font-medium tabular-nums">

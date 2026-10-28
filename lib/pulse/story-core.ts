@@ -53,7 +53,8 @@ ${SHARED_LINE}
 
 Who they are becoming: ${characterName}
 Week: ${week.start} through ${week.end}
-Active habits: ${quests.join(", ")}
+Active habits and when they are due: ${quests.join(", ")}
+Done rate counts only due days. The first missed due day each week is forgiven.
 
 Check-ins this week:
 ${proofLines || "- No check-ins this week."}${journalSection}

@@ -26,6 +26,8 @@ import {
   type JournalCheckInDraft,
 } from "@/lib/pulse/journal-check-ins-core";
 import { validateJournalDate } from "@/lib/pulse/journal-core";
+import { isDueOn, scheduleForDate } from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type FindJournalCheckInsResult =
@@ -53,7 +55,7 @@ export async function findJournalCheckIns(
     return { status: "error", message: dateError };
   }
 
-  const [[entry], habits, existing] = await Promise.all([
+  const [[entry], habitRows, existing, histories] = await Promise.all([
     db
       .select({ body: journalEntries.body })
       .from(journalEntries)
@@ -68,7 +70,16 @@ export async function findJournalCheckIns(
       .select({ questId: checkIns.questId, outcome: checkIns.outcome })
       .from(checkIns)
       .where(and(eq(checkIns.userId, userId), eq(checkIns.localDate, localDate))),
+    getScheduleHistoriesForUser(userId),
   ]);
+
+  const habits = habitRows.map((habit) => {
+    const schedule = scheduleForDate(histories.get(habit.id) ?? [], localDate);
+    return {
+      ...habit,
+      dueThatDay: schedule?.kind === "weekly" || isDueOn(schedule, localDate),
+    };
+  });
 
   if (!entry) {
     return { status: "error", message: "Save the entry first, then try again." };

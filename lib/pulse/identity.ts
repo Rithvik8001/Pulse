@@ -38,6 +38,8 @@ import {
   type IdentitySnapshotCore,
   type IdentityStoryInput,
 } from "@/lib/pulse/identity-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
+import type { ScheduleEntry } from "@/lib/pulse/schedule-core";
 import {
   getUserLocalDateContextForUser,
   type UserLocalDateContext,
@@ -119,6 +121,7 @@ export async function getIdentityTimelineDataForUser(
     journals: [],
     quests: [],
     stories: [],
+    histories: new Map(),
     today: dateContext.today,
   });
   const [character] = await db
@@ -141,7 +144,7 @@ export async function getIdentityTimelineDataForUser(
   }
 
   const allRange = buildIdentityRange(dateContext.today, identityAllWindowDays);
-  const [questRows, checkInRows, journalRows, storyRows, snapshotRows] =
+  const [questRows, checkInRows, journalRows, storyRows, snapshotRows, histories] =
     await Promise.all([
       db
         .select({
@@ -211,6 +214,7 @@ export async function getIdentityTimelineDataForUser(
         .where(eq(identitySnapshots.userId, userId))
         .orderBy(desc(identitySnapshots.periodEnd), desc(identitySnapshots.updatedAt))
         .limit(1),
+      getScheduleHistoriesForUser(userId),
     ]);
 
   return {
@@ -226,6 +230,7 @@ export async function getIdentityTimelineDataForUser(
         status: quest.status === "archived" ? "archived" : "active",
       })),
       stories: storyRows,
+      histories,
       today: dateContext.today,
     }),
   };
@@ -260,7 +265,7 @@ export async function generateIdentitySnapshotForUser(
     return null;
   }
 
-  const [questRows, checkInRows, journalRows, storyRows] = await Promise.all([
+  const [questRows, checkInRows, journalRows, storyRows, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -323,6 +328,7 @@ export async function generateIdentitySnapshotForUser(
         ),
       )
       .orderBy(asc(weeklyStories.weekStart)),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   const checkInInputs = checkInRows.map(toIdentityCheckIn);
@@ -345,6 +351,7 @@ export async function generateIdentitySnapshotForUser(
     quests: questInputs,
     range,
     stories: storyRows,
+    histories,
   });
   const system =
     "You describe who a Pulse user is becoming, using only their habit data. Be brief and grounded. Never shame, diagnose, or mention how Pulse works internally.";
@@ -486,12 +493,14 @@ function buildViews({
   journals,
   quests,
   stories,
+  histories,
   today,
 }: {
   checkIns: IdentityCheckInInput[];
   journals: IdentityJournalInput[];
   quests: IdentityQuestInput[];
   stories: IdentityStoryInput[];
+  histories: Map<string, ScheduleEntry[]>;
   today: string;
 }): Record<IdentityTimelineViewKey, IdentityComputedData> {
   return {
@@ -501,6 +510,7 @@ function buildViews({
       quests,
       range: buildIdentityRange(today, identityDefaultWindowDays),
       stories,
+      histories,
     }),
     "12w": computeIdentityData({
       checkIns,
@@ -508,6 +518,7 @@ function buildViews({
       quests,
       range: buildIdentityRange(today, 84),
       stories,
+      histories,
     }),
     all: computeIdentityData({
       checkIns,
@@ -515,6 +526,7 @@ function buildViews({
       quests,
       range: buildIdentityRange(today, identityAllWindowDays),
       stories,
+      histories,
     }),
   };
 }

@@ -25,6 +25,7 @@ export type ParsedProposal = {
 export type ConfirmationState = {
   status: "confirmed" | "canceled" | "error";
   message: string;
+  target?: ProposalTarget;
 };
 
 export function parseCoachProposal(output: unknown): ParsedProposal | null {
@@ -154,6 +155,8 @@ function formatCoachActionLabel(action: CoachAction["type"]) {
       return "Check in";
     case "saveJournal":
       return "Journal";
+    case "updateQuestSchedule":
+      return "Schedule";
   }
 }
 
@@ -169,5 +172,71 @@ function formatHabitActionLabel(action: HabitAgentAction["type"]) {
       return "Restore";
     case "deleteHabit":
       return "Delete";
+    case "updateHabitSchedule":
+      return "Schedule";
   }
+}
+
+export type ProposalTarget = {
+  href: string;
+  highlightId: string | null;
+};
+
+export const highlightParam = "highlight";
+
+function withHighlight(path: string, highlightId: string | null) {
+  if (!highlightId) return path;
+  const [base, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
+  params.set(highlightParam, highlightId);
+  return `${base}?${params.toString()}`;
+}
+
+function browserToday() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function getProposalTarget(action: ProposalAction, createdQuestId?: string): ProposalTarget {
+  const habits = (highlightId: string | null): ProposalTarget => ({
+    href: withHighlight("/dashboard/habits", highlightId),
+    highlightId,
+  });
+
+  switch (action.type) {
+    case "createQuest":
+    case "createHabit":
+      return habits(createdQuestId ?? null);
+    case "deleteHabit":
+      return habits(null);
+    case "saveCheckIn": {
+      const path = action.localDate === browserToday() ? "/dashboard" : `/dashboard/journal?date=${action.localDate}`;
+      return { href: withHighlight(path, action.questId), highlightId: action.questId };
+    }
+    case "saveJournal":
+      return {
+        href: withHighlight(`/dashboard/journal?date=${action.localDate}`, "journal-entry"),
+        highlightId: "journal-entry",
+      };
+    default:
+      return habits(action.questId);
+  }
+}
+
+const confirmedVerbs: Record<string, string> = {
+  Add: "Added",
+  Rename: "Renamed",
+  Archive: "Archived",
+  Restore: "Restored",
+  Delete: "Deleted",
+  Schedule: "New schedule for",
+  "Check in": "Checked in",
+  Journal: "Saved journal entry",
+};
+
+export function formatConfirmedLine(proposal: ParsedProposal) {
+  const verb = confirmedVerbs[proposal.actionLabel] ?? "Done:";
+  const subject = proposal.summary.match(/"([^"]+)"/)?.[1];
+
+  return subject ? `${verb} ${subject}` : verb;
 }

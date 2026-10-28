@@ -3,9 +3,22 @@ import "server-only";
 import { and, asc, count, desc, eq, isNull, max, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { characters, checkIns, quests } from "@/lib/db/schema";
+import { characters, checkIns, questSchedules, quests } from "@/lib/db/schema";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { isUuid } from "@/lib/pulse/id-core";
+import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import {
+  dailySchedule,
+  latestHabitSchedule,
+  scheduleForDate,
+  scheduleFromRow,
+  scheduleToRow,
+  schedulesEqual,
+  type HabitSchedule,
+  type ScheduleEntry,
+  type StoredSchedule,
+} from "@/lib/pulse/schedule-core";
+import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export const activeQuestLimit = 12;
 export const questTitleMaxLength = 96;
@@ -43,6 +56,7 @@ export type QuestManagerData =
 export type QuestMutationResult = {
   status: "success" | "error";
   message: string;
+  questId?: string;
 };
 
 export async function getQuestManagerData(): Promise<QuestManagerData> {
@@ -98,8 +112,12 @@ export async function getQuestManagerDataForUser(
   };
 }
 
-export async function createQuest(title: string): Promise<QuestMutationResult> {
+export async function createQuest(
+  title: string,
+  schedule: HabitSchedule = dailySchedule,
+): Promise<QuestMutationResult> {
   const userId = await requireUserId();
+  const { today } = await getUserLocalDateContextForUser(userId);
   const character = await getCharacterForUser(userId);
 
   if (!character) {
@@ -134,16 +152,26 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
         character.id,
       );
 
-      await tx.insert(quests).values({
-        characterId: character.id,
+      const [created] = await tx
+        .insert(quests)
+        .values({
+          characterId: character.id,
+          userId,
+          title: normalizedTitle,
+          position: nextPosition,
+          status: "active",
+          updatedAt: new Date(),
+        })
+        .returning({ id: quests.id });
+
+      await tx.insert(questSchedules).values({
+        questId: created.id,
         userId,
-        title: normalizedTitle,
-        position: nextPosition,
-        status: "active",
-        updatedAt: new Date(),
+        ...scheduleToRow(schedule),
+        effectiveFrom: today,
       });
 
-      return "created" as const;
+      return created.id;
     });
 
     if (result === "limit") {
@@ -152,6 +180,12 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
         message: activeQuestLimitMessage,
       };
     }
+
+    return {
+      status: "success",
+      message: "Habit added.",
+      questId: result,
+    };
   } catch (error) {
     if (isActiveQuestLimitError(error)) {
       return {
@@ -162,11 +196,6 @@ export async function createQuest(title: string): Promise<QuestMutationResult> {
 
     throw error;
   }
-
-  return {
-    status: "success",
-    message: "Habit added.",
-  };
 }
 
 export async function updateQuestTitle(
@@ -299,14 +328,17 @@ export async function removeQuest(
     };
   }
 
-  await db
-    .update(quests)
-    .set({
-      status: "archived",
-      archivedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(quests.id, questId), eq(quests.userId, userId)));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(quests)
+      .set({
+        status: "archived",
+        archivedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(quests.id, questId), eq(quests.userId, userId)));
+    await setScheduleFromToday(tx, userId, questId, { kind: "paused" });
+  });
 
   return {
     status: "success",
@@ -349,6 +381,8 @@ export async function archiveQuest(
       message: "This habit could not be archived. Reload the page and try again.",
     };
   }
+
+  await setScheduleFromToday(db, userId, questId, { kind: "paused" });
 
   return {
     status: "success",
@@ -424,7 +458,14 @@ export async function restoreQuest(
         )
         .returning({ id: quests.id });
 
-      return quest ? ("restored" as const) : ("missing" as const);
+      if (!quest) {
+        return "missing" as const;
+      }
+
+      const history = await getScheduleHistory(tx, userId, questId);
+      await setScheduleFromToday(tx, userId, questId, latestHabitSchedule(history));
+
+      return "restored" as const;
     });
 
     if (result === "limit") {
@@ -542,6 +583,110 @@ function isActiveQuestLimitError(error: unknown) {
   return /active quest limit exceeded|quests_active_limit/i.test(
     `${error.message} ${constraint}`,
   );
+}
+
+export async function updateQuestSchedule(
+  questId: string,
+  schedule: HabitSchedule,
+): Promise<QuestMutationResult> {
+  const userId = await requireUserId();
+
+  if (!isUuid(questId)) {
+    return {
+      status: "error",
+      message: "This habit could not be found. Reload the page and try again.",
+    };
+  }
+
+  const [quest] = await db
+    .select({ id: quests.id })
+    .from(quests)
+    .where(
+      and(
+        eq(quests.id, questId),
+        eq(quests.userId, userId),
+        eq(quests.status, "active"),
+        isNull(quests.archivedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!quest) {
+    return {
+      status: "error",
+      message: "Only active habits have a schedule. Restore this habit first.",
+    };
+  }
+
+  const { today } = await getUserLocalDateContextForUser(userId);
+  const history = await getScheduleHistory(db, userId, questId);
+  const current = scheduleForDate(history, today);
+
+  if (current && schedulesEqual(current, schedule)) {
+    return {
+      status: "success",
+      message: "No change.",
+    };
+  }
+
+  await setScheduleFromToday(db, userId, questId, schedule, today, history);
+
+  return {
+    status: "success",
+    message: "Schedule updated. Past days keep the schedule they had.",
+  };
+}
+
+async function getScheduleHistory(
+  client: Pick<typeof db, "select">,
+  userId: string,
+  questId: string,
+): Promise<ScheduleEntry[]> {
+  const rows = await client
+    .select({
+      kind: questSchedules.kind,
+      weekdays: questSchedules.weekdays,
+      timesPerWeek: questSchedules.timesPerWeek,
+      effectiveFrom: questSchedules.effectiveFrom,
+    })
+    .from(questSchedules)
+    .where(and(eq(questSchedules.questId, questId), eq(questSchedules.userId, userId)))
+    .orderBy(asc(questSchedules.effectiveFrom));
+
+  return rows.map((row) => ({ effectiveFrom: row.effectiveFrom, schedule: scheduleFromRow(row) }));
+}
+
+async function setScheduleFromToday(
+  client: Pick<typeof db, "select" | "insert" | "delete">,
+  userId: string,
+  questId: string,
+  schedule: StoredSchedule,
+  knownToday?: string,
+  knownHistory?: ScheduleEntry[],
+) {
+  const today = knownToday ?? (await getUserLocalDateContextForUser(userId)).today;
+  const history = knownHistory ?? (await getScheduleHistory(client, userId, questId));
+  const previous = scheduleForDate(
+    history.filter((entry) => entry.effectiveFrom < today),
+    offsetLocalDate(today, -1),
+  );
+
+  if (previous && schedulesEqual(previous, schedule)) {
+    await client
+      .delete(questSchedules)
+      .where(and(eq(questSchedules.questId, questId), eq(questSchedules.effectiveFrom, today)));
+    return;
+  }
+
+  const row = scheduleToRow(schedule);
+
+  await client
+    .insert(questSchedules)
+    .values({ questId, userId, ...row, effectiveFrom: today })
+    .onConflictDoUpdate({
+      target: [questSchedules.questId, questSchedules.effectiveFrom],
+      set: row,
+    });
 }
 
 async function getOwnedQuestWithProofCount(userId: string, questId: string) {

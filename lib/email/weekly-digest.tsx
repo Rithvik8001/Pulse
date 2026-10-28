@@ -23,6 +23,7 @@ import { getSiteUrl } from "@/lib/email/resend";
 import { sendProductEmail } from "@/lib/email/send";
 import { getLocalDateInTimeZone } from "@/lib/pulse/local-date-core";
 import { defaultTimeZone } from "@/lib/pulse/user-settings-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { computeStatsData } from "@/lib/pulse/stats-core";
 
 export type WeeklyDigestRunResult = {
@@ -135,7 +136,7 @@ async function sendWeeklyDigestForCandidate(
     return "skipped" as const;
   }
 
-  const [questRows, proofRows, journalRows, storyRows] = await Promise.all([
+  const [questRows, proofRows, journalRows, storyRows, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -182,6 +183,7 @@ async function sendWeeklyDigestForCandidate(
         ),
       )
       .limit(1),
+    getScheduleHistoriesForUser(candidate.userId),
   ]);
 
   const activityCount = proofRows.length + journalRows.length;
@@ -196,6 +198,7 @@ async function sendWeeklyDigestForCandidate(
       ...quest,
       status: quest.status === "archived" ? "archived" : "active",
     })),
+    histories,
     weeks: 1,
   });
   const story = storyRows[0] ?? null;

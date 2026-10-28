@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, DotsThree, PencilSimple, Trash, TrayArrowDown } from "@phosphor-icons/react";
+import { useActionState, useCallback, useEffect, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, CalendarDots, DotsThree, PencilSimple, Trash, TrayArrowDown } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import {
@@ -9,9 +9,11 @@ import {
   moveQuestAction,
   removeQuestAction,
   restoreQuestAction,
+  updateQuestScheduleAction,
   updateQuestTitleAction,
   type QuestFormState,
 } from "@/app/dashboard/habits/actions";
+import { SchedulePicker } from "@/components/product/schedule-picker";
 import { useShell } from "@/components/product/shell";
 import { Button } from "@/components/ui/button";
 import { ConfirmTray } from "@/components/ui/confirm-tray";
@@ -24,7 +26,15 @@ import { Row, RowList } from "@/components/ui/row";
 import { Section } from "@/components/ui/section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { SummaryBar } from "@/components/ui/summary-bar";
+import { Tray, TrayActions, TrayBody, TrayContent, TrayHeader } from "@/components/ui/tray";
 import type { ManagedQuest } from "@/lib/pulse/quests";
+import type { ScheduleInput } from "@/lib/pulse/schedule-core";
+
+export type HabitScheduleMeta = {
+  scheduleLabel: string;
+  runLabel: string | null;
+  schedule: ScheduleInput;
+};
 
 const initialFormState: QuestFormState = { status: "idle" };
 
@@ -33,22 +43,23 @@ function checkInCount(n: number) {
   return `${n} ${n === 1 ? "check-in" : "check-ins"}`;
 }
 
-function caption(quest: ManagedQuest, streak: number) {
-  const base = checkInCount(quest.checkInCount);
-  return streak >= 2 ? `${base} · ${streak} days in a row` : base;
+function caption(quest: ManagedQuest, meta: HabitScheduleMeta | undefined) {
+  return [meta?.scheduleLabel ?? "Every day", checkInCount(quest.checkInCount), meta?.runLabel]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export function QuestManager({
   activeQuestLimit,
   activeQuests,
   archivedQuests,
-  streakByQuestId,
+  scheduleByQuestId,
   suggestions,
 }: {
   activeQuestLimit: number;
   activeQuests: ManagedQuest[];
   archivedQuests: ManagedQuest[];
-  streakByQuestId: Record<string, number>;
+  scheduleByQuestId: Record<string, HabitScheduleMeta>;
   suggestions?: React.ReactNode;
 }) {
   const activeCount = activeQuests.length;
@@ -84,7 +95,7 @@ export function QuestManager({
               <QuestRow
                 key={quest.id}
                 quest={quest}
-                streak={streakByQuestId[quest.id] ?? 0}
+                meta={scheduleByQuestId[quest.id]}
                 isFirst={index === 0}
                 isLast={index === activeQuests.length - 1}
                 onDelete={() => setDeleting(quest)}
@@ -102,7 +113,7 @@ export function QuestManager({
         <Section title="Archived" count={archivedQuests.length}>
           <RowList>
             {archivedQuests.map((quest) => (
-              <Row key={quest.id} className="flex-wrap">
+              <Row key={quest.id} className="flex-wrap" data-highlight-id={quest.id}>
                 <FeatureChip feature="habits" className="opacity-(--soft)" />
                 <div className="grid min-w-0 flex-1 gap-0.5">
                   <div className="truncate type-body font-medium">{quest.title}</div>
@@ -155,7 +166,9 @@ function CreateQuestForm({
   if (handled !== state) {
     setHandled(state);
 
-    if (state.status === "success") setFormKey((k) => k + 1);
+    if (state.status === "success") {
+      setFormKey((k) => k + 1);
+    }
   }
 
   return (
@@ -164,10 +177,11 @@ function CreateQuestForm({
         id="new-habit"
         label="New habit"
         error={state.status === "error" ? state.message : undefined}
-        hint={disabled ? undefined : "One small thing you can repeat each day."}
+        hint={disabled ? undefined : "One small thing you can repeat."}
       >
         <Input name="title" placeholder="Read 10 pages" maxLength={96} disabled={disabled} autoComplete="off" />
       </Field>
+      <SchedulePicker key={formKey} disabled={disabled} />
       {disabled ? (
         <Notice>You have {limit} active habits. Archive one to add another.</Notice>
       ) : null}
@@ -182,18 +196,20 @@ function CreateQuestForm({
 
 function QuestRow({
   quest,
-  streak,
+  meta,
   isFirst,
   isLast,
   onDelete,
 }: {
   quest: ManagedQuest;
-  streak: number;
+  meta: HabitScheduleMeta | undefined;
   isFirst: boolean;
   isLast: boolean;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const closeSchedule = useCallback(() => setEditingSchedule(false), []);
   const [, startTransition] = useTransition();
   const { announce } = useShell();
 
@@ -242,20 +258,23 @@ function QuestRow({
   }
 
   return (
-    <Row className="min-h-16 flex-wrap">
+    <Row className="min-h-16 flex-wrap" data-highlight-id={quest.id}>
       <FeatureChip feature="habits" />
       {editing ? (
         <RenameForm quest={quest} onDone={() => setEditing(false)} />
       ) : (
         <div className="grid min-w-0 flex-1 gap-0.5">
           <div className="truncate type-body font-medium">{quest.title}</div>
-          <div className="type-caption text-fg-2">{caption(quest, streak)}</div>
+          <div className="type-caption text-fg-2">{caption(quest, meta)}</div>
         </div>
       )}
       {!editing ? (
         <Menu trigger={<IconButton label={`More actions for ${quest.title}`} icon={DotsThree} size="sm" />}>
           <MenuItem icon={PencilSimple} onSelect={() => setEditing(true)}>
             Rename
+          </MenuItem>
+          <MenuItem icon={CalendarDots} onSelect={() => setEditingSchedule(true)}>
+            Change schedule
           </MenuItem>
           <MenuItem icon={ArrowUp} disabled={isFirst} onSelect={() => move("up")}>
             Move up
@@ -275,7 +294,63 @@ function QuestRow({
           )}
         </Menu>
       ) : null}
+      <ScheduleTray
+        quest={quest}
+        schedule={meta?.schedule ?? { kind: "daily" }}
+        open={editingSchedule}
+        onClose={closeSchedule}
+      />
     </Row>
+  );
+}
+
+function ScheduleTray({
+  quest,
+  schedule,
+  open,
+  onClose,
+}: {
+  quest: ManagedQuest;
+  schedule: ScheduleInput;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [state, action] = useActionState(updateQuestScheduleAction, initialFormState);
+  useEffect(() => {
+    if (state.status !== "success") return;
+    toast.success(state.message === "No change." ? "Schedule unchanged" : "Schedule updated");
+    onClose();
+  }, [state, onClose]);
+
+  return (
+    <Tray open={open} onOpenChange={(next) => !next && onClose()}>
+      <TrayContent>
+        <TrayHeader
+          title={`Schedule for ${quest.title}`}
+          description="Choose when this habit is due. Past days keep the schedule they had."
+        />
+        <form action={action} className="grid gap-4">
+          <input type="hidden" name="questId" value={quest.id} />
+          <TrayBody>
+            <SchedulePicker key={open ? "open" : "closed"} defaultValue={schedule} labelHidden />
+            <p className="type-small text-fg-2">Starts today. Past days keep the schedule they had.</p>
+            {state.status === "error" ? <Notice tone="bad">{state.message}</Notice> : null}
+          </TrayBody>
+          <TrayActions
+            primary={
+              <SubmitButton variant="primary" fullWidth pendingLabel="Saving">
+                Save schedule
+              </SubmitButton>
+            }
+            secondary={
+              <Button variant="text" fullWidth onClick={onClose}>
+                Cancel
+              </Button>
+            }
+          />
+        </form>
+      </TrayContent>
+    </Tray>
   );
 }
 

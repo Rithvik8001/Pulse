@@ -10,6 +10,7 @@ import {
   isToolPart,
   type ParsedProposal,
   type ProposalAction,
+  type ProposalTarget,
   redactPrivateIdentifiers,
 } from "@/components/product/assistant/assistant-proposals";
 import { Pip, pipName } from "@/components/product/pip";
@@ -23,6 +24,7 @@ export function AssistantMessage({
   message,
   onCancel,
   onConfirm,
+  onShow,
   parseProposal,
   proposalPendingText,
 }: {
@@ -32,6 +34,7 @@ export function AssistantMessage({
   message: UIMessage;
   onCancel: (toolCallId: string) => void;
   onConfirm: (toolCallId: string, action: ProposalAction) => void;
+  onShow: (target: ProposalTarget) => void;
   parseProposal: (output: unknown) => ParsedProposal | null;
   proposalPendingText: string;
 }) {
@@ -69,6 +72,7 @@ export function AssistantMessage({
               pendingText={proposalPendingText}
               onCancel={onCancel}
               onConfirm={onConfirm}
+              onShow={onShow}
             />
           );
         }

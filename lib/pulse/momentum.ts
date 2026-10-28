@@ -10,6 +10,7 @@ import {
   type MomentumData,
 } from "@/lib/pulse/momentum-core";
 import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import {
   getUserLocalDateContextForUser,
   type UserLocalDateContext,
@@ -29,9 +30,9 @@ export async function getMomentumDataForUser(
   dateContext: UserLocalDateContext,
 ): Promise<MomentumData | null> {
   const today = dateContext.today;
-  const ninetyDaysAgo = offsetLocalDate(today, -90);
+  const checkInWindowStart = offsetLocalDate(today, -97);
 
-  const [activeQuests, checkInRows] = await Promise.all([
+  const [activeQuests, checkInRows, histories] = await Promise.all([
     db
       .select({ id: quests.id, title: quests.title })
       .from(quests)
@@ -53,13 +54,14 @@ export async function getMomentumDataForUser(
       .where(
         and(
           eq(checkIns.userId, userId),
-          gte(checkIns.localDate, ninetyDaysAgo),
+          gte(checkIns.localDate, checkInWindowStart),
         ),
       )
       .orderBy(asc(checkIns.localDate)),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   if (activeQuests.length === 0) return null;
 
-  return computeMomentum(activeQuests, checkInRows, today);
+  return computeMomentum(activeQuests, histories, checkInRows, today);
 }

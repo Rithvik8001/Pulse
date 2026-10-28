@@ -10,11 +10,14 @@ import { useAiQuota } from "@/components/product/ai-quota";
 import { AssistantMessage } from "@/components/product/assistant/assistant-message";
 import {
   type ConfirmationState,
+  getProposalTarget,
   isToolPart,
+  type ProposalTarget,
   type ParsedProposal,
   type ProposalAction,
 } from "@/components/product/assistant/assistant-proposals";
 import { Pip } from "@/components/product/pip";
+import { useShell } from "@/components/product/shell";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
@@ -98,12 +101,15 @@ export function AssistantPane({
   onReset,
 }: {
   config: AssistantPaneConfig;
-  confirmAction: (action: ProposalAction) => Promise<{ status: "success" | "error"; message: string }>;
+  confirmAction: (
+    action: ProposalAction,
+  ) => Promise<{ status: "success" | "error"; message: string; questId?: string }>;
   session: AssistantSession;
   empty: React.ReactNode;
   onReset: () => void;
 }) {
   const router = useRouter();
+  const { close } = useShell();
   const { exhausted, exhaustedMessage } = useAiQuota();
   const hasMessages = session.messages.length > 0;
   const remainingChars = aiChatMaxUserTextChars - session.input.length;
@@ -133,19 +139,26 @@ export function AssistantPane({
   function confirmProposal(toolCallId: string, action: ProposalAction) {
     session.startConfirming(() => {
       void confirmAction(action).then((result) => {
+        const target = result.status === "success" ? getProposalTarget(action, result.questId) : undefined;
         session.setConfirmations((current) => ({
           ...current,
           [toolCallId]: {
             status: result.status === "success" ? "confirmed" : "error",
             message: result.message,
+            target,
           },
         }));
-        if (result.status === "success") {
-          toast.success(result.message);
-          router.refresh();
+        if (target) {
+          toast.success(result.message.replace(/\.$/, ""));
+          showTarget(target);
         }
       });
     });
+  }
+
+  function showTarget(target: ProposalTarget) {
+    close();
+    router.push(target.href, { scroll: false });
   }
 
   function cancelProposal(toolCallId: string) {
@@ -184,6 +197,7 @@ export function AssistantPane({
                 proposalPendingText={config.proposalPendingText}
                 onCancel={cancelProposal}
                 onConfirm={confirmProposal}
+                onShow={showTarget}
               />
             ))}
             {session.isStreaming ? (

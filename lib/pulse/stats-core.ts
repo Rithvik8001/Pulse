@@ -1,4 +1,15 @@
-import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-core";
+import {
+  formatLocalDate,
+  getWeekStart,
+  offsetDate,
+  parseLocalDate,
+} from "@/lib/pulse/local-date-core";
+import {
+  evaluateHabit,
+  formatScheduleLabel,
+  sumOccurrences,
+  type ScheduleEntry,
+} from "@/lib/pulse/schedule-core";
 
 export const statsWindowWeeks = 12;
 export const statsMinimumSampleSize = 3;
@@ -32,6 +43,8 @@ export type WeeklyTrendPoint = {
   winCount: number;
   passCount: number;
   totalCount: number;
+  dueCount: number;
+  doneCount: number;
   winRate: number | null;
 };
 
@@ -51,9 +64,13 @@ export type QuestStat = {
   winCount: number;
   passCount: number;
   totalCount: number;
+  dueCount: number;
+  doneCount: number;
   winRate: number | null;
   currentStreak: number;
   longestStreak: number;
+  runUnit: "days" | "weeks";
+  scheduleLabel: string;
   lastCheckInDate: string | null;
 };
 
@@ -86,32 +103,8 @@ export type StatsComputedData = {
   summary: StatsSummary;
 };
 
-function parseLocalDate(value: string) {
-  return new Date(`${value}T12:00:00`);
-}
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function offsetDate(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-
-  return nextDate;
-}
-
 function startOfWeek(date: Date) {
-  const start = new Date(date);
-  const day = start.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  start.setDate(start.getDate() + mondayOffset);
-
-  return start;
+  return parseLocalDate(getWeekStart(formatLocalDate(date)));
 }
 
 function formatWeekLabel(weekStart: string) {
@@ -130,7 +123,7 @@ function normalizeOutcome(outcome: string): StatsOutcome {
 }
 
 function getWeekStartForDate(localDate: string) {
-  return formatLocalDate(startOfWeek(parseLocalDate(localDate)));
+  return getWeekStart(localDate);
 }
 
 function buildWeekSkeleton(baseDate: Date, weeks: number): WeeklyTrendPoint[] {
@@ -148,6 +141,8 @@ function buildWeekSkeleton(baseDate: Date, weeks: number): WeeklyTrendPoint[] {
       winCount: 0,
       passCount: 0,
       totalCount: 0,
+      dueCount: 0,
+      doneCount: 0,
       winRate: null,
     };
   });
@@ -191,9 +186,11 @@ export function buildStatsSummary(
     0,
   );
   const totalProof = winCount + passCount;
+  const dueCount = questStats.reduce((total, quest) => total + quest.dueCount, 0);
+  const doneCount = questStats.reduce((total, quest) => total + quest.doneCount, 0);
   const rankedQuests = questStats.filter(
     (quest) =>
-      quest.totalCount >= statsMinimumSampleSize && quest.winRate !== null,
+      quest.dueCount >= statsMinimumSampleSize && quest.winRate !== null,
   );
   const strongest = [...rankedQuests].sort((first, second) => {
     if (second.winRate !== first.winRate) {
@@ -217,12 +214,12 @@ export function buildStatsSummary(
     totalProof,
     winCount,
     passCount,
-    overallWinRate: toWinRate(winCount, totalProof),
+    overallWinRate: toWinRate(doneCount, dueCount),
     strongestQuest: strongest
-      ? toInsightQuest(strongest, "Highest done rate with enough recent check-ins.")
+      ? toInsightQuest(strongest, "Highest done rate on its due days.")
       : null,
     needsAttentionQuest: lowWinRate
-      ? toInsightQuest(lowWinRate, "Lowest done rate with enough recent check-ins.")
+      ? toInsightQuest(lowWinRate, "Lowest done rate on its due days.")
       : staleActive
         ? toInsightQuest(staleActive, "No check-ins in this period yet.")
         : null,
@@ -234,11 +231,13 @@ export function computeStatsData({
   baseDate,
   checkIns,
   quests,
+  histories,
   weeks = statsWindowWeeks,
 }: {
   baseDate: Date;
   checkIns: StatsCheckInInput[];
   quests: StatsQuestInput[];
+  histories: Map<string, ScheduleEntry[]>;
   weeks?: number;
 }): StatsComputedData {
   const weeklyTrend = buildWeekSkeleton(baseDate, weeks);
@@ -251,7 +250,7 @@ export function computeStatsData({
     {
       winCount: number;
       passCount: number;
-      dates: Set<string>;
+      dates: Map<string, "win" | "pass">;
       lastCheckInDate: string | null;
       weekly: Map<string, { winCount: number; passCount: number }>;
     }
@@ -261,7 +260,7 @@ export function computeStatsData({
     questBucket.set(quest.id, {
       winCount: 0,
       passCount: 0,
-      dates: new Set(),
+      dates: new Map(),
       lastCheckInDate: null,
       weekly: new Map(),
     });
@@ -287,9 +286,7 @@ export function computeStatsData({
     }
 
     week.totalCount += 1;
-    if (outcome === "win") {
-      bucket.dates.add(checkIn.localDate);
-    }
+    bucket.dates.set(checkIn.localDate, outcome);
     bucket.lastCheckInDate =
       bucket.lastCheckInDate === null ||
       checkIn.localDate > bucket.lastCheckInDate
@@ -308,19 +305,39 @@ export function computeStatsData({
     bucket.weekly.set(weekStart, questWeek);
   }
 
+  const today = formatLocalDate(baseDate);
+  const rangeStart = weeklyTrend[0].weekStart;
+  const evaluations = new Map(
+    quests.map((quest) => [
+      quest.id,
+      evaluateHabit({
+        history: histories.get(quest.id) ?? [],
+        checkIns: questBucket.get(quest.id)?.dates ?? new Map<string, "win" | "pass">(),
+        today,
+        windowStart: rangeStart,
+      }),
+    ]),
+  );
+
   for (const week of weeklyTrend) {
-    week.winRate = toWinRate(week.winCount, week.totalCount);
+    for (const evaluation of evaluations.values()) {
+      const tally = sumOccurrences(evaluation.occurrences, week.weekStart, week.weekEnd);
+      week.dueCount += tally.due;
+      week.doneCount += tally.done;
+    }
+    week.winRate = toWinRate(week.doneCount, week.dueCount);
   }
 
-  const today = formatLocalDate(baseDate);
   const questStats = quests
     .map((quest) => {
       const bucket = questBucket.get(quest.id);
+      const evaluation = evaluations.get(quest.id);
       const winCount = bucket?.winCount ?? 0;
       const passCount = bucket?.passCount ?? 0;
       const totalCount = winCount + passCount;
-      const sortedDates = [...(bucket?.dates ?? new Set<string>())].sort();
-      const dateSet = new Set(sortedDates);
+      const tally = evaluation
+        ? sumOccurrences(evaluation.occurrences, rangeStart, today)
+        : { due: 0, done: 0 };
 
       return {
         questId: quest.id,
@@ -329,9 +346,13 @@ export function computeStatsData({
         winCount,
         passCount,
         totalCount,
-        winRate: toWinRate(winCount, totalCount),
-        currentStreak: computeCurrentStreak(dateSet, today).current,
-        longestStreak: computeLongestStreak(sortedDates),
+        dueCount: tally.due,
+        doneCount: tally.done,
+        winRate: toWinRate(tally.done, tally.due),
+        currentStreak: evaluation?.currentRun ?? 0,
+        longestStreak: evaluation?.longestRun ?? 0,
+        runUnit: evaluation?.runUnit ?? "days",
+        scheduleLabel: evaluation?.schedule ? formatScheduleLabel(evaluation.schedule) : "Every day",
         lastCheckInDate: bucket?.lastCheckInDate ?? null,
       };
     })
@@ -346,6 +367,7 @@ export function computeStatsData({
 
   const questWeeklyStats = quests.flatMap((quest) => {
     const bucket = questBucket.get(quest.id);
+    const evaluation = evaluations.get(quest.id);
 
     return weeklyTrend.map((week) => {
       const questWeek = bucket?.weekly.get(week.weekStart) ?? {
@@ -353,6 +375,9 @@ export function computeStatsData({
         passCount: 0,
       };
       const totalCount = questWeek.winCount + questWeek.passCount;
+      const tally = evaluation
+        ? sumOccurrences(evaluation.occurrences, week.weekStart, week.weekEnd)
+        : { due: 0, done: 0 };
 
       return {
         questId: quest.id,
@@ -360,7 +385,7 @@ export function computeStatsData({
         winCount: questWeek.winCount,
         passCount: questWeek.passCount,
         totalCount,
-        winRate: toWinRate(questWeek.winCount, totalCount),
+        winRate: toWinRate(tally.done, tally.due),
       };
     });
   });

@@ -7,6 +7,7 @@ import { Breadcrumb, Page, PageHeader, PageLead, PageTitle } from "@/components/
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { getMomentumDataForUser } from "@/lib/pulse/momentum";
 import { getQuestManagerDataForUser } from "@/lib/pulse/quests";
+import { dailySchedule, formatRunLabel, scheduleToInput } from "@/lib/pulse/schedule-core";
 import { computeSuggestions, getSuggestionsDataForUser } from "@/lib/pulse/suggestions";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
@@ -28,8 +29,15 @@ export default async function HabitsPage() {
     return <SetupGate isSetupComplete={false}>{null}</SetupGate>;
   }
 
-  const streakByQuestId = Object.fromEntries(
-    (momentum?.questStreaks ?? []).map((quest) => [quest.questId, quest.currentStreak]),
+  const scheduleByQuestId = Object.fromEntries(
+    (momentum?.questStreaks ?? []).map((quest) => [
+      quest.questId,
+      {
+        scheduleLabel: quest.scheduleLabel,
+        runLabel: formatRunLabel(quest.currentStreak, quest.runUnit),
+        schedule: scheduleToInput(quest.schedule ?? dailySchedule),
+      },
+    ]),
   );
   const suggestions = computeSuggestions(rawSuggestions).slice(0, 3);
   const isAtLimit = data.activeQuests.length >= data.activeQuestLimit;
@@ -48,7 +56,7 @@ export default async function HabitsPage() {
         activeQuestLimit={data.activeQuestLimit}
         activeQuests={data.activeQuests}
         archivedQuests={data.archivedQuests}
-        streakByQuestId={streakByQuestId}
+        scheduleByQuestId={scheduleByQuestId}
         suggestions={<SuggestionList suggestions={suggestions} isAtQuestLimit={isAtLimit} />}
       />
     </Page>

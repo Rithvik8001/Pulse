@@ -1,9 +1,13 @@
 import {
-  formatLocalDate,
+  getWeekStart,
   offsetLocalDate,
   parseLocalDate,
 } from "@/lib/pulse/local-date-core";
-import { computeCurrentStreak, computeLongestStreak } from "@/lib/pulse/streak-core";
+import {
+  evaluateHabit,
+  sumOccurrences,
+  type ScheduleEntry,
+} from "@/lib/pulse/schedule-core";
 
 export const identityDefaultWindowDays = 90;
 export const identityAllWindowDays = 3650;
@@ -154,12 +158,14 @@ export function computeIdentityData({
   quests,
   range,
   stories,
+  histories,
 }: {
   checkIns: IdentityCheckInInput[];
   journals: IdentityJournalInput[];
   quests: IdentityQuestInput[];
   range: IdentityRange;
   stories: IdentityStoryInput[];
+  histories: Map<string, ScheduleEntry[]>;
 }): IdentityComputedData {
   const rangeCheckIns = checkIns.filter((entry) =>
     isInRange(entry.localDate, range),
@@ -180,6 +186,8 @@ export function computeIdentityData({
     checkIns: rangeCheckIns,
     quests,
     today: range.end,
+    windowStart: range.start,
+    histories,
   });
   const milestones = buildIdentityMilestones({
     checkIns: rangeCheckIns,
@@ -218,10 +226,14 @@ export function buildIdentitySignals({
   checkIns,
   quests,
   today,
+  windowStart,
+  histories,
 }: {
   checkIns: IdentityCheckInInput[];
   quests: IdentityQuestInput[];
   today: string;
+  windowStart: string;
+  histories: Map<string, ScheduleEntry[]>;
 }): IdentitySignal[] {
   const byQuest = new Map<
     string,
@@ -230,7 +242,7 @@ export function buildIdentitySignals({
       winCount: number;
       passCount: number;
       proofNoteCount: number;
-      dates: Set<string>;
+      dates: Map<string, "win" | "pass">;
       weeks: Set<string>;
       lastProofDate: string | null;
     }
@@ -242,7 +254,7 @@ export function buildIdentitySignals({
       winCount: 0,
       passCount: 0,
       proofNoteCount: 0,
-      dates: new Set(),
+      dates: new Map(),
       weeks: new Set(),
       lastProofDate: null,
     });
@@ -263,9 +275,7 @@ export function buildIdentitySignals({
     if (entry.note?.trim()) {
       bucket.proofNoteCount += 1;
     }
-    if (entry.outcome === "win") {
-      bucket.dates.add(entry.localDate);
-    }
+    bucket.dates.set(entry.localDate, entry.outcome === "pass" ? "pass" : "win");
     bucket.weeks.add(getWeekStart(entry.localDate));
     bucket.lastProofDate =
       bucket.lastProofDate === null || entry.localDate > bucket.lastProofDate
@@ -279,11 +289,16 @@ export function buildIdentitySignals({
       const proofCount = bucket?.proofCount ?? 0;
       const winCount = bucket?.winCount ?? 0;
       const passCount = bucket?.passCount ?? 0;
-      const sortedDates = [...(bucket?.dates ?? new Set<string>())].sort();
-      const currentStreak = computeCurrentStreak(new Set(sortedDates), today).current;
-      const longestStreak = computeLongestStreak(sortedDates);
-      const winRate =
-        proofCount > 0 ? Math.round((winCount / proofCount) * 100) : null;
+      const evaluation = evaluateHabit({
+        history: histories.get(quest.id) ?? [],
+        checkIns: bucket?.dates ?? new Map<string, "win" | "pass">(),
+        today,
+        windowStart,
+      });
+      const currentStreak = evaluation.currentRun;
+      const longestStreak = evaluation.longestRun;
+      const tally = sumOccurrences(evaluation.occurrences, windowStart, today);
+      const winRate = tally.due > 0 ? Math.round((tally.done / tally.due) * 100) : null;
       const activeWeeks = bucket?.weeks.size ?? 0;
       const proofNoteCount = bucket?.proofNoteCount ?? 0;
       const score = Math.round(
@@ -809,15 +824,6 @@ function buildSignalReason({
   }
 
   return parts.join(" · ");
-}
-
-function getWeekStart(localDate: string) {
-  const date = parseLocalDate(localDate);
-  const day = date.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  date.setDate(date.getDate() + mondayOffset);
-
-  return formatLocalDate(date);
 }
 
 function formatWeekLabel(weekStart: string) {

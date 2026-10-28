@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const steps = [
   { title: "Say who you are becoming", body: "I am a writer, a runner, an early riser." },
-  { title: "Check in each day", body: "Mark each habit Done or Skipped. Skipping is allowed." },
+  { title: "Check in on the days you plan", body: "Every day, set days or a few times a week. Mark each habit Done or Skipped." },
   { title: "Look back each week", body: "Pulse writes a short recap of what your days show." },
 ];
 
@@ -43,17 +43,17 @@ const features: { feature: Feature; title: string; body: string }[] = [
   {
     feature: "today",
     title: "Check in, done or skipped",
-    body: "Each day shows the habits you chose. Mark each one Done or Skipped and add a note if you want. Skipping is honest, not failure.",
+    body: "Today shows only the habits due today. Mark each one Done or Skipped and add a note if you want. Skipping is honest, not failure.",
   },
   {
     feature: "habits",
     title: "Habits tied to who you are becoming",
-    body: "Start with I am a writer and keep up to twelve small habits a writer does. Rename, reorder, archive and restore them as life changes.",
+    body: "Start with I am a writer and keep up to twelve small habits a writer does. Pick when each is due, then rename, reorder, archive and restore them as life changes.",
   },
   {
     feature: "history",
     title: "A record, not a scoreboard",
-    body: "Every check-in is kept and searchable. See your consistency, done rate, an 8-week grid and how each habit is going, with no broken chains.",
+    body: "Every check-in is kept and searchable. See your consistency, done rate, an 8-week grid and how each habit is going, counted only on the days each habit was due. One missed day a week is forgiven.",
   },
   {
     feature: "review",

@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { getEmailPreferenceRow } from "@/app/dashboard/_data";
 import { AiQuotaProvider } from "@/components/product/ai-quota";
 import { AppHeader } from "@/components/product/app-header";
 import { AssistantTray } from "@/components/product/assistant-tray";
+import { HighlightTarget } from "@/components/product/highlight-target";
 import { CommandMenu } from "@/components/product/command-menu";
 import { NavTray } from "@/components/product/nav-tray";
 import { RouteFocus } from "@/components/product/route-focus";
@@ -52,6 +54,9 @@ export default async function DashboardLayout({
           {children}
         </main>
         <RouteFocus />
+        <Suspense fallback={null}>
+          <HighlightTarget />
+        </Suspense>
         <NavTray />
         <CommandMenu />
         <ShortcutsTray />

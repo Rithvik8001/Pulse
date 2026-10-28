@@ -15,6 +15,14 @@ import {
   type HabitAgentProposal,
 } from "@/lib/pulse/habit-agent-core";
 import { getLocalDateForTimeZone } from "@/lib/pulse/dashboard";
+import {
+  dailySchedule,
+  formatScheduleLabel,
+  latestHabitSchedule,
+  scheduleFromInput,
+  scheduleInputSchema,
+} from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import {
   computeSuggestions,
@@ -50,7 +58,7 @@ export async function getHabitAgentContextForUser(
     return null;
   }
 
-  const [habitRows, suggestionsRaw] = await Promise.all([
+  const [habitRows, suggestionsRaw, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -68,6 +76,7 @@ export async function getHabitAgentContextForUser(
       .groupBy(quests.id)
       .orderBy(asc(quests.position), desc(quests.updatedAt)),
     getSuggestionsDataForUser(userId, dateContext),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   const habits: HabitAgentHabit[] = habitRows.map((habit) => ({
@@ -78,6 +87,7 @@ export async function getHabitAgentContextForUser(
     winCount: Number(habit.winCount),
     passCount: Number(habit.passCount),
     lastCheckInDate: habit.lastCheckInDate,
+    scheduleLabel: formatScheduleLabel(latestHabitSchedule(histories.get(habit.id) ?? [])),
     archivedAt: habit.archivedAt
       ? getLocalDateForTimeZone(habit.archivedAt, dateContext.timeZone)
       : null,
@@ -109,15 +119,34 @@ export function buildHabitAgentTools(context: HabitAgentContext) {
   return {
     proposeCreateHabit: tool({
       description:
-        "Propose adding a new active habit. Use only for repeatable habits.",
+        "Propose adding a new active habit. Use only for repeatable habits. Include a schedule when the person says how often; leave it out for every day.",
       inputSchema: z.object({
         title: z.string().min(1).max(96),
+        schedule: scheduleInputSchema.optional(),
       }),
-      execute: async ({ title }) =>
-        proposal("Add habit", `Add "${title}" to your habits.`, {
-          type: "createHabit",
-          title,
-        }),
+      execute: async ({ title, schedule }) =>
+        proposal(
+          "Add habit",
+          `Add "${title}" to your habits, due ${formatScheduleLabel(schedule ? scheduleFromInput(schedule) : dailySchedule).toLowerCase()}.`,
+          { type: "createHabit", title, schedule },
+        ),
+    }),
+    proposeUpdateHabitSchedule: tool({
+      description:
+        "Propose changing when an active habit is due: every day, specific weekdays, or 1 to 6 times a week. The change applies from today.",
+      inputSchema: z.object({
+        questId: z.string().min(1),
+        schedule: scheduleInputSchema,
+      }),
+      execute: async ({ questId, schedule }) => {
+        const habit = findHabit(context, questId);
+
+        return proposal(
+          "Change schedule",
+          `Make "${habit?.title ?? "this habit"}" due ${formatScheduleLabel(scheduleFromInput(schedule)).toLowerCase()}, starting today. Past days keep their old schedule.`,
+          { type: "updateHabitSchedule", questId, schedule },
+        );
+      },
     }),
     proposeUpdateHabit: tool({
       description: "Propose renaming an existing habit.",

@@ -102,7 +102,7 @@ export function DashboardSetupForm() {
 
       {state.message ? <Notice tone="bad">{state.message}</Notice> : null}
 
-      <SummaryBar caption="One to three habits. You can change them later.">
+      <SummaryBar caption="One to three habits, each starting as every day. You can change schedules later on Habits.">
         <SubmitButton variant="primary" pendingLabel="Setting up">
           Start checking in
         </SubmitButton>

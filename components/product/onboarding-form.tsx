@@ -187,7 +187,7 @@ export function OnboardingForm() {
       <HowItWorks
         steps={[
           { title: "Say who you are becoming", body: "I am a writer, a runner, an early riser." },
-          { title: "Check in each day", body: "Mark each habit Done or Skipped. Skipping is allowed." },
+          { title: "Check in on the days you plan", body: "Every day, set days or a few times a week. Mark each habit Done or Skipped." },
           { title: "Look back each week", body: "Pulse writes a short recap of what your days show." },
         ]}
       />

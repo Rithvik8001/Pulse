@@ -40,6 +40,7 @@ export type JournalCheckInSaveInput = z.infer<typeof journalCheckInSaveSchema>;
 export type JournalCheckInHabit = {
   id: string;
   title: string;
+  dueThatDay?: boolean;
 };
 
 export type JournalCheckInExisting = {
@@ -79,7 +80,9 @@ export function buildJournalCheckInPrompt({
 }) {
   return [
     "Habits:",
-    ...habits.map((habit) => `- [id:${habit.id}] ${habit.title}`),
+    ...habits.map(
+      (habit) => `- [id:${habit.id}] ${habit.title}${habit.dueThatDay === false ? " (not due that day, still fine to check in if the entry says so)" : ""}`,
+    ),
     "",
     "Journal entry:",
     '"""',

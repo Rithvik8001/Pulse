@@ -1,4 +1,4 @@
-import { offsetLocalDate } from "@/lib/pulse/local-date-core";
+import { getWeekStart, offsetLocalDate } from "@/lib/pulse/local-date-core";
 
 export const welcomeEmailType = "welcome";
 export const weeklyDigestEmailType = "weekly_digest";
@@ -35,16 +35,7 @@ export function buildUnsubscribeUrl(siteUrl: string, token: string) {
 }
 
 export function getPreviousWeekRange(today: string) {
-  const date = new Date(`${today}T12:00:00`);
-  const day = date.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  date.setDate(date.getDate() + mondayOffset - 7);
-
-  const start = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
+  const start = offsetLocalDate(getWeekStart(today), -7);
 
   return {
     start,

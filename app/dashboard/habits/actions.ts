@@ -7,9 +7,11 @@ import {
   moveQuest,
   removeQuest,
   restoreQuest,
+  updateQuestSchedule,
   updateQuestTitle,
   type QuestMutationResult,
 } from "@/lib/pulse/quests";
+import { parseScheduleFields } from "@/lib/pulse/schedule-core";
 
 export type QuestFormState = {
   status: "idle" | "success" | "error";
@@ -30,11 +32,25 @@ function revalidateQuestSurfaces() {
   revalidatePath("/dashboard/review");
 }
 
+function readSchedule(formData: FormData) {
+  return parseScheduleFields({
+    kind: normalizeText(formData.get("scheduleKind")),
+    weekdays: formData.getAll("weekdays").map(normalizeText),
+    timesPerWeek: normalizeText(formData.get("timesPerWeek")),
+  });
+}
+
 export async function createQuestAction(
   _state: QuestFormState,
   formData: FormData,
 ): Promise<QuestFormState> {
-  const result = await createQuest(normalizeText(formData.get("title")));
+  const schedule = readSchedule(formData);
+
+  if (!schedule.ok) {
+    return { status: "error", message: schedule.message };
+  }
+
+  const result = await createQuest(normalizeText(formData.get("title")), schedule.schedule);
   revalidateQuestSurfaces();
 
   return toFormState(result);
@@ -49,6 +65,23 @@ export async function updateQuestTitleAction(
     normalizeText(formData.get("title")),
   );
   revalidateQuestSurfaces();
+
+  return toFormState(result);
+}
+
+export async function updateQuestScheduleAction(
+  _state: QuestFormState,
+  formData: FormData,
+): Promise<QuestFormState> {
+  const schedule = readSchedule(formData);
+
+  if (!schedule.ok) {
+    return { status: "error", message: schedule.message };
+  }
+
+  const result = await updateQuestSchedule(normalizeText(formData.get("questId")), schedule.schedule);
+  revalidateQuestSurfaces();
+  revalidatePath("/dashboard/history");
 
   return toFormState(result);
 }

@@ -15,8 +15,8 @@ export function Hero() {
         <span className="underline-wipe">who you are becoming.</span>
       </h1>
       <p className="max-w-lead type-body text-fg-2 text-pretty">
-        Pulse is a daily habit app. Say who you want to be, check in on one to
-        three small habits each day, and get a short weekly recap written from
+        Pulse is a habit app. Say who you want to be, check in on a few small
+        habits on the days you plan, and get a short weekly recap written from
         your own check-ins.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">

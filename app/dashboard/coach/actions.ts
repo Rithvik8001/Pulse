@@ -14,13 +14,16 @@ import {
   archiveQuest,
   createQuest,
   restoreQuest,
+  updateQuestSchedule,
   updateQuestTitle,
 } from "@/lib/pulse/quests";
+import { scheduleFromInput } from "@/lib/pulse/schedule-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type CoachConfirmResult = {
   status: "success" | "error";
   message: string;
+  questId?: string;
 };
 
 export async function confirmPulseCoachAction(
@@ -39,7 +42,10 @@ export async function confirmPulseCoachAction(
 
   switch (parsed.data.type) {
     case "createQuest":
-      result = await createQuest(parsed.data.title);
+      result = await createQuest(
+        parsed.data.title,
+        parsed.data.schedule ? scheduleFromInput(parsed.data.schedule) : undefined,
+      );
       break;
     case "updateQuest":
       result = await updateQuestTitle(parsed.data.questId, parsed.data.title);
@@ -49,6 +55,12 @@ export async function confirmPulseCoachAction(
       break;
     case "restoreQuest":
       result = await restoreQuest(parsed.data.questId);
+      break;
+    case "updateQuestSchedule":
+      result = await updateQuestSchedule(
+        parsed.data.questId,
+        scheduleFromInput(parsed.data.schedule),
+      );
       break;
     case "saveCheckIn":
       result = await saveCoachCheckIn(parsed.data);

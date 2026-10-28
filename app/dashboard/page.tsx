@@ -13,11 +13,12 @@ export const metadata: Metadata = {
   description: "Check in on today's habits.",
 };
 
-function summary(done: number, total: number) {
+function summary(done: number, due: number, total: number) {
   if (total === 0) return "No habits yet.";
-  if (done === 0) return total === 1 ? "1 habit to check in today." : `${total} habits to check in today.`;
-  if (done >= total) return total === 1 ? "Checked in today." : `All ${total} checked in today.`;
-  return `${done} of ${total} checked in today.`;
+  if (due === 0) return "Nothing due today.";
+  if (done === 0) return due === 1 ? "1 habit due today." : `${due} habits due today.`;
+  if (done >= due) return due === 1 ? "Your habit for today is checked in." : `All ${due} due habits checked in.`;
+  return `${done} of ${due} due habits checked in.`;
 }
 
 export default async function TodayPage() {
@@ -30,17 +31,21 @@ export default async function TodayPage() {
   }
 
   const total = dashboard.quests.length;
-  const done = dashboard.quests.filter((quest) => quest.todayCheckIn).length;
+  const dueQuests = dashboard.quests.filter(
+    (quest) => quest.dueToday || (quest.thisWeek !== null && quest.todayCheckIn !== null),
+  );
+  const notDueQuests = dashboard.quests.filter((quest) => !dueQuests.includes(quest));
+  const done = dueQuests.filter((quest) => quest.todayCheckIn).length;
 
   return (
     <Page>
       <PageHeader>
         <PageTitle>Today</PageTitle>
-        <PageLead>{summary(done, total)}</PageLead>
+        <PageLead>{summary(done, dueQuests.length, total)}</PageLead>
       </PageHeader>
 
       {total > 0 ? (
-        <CheckInList quests={dashboard.quests} />
+        <CheckInList quests={dueQuests} notDueQuests={notDueQuests} />
       ) : (
         <Notice action={{ label: "Add a habit", href: "/dashboard/habits#new-habit" }}>
           You have no active habits.

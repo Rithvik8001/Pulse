@@ -5,13 +5,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
-import { characters, checkIns, quests } from "@/lib/db/schema";
+import { characters, checkIns, questSchedules, quests } from "@/lib/db/schema";
 import { sendWelcomeEmailAfterSetup } from "@/lib/email/welcome";
 import { logError } from "@/lib/observability/logger";
 import { getAiQuotaForUser } from "@/lib/pulse/ai-limits";
 import type { AiQuota } from "@/lib/pulse/ai-limits-core";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { isUuid } from "@/lib/pulse/id-core";
+import { dailySchedule, scheduleToRow } from "@/lib/pulse/schedule-core";
 import { getUserLocalDateContextForUser } from "@/lib/pulse/user-settings";
 
 export type SetupFormState = {
@@ -51,6 +52,7 @@ export async function createInitialSetup(
   formData: FormData,
 ): Promise<SetupFormState> {
   const userId = await requireUserId();
+  const { today } = await getUserLocalDateContextForUser(userId);
   const character = normalizeText(formData.get("character"));
   const questList = normalizeQuestList(formData);
   const errors: SetupFormState["errors"] = {};
@@ -91,12 +93,24 @@ export async function createInitialSetup(
           id: characters.id,
         });
 
-      await tx.insert(quests).values(
-        questList.map((quest, index) => ({
-          characterId: createdCharacter.id,
+      const createdQuests = await tx
+        .insert(quests)
+        .values(
+          questList.map((quest, index) => ({
+            characterId: createdCharacter.id,
+            userId,
+            title: quest,
+            position: index + 1,
+          })),
+        )
+        .returning({ id: quests.id });
+
+      await tx.insert(questSchedules).values(
+        createdQuests.map((quest) => ({
+          questId: quest.id,
           userId,
-          title: quest,
-          position: index + 1,
+          ...scheduleToRow(dailySchedule),
+          effectiveFrom: today,
         })),
       );
     });

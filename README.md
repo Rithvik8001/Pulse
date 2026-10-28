@@ -4,8 +4,8 @@ A daily habit app for who you are becoming. Say who you want to be ("I am a writ
 
 ## Features
 
-- **Today**: the day's habits with a Done or Skipped control and an optional note.
-- **Habits**: add, rename, reorder, archive, restore and delete habits, up to 12 active. Suggestions point out dormant habits, strong archived ones and shorter wording.
+- **Today**: the habits due today with a Done or Skipped control and an optional note. Habits not due sit in a collapsed section.
+- **Habits**: add, rename, reorder, reschedule, archive, restore and delete habits, up to 12 active. A habit is due every day, on set weekdays, or 1 to 6 times a week. Stats count only due days, and the first missed due day each week is forgiven. Suggestions point out dormant habits, strong archived ones and shorter wording.
 - **History**: consistency score, done rate, an 8-week grid, a weekly done-rate chart, per-habit stats, and every check-in with search, filter, edit and delete.
 - **Review**: the weekly recap (last week's, if this week has nothing yet), past recaps, a refreshable "who you are becoming" statement, and milestones.
 - **Journal**: one entry per day with a date picker, prompts and that day's check-ins. Pip can read a saved entry and suggest the matching Done or Skipped check-ins to save in one go.

@@ -11,7 +11,7 @@ function describe(day: ProofHistoryDay, locale: string) {
     month: "short",
     day: "numeric",
   });
-  if (day.totalCount === 0) return `${date}: no check-ins`;
+  if (day.totalCount === 0) return day.dueCount === 0 ? `${date}: nothing due` : `${date}: no check-ins`;
   const parts = [];
   if (day.winCount > 0) parts.push(`${day.winCount} done`);
   if (day.passCount > 0) parts.push(`${day.passCount} skipped`);
@@ -33,6 +33,7 @@ export function ProofHistoryGrid({
   const weeks = Math.ceil(days.length / 7);
   const checkedIn = days.filter((d) => d.totalCount > 0).length;
   const withDone = days.filter((d) => d.winCount > 0).length;
+  const hasNothingDue = days.some((d) => d.dueCount === 0 && d.totalCount === 0);
 
   return (
     <div className="grid gap-3">
@@ -50,7 +51,7 @@ export function ProofHistoryGrid({
                 day.winCount === 2 && "bg-ok opacity-(--soft)",
                 day.winCount === 1 && "bg-ok opacity-(--muted)",
                 day.winCount === 0 && day.passCount > 0 && "bg-fg-3",
-                day.totalCount === 0 && "bg-fill-2",
+                day.totalCount === 0 && (day.dueCount === 0 ? "border border-line" : "bg-fill-2"),
                 day.localDate === last && "outline-1 -outline-offset-1 outline-ink",
                 cellClassName,
               )}
@@ -71,6 +72,12 @@ export function ProofHistoryGrid({
           <span aria-hidden className="size-3 rounded-cell bg-fill-2" />
           {legend === "full" ? "No check-ins" : "None"}
         </li>
+        {hasNothingDue ? (
+          <li className="flex items-center gap-2">
+            <span aria-hidden className="size-3 rounded-cell border border-line" />
+            Nothing due
+          </li>
+        ) : null}
       </ul>
     </div>
   );

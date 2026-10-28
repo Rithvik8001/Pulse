@@ -4,6 +4,7 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { characters, checkIns, quests } from "@/lib/db/schema";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
 import { requireUserId } from "@/lib/pulse/dashboard";
 import { parseLocalDate } from "@/lib/pulse/local-date-core";
 import {
@@ -78,6 +79,7 @@ export async function getStatsDataForUser(
     baseDate,
     checkIns: [],
     quests: [],
+    histories: new Map(),
     weeks: statsWindowWeeks,
   });
   const [character] = await db
@@ -101,7 +103,7 @@ export async function getStatsDataForUser(
     };
   }
 
-  const [questRows, checkInRows] = await Promise.all([
+  const [questRows, checkInRows, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -127,6 +129,7 @@ export async function getStatsDataForUser(
         ),
       )
       .orderBy(asc(checkIns.localDate)),
+    getScheduleHistoriesForUser(userId),
   ]);
 
   const computed = computeStatsData({
@@ -136,6 +139,7 @@ export async function getStatsDataForUser(
       ...quest,
       status: quest.status === "archived" ? "archived" : "active",
     })),
+    histories,
     weeks: statsWindowWeeks,
   });
 

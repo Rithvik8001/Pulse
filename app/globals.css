@@ -125,6 +125,7 @@
   --dur-3: 300ms;
   --dur-badge: 460ms;
   --dur-loop: 1600ms;
+  --dur-highlight: 2400ms;
   --press: 0.98;
   --settle: 0.96;
   --tray-rise: 0.5rem;
@@ -388,6 +389,10 @@
   @keyframes sweep {
     from { background-position: -40% 0; }
     to { background-position: 140% 0; }
+  }
+  @keyframes highlight-fade {
+    0%, 40% { background-color: var(--brand-tint); box-shadow: 0 0 0 0.5rem var(--brand-tint); }
+    100% { background-color: transparent; box-shadow: 0 0 0 0.5rem transparent; }
   }
   @keyframes pip-bob {
     0%, 100% { transform: translateY(0); }
@@ -656,5 +661,18 @@
     :focus-visible { outline-color: Highlight; }
     .keycap, .keycap-2, .knob { border: var(--hairline) solid ButtonText; }
     .track { border: var(--hairline) solid CanvasText; }
+  }
+}
+
+[data-highlighted="true"] {
+  border-radius: var(--radius-inner);
+  animation: highlight-fade var(--dur-highlight) var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-highlighted="true"] {
+    animation: none;
+    background-color: var(--brand-tint);
+    box-shadow: 0 0 0 0.5rem var(--brand-tint);
   }
 }

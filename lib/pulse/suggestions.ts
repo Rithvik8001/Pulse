@@ -24,6 +24,13 @@ import { isUuid } from "@/lib/pulse/id-core";
 import { offsetLocalDate, parseLocalDate } from "@/lib/pulse/local-date-core";
 import { activeQuestLimit } from "@/lib/pulse/quests";
 import {
+  evaluateHabit,
+  groupCheckInsByQuest,
+  hasNoRecentDone,
+  sumOccurrences,
+} from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
+import {
   getUserLocalDateContextForUser,
   type UserLocalDateContext,
 } from "@/lib/pulse/user-settings";
@@ -45,6 +52,9 @@ type ActiveQuestRow = {
   totalCheckInCount: number;
   recentCheckInCount: number;
   recentWinCount: number;
+  recentDueCount: number;
+  recentDoneCount: number;
+  isDormant: boolean;
 };
 
 type ArchivedQuestRow = {
@@ -90,7 +100,7 @@ export async function getSuggestionsDataForUser(
   const twentyOneDaysAgo = offsetLocalDate(dateContext.today, -21);
   const thirtyDaysAgo = offsetLocalDate(dateContext.today, -30);
 
-  const [activeRows, archivedRows] = await Promise.all([
+  const [activeRows, archivedRows, recentRows, histories] = await Promise.all([
     db
       .select({
         id: quests.id,
@@ -130,10 +140,39 @@ export async function getSuggestionsDataForUser(
       .leftJoin(checkIns, eq(checkIns.questId, quests.id))
       .where(and(eq(quests.userId, userId), eq(quests.status, "archived")))
       .groupBy(quests.id),
+    db
+      .select({
+        questId: checkIns.questId,
+        localDate: checkIns.localDate,
+        outcome: checkIns.outcome,
+      })
+      .from(checkIns)
+      .where(
+        and(eq(checkIns.userId, userId), gte(checkIns.localDate, offsetLocalDate(dateContext.today, -45))),
+      ),
+    getScheduleHistoriesForUser(userId),
   ]);
 
+  const checkInsByQuest = groupCheckInsByQuest(recentRows);
+  const activeQuests = activeRows.map((row) => {
+    const evaluation = evaluateHabit({
+      history: histories.get(row.id) ?? [],
+      checkIns: checkInsByQuest.get(row.id) ?? new Map<string, "win" | "pass">(),
+      today: dateContext.today,
+      windowStart: offsetLocalDate(dateContext.today, -45),
+    });
+    const tally = sumOccurrences(evaluation.occurrences, thirtyDaysAgo, dateContext.today);
+
+    return {
+      ...row,
+      recentDueCount: tally.due,
+      recentDoneCount: tally.done,
+      isDormant: hasNoRecentDone(evaluation, dateContext.today),
+    };
+  });
+
   return {
-    activeQuests: activeRows as ActiveQuestRow[],
+    activeQuests: activeQuests as ActiveQuestRow[],
     archivedQuests: archivedRows as ArchivedQuestRow[],
     activeQuestCount: activeRows.length,
     sevenDaysAgo,
@@ -164,8 +203,7 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
   for (const quest of activeQuests) {
     const isOldEnoughForArchive = quest.createdAt < sevenDaysCutoff;
     const isOldEnoughForNeverStarted = quest.createdAt < fourteenDaysCutoff;
-    const missedSevenPlusDays =
-      quest.lastCheckInDate === null || quest.lastCheckInDate < sevenDaysAgo;
+    const missedSevenPlusDays = quest.isDormant;
     const neverStarted =
       quest.totalCheckInCount === 0 && isOldEnoughForNeverStarted;
 
@@ -175,15 +213,15 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
         questId: quest.id,
         questTitle: quest.title,
         reason:
-          "No check-ins for 7 days or more. Archive it to clear Today, or keep going.",
+          "Not done on its last few due days. Archive it to clear Today, or keep going.",
       });
       archivedQuestIds.add(quest.id);
       continue;
     }
 
-    const hasEnoughData = quest.recentCheckInCount >= 7;
+    const hasEnoughData = quest.recentDueCount >= 7;
     const lowWinRate =
-      hasEnoughData && quest.recentWinCount / quest.recentCheckInCount < 0.3;
+      hasEnoughData && quest.recentDoneCount / quest.recentDueCount < 0.3;
 
     if (lowWinRate) {
       rewordCandidates.push({
@@ -191,7 +229,7 @@ export function computeSuggestions(raw: SuggestionsRawData): QuestSuggestion[] {
         questId: quest.id,
         questTitle: quest.title,
         reason:
-          "Done on fewer than 3 in 10 check-ins this month. A smaller version may be easier.",
+          "Done on fewer than 3 in 10 due days this month. A smaller version may be easier.",
       });
     }
   }

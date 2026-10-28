@@ -11,6 +11,14 @@ import {
   offsetLocalDate,
 } from "@/lib/pulse/local-date-core";
 import {
+  countDueByDate,
+  evaluateHabit,
+  formatRunLabel,
+  formatScheduleLabel,
+  groupCheckInsByQuest,
+} from "@/lib/pulse/schedule-core";
+import { getScheduleHistoriesForUser } from "@/lib/pulse/schedules";
+import {
   getUserLocalDateContextForUser,
   type UserLocalDateContext,
 } from "@/lib/pulse/user-settings";
@@ -21,6 +29,10 @@ export type DashboardQuest = {
   title: string;
   position: number;
   todayCheckIn: DashboardCheckIn | null;
+  scheduleLabel: string;
+  dueToday: boolean;
+  thisWeek: { done: number; target: number } | null;
+  runLabel: string | null;
 };
 
 export type CheckInOutcome = "win" | "pass";
@@ -42,6 +54,7 @@ export type ProofHistoryDay = {
   winCount: number;
   passCount: number;
   totalCount: number;
+  dueCount?: number;
 };
 
 export type DashboardData =
@@ -117,8 +130,8 @@ export async function getDashboardDataForUser(
     };
   }
 
-  const historyStartDate = offsetLocalDate(today, -55);
-  const [userQuests, todayCheckIns, recentProofRows, proofHistoryRows] =
+  const historyStartDate = offsetLocalDate(today, -97);
+  const [userQuests, todayCheckIns, recentProofRows, proofHistoryRows, histories] =
     await Promise.all([
       db
         .select({
@@ -161,6 +174,7 @@ export async function getDashboardDataForUser(
         .limit(6),
       db
         .select({
+          questId: checkIns.questId,
           localDate: checkIns.localDate,
           outcome: checkIns.outcome,
         })
@@ -172,6 +186,7 @@ export async function getDashboardDataForUser(
           ),
         )
         .orderBy(asc(checkIns.localDate)),
+      getScheduleHistoriesForUser(userId),
     ]);
 
   const checkInByQuestId = new Map(
@@ -181,18 +196,40 @@ export async function getDashboardDataForUser(
     ]),
   );
 
+  const checkInsByQuest = groupCheckInsByQuest(proofHistoryRows);
+  const evaluations = new Map(
+    userQuests.map((quest) => [
+      quest.id,
+      evaluateHabit({
+        history: histories.get(quest.id) ?? [],
+        checkIns: checkInsByQuest.get(quest.id) ?? new Map<string, "win" | "pass">(),
+        today,
+        windowStart: offsetLocalDate(today, -90),
+      }),
+    ]),
+  );
+  const dueByDate = countDueByDate([...evaluations.values()]);
+
   return {
     isSetupComplete: true,
     character,
-    quests: userQuests.map((quest) => ({
-      ...quest,
-      todayCheckIn: checkInByQuestId.get(quest.id) ?? null,
-    })),
+    quests: userQuests.map((quest) => {
+      const evaluation = evaluations.get(quest.id);
+
+      return {
+        ...quest,
+        todayCheckIn: checkInByQuestId.get(quest.id) ?? null,
+        scheduleLabel: evaluation?.schedule ? formatScheduleLabel(evaluation.schedule) : "Every day",
+        dueToday: evaluation?.dueToday ?? true,
+        thisWeek: evaluation?.thisWeek ?? null,
+        runLabel: evaluation ? formatRunLabel(evaluation.currentRun, evaluation.runUnit) : null,
+      };
+    }),
     recentProof: recentProofRows.map((row) => ({
       ...toDashboardCheckIn(row),
       questTitle: row.questTitle,
     })),
-    proofHistory: buildProofHistory(proofHistoryRows, today),
+    proofHistory: buildProofHistory(proofHistoryRows, today, dueByDate),
   };
 }
 
@@ -226,6 +263,7 @@ function buildProofHistory(
     outcome: string;
   }[],
   today: string,
+  dueByDate: Map<string, number>,
 ): ProofHistoryDay[] {
   const byDate = new Map<string, ProofHistoryDay>();
 
@@ -236,6 +274,7 @@ function buildProofHistory(
       winCount: 0,
       passCount: 0,
       totalCount: 0,
+      dueCount: dueByDate.get(localDate) ?? 0,
     });
   }
 

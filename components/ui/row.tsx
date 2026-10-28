@@ -67,6 +67,7 @@ export function ActionRow({
   actions,
   as,
   className,
+  highlightId,
   children,
 }: {
   leading?: React.ReactNode;
@@ -75,10 +76,11 @@ export function ActionRow({
   actions?: React.ReactNode;
   as?: "li" | "div";
   className?: string;
+  highlightId?: string;
   children?: React.ReactNode;
 }) {
   return (
-    <Row as={as} className={cn("flex-wrap", className)}>
+    <Row as={as} className={cn("flex-wrap", className)} data-highlight-id={highlightId}>
       {leading}
       <div className="grid min-w-0 flex-1 gap-0.5">
         <div className="truncate type-body font-medium">{title}</div>

@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { CaretDown } from "@phosphor-icons/react";
 
 import { type CheckInFormState, upsertCheckInAction } from "@/app/dashboard/actions";
+import { highlightParam } from "@/components/product/assistant/assistant-proposals";
 import { Button } from "@/components/ui/button";
 import { FeatureChip } from "@/components/ui/feature-chip";
 import { Field, Input } from "@/components/ui/field";
@@ -14,10 +17,24 @@ import { toast } from "sonner";
 
 type Outcome = "win" | "pass";
 
-export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
+export function CheckInList({
+  quests,
+  notDueQuests = [],
+}: {
+  quests: DashboardQuest[];
+  notDueQuests?: DashboardQuest[];
+}) {
+  const highlightId = useSearchParams().get(highlightParam);
+  const highlightsNotDue = notDueQuests.some((quest) => quest.id === highlightId);
+  const [showNotDue, setShowNotDue] = useState(highlightsNotDue);
+  const [openedFor, setOpenedFor] = useState(highlightsNotDue ? highlightId : null);
+  if (highlightsNotDue && openedFor !== highlightId) {
+    setOpenedFor(highlightId);
+    setShowNotDue(true);
+  }
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>(() =>
     Object.fromEntries(
-      quests
+      [...quests, ...notDueQuests]
         .filter((quest) => quest.todayCheckIn)
         .map((quest) => [quest.id, quest.todayCheckIn?.outcome ?? "win"]),
     ),
@@ -32,16 +49,52 @@ export function CheckInList({ quests }: { quests: DashboardQuest[] }) {
   }, []);
 
   return (
-    <RowList>
-      {quests.map((quest) => (
-        <CheckInRow
-          key={quest.id}
-          activeOutcome={outcomes[quest.id] ?? null}
-          quest={quest}
-          setQuestOutcome={setQuestOutcome}
-        />
-      ))}
-    </RowList>
+    <div className="grid gap-4">
+      {quests.length > 0 ? (
+        <RowList>
+          {quests.map((quest) => (
+            <CheckInRow
+              key={quest.id}
+              activeOutcome={outcomes[quest.id] ?? null}
+              quest={quest}
+              setQuestOutcome={setQuestOutcome}
+            />
+          ))}
+        </RowList>
+      ) : (
+        <Notice>Nothing is due today. You can still check in on any habit below.</Notice>
+      )}
+      {notDueQuests.length > 0 ? (
+        <section aria-label="Not due today" className="grid gap-1">
+          <Button
+            variant="text"
+            size="sm"
+            aria-expanded={showNotDue}
+            className="-mx-3 justify-self-start"
+            onClick={() => setShowNotDue((open) => !open)}
+          >
+            Not due today ({notDueQuests.length})
+            <CaretDown
+              size={14}
+              aria-hidden
+              className={showNotDue ? "rotate-180 transition-transform duration-(--dur-1)" : "transition-transform duration-(--dur-1)"}
+            />
+          </Button>
+          {showNotDue ? (
+            <RowList>
+              {notDueQuests.map((quest) => (
+                <CheckInRow
+                  key={quest.id}
+                  activeOutcome={outcomes[quest.id] ?? null}
+                  quest={quest}
+                  setQuestOutcome={setQuestOutcome}
+                />
+              ))}
+            </RowList>
+          ) : null}
+        </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -95,14 +148,15 @@ function CheckInRow({
     });
   }
 
+  const weekProgress = quest.thisWeek ? `${quest.thisWeek.done} of ${quest.thisWeek.target} this week` : null;
   const status = !currentOutcome
-    ? "Not done yet today"
+    ? weekProgress ?? (quest.dueToday ? "Not done yet today" : `Not due today · ${quest.scheduleLabel}`)
     : currentOutcome === "win"
       ? "Done"
       : "Skipped";
 
   return (
-    <li className="grid gap-3 py-3.5">
+    <li className="grid gap-3 py-3.5" data-highlight-id={quest.id}>
       <div className="flex flex-wrap items-center gap-4">
         <FeatureChip feature="habits" />
         <div className="grid min-w-0 flex-1 gap-0.5">

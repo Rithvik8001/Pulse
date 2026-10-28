@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { scheduleInputSchema } from "@/lib/pulse/schedule-core";
+
 export const pulseCoachModel = "claude-haiku-5-5";
 
 export const pulseCoachToolNames = [
@@ -9,6 +11,7 @@ export const pulseCoachToolNames = [
   "proposeRestoreQuest",
   "proposeSaveCheckIn",
   "proposeSaveJournal",
+  "proposeUpdateQuestSchedule",
 ] as const;
 
 export const coachRecentProofLimit = 14;
@@ -20,6 +23,12 @@ export const coachActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("createQuest"),
     title: z.string().min(1).max(96),
+    schedule: scheduleInputSchema.optional(),
+  }),
+  z.object({
+    type: z.literal("updateQuestSchedule"),
+    questId: z.string().min(1),
+    schedule: scheduleInputSchema,
   }),
   z.object({
     type: z.literal("updateQuest"),
@@ -71,7 +80,12 @@ export type PulseCoachContext = {
     lastCheckInDate: string | null;
     currentStreak: number;
     longestStreak: number;
+    runUnit: "days" | "weeks";
     isAtRisk: boolean;
+    scheduleLabel: string;
+    dueToday: boolean;
+    thisWeek: { done: number; target: number } | null;
+    doneRate30d: number | null;
   }[];
   archivedQuests: {
     id: string;
@@ -187,7 +201,7 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
   }
 
   return [
-    "You are Pip, the friendly habit assistant inside Pulse. If the person asks who you are, say you are Pip. Pulse helps people check in on small daily habits and see who they are becoming. Your job is to reason over their actual habit data and help them choose one concrete next step.",
+    "You are Pip, the friendly habit assistant inside Pulse. If the person asks who you are, say you are Pip. Pulse helps people check in on small habits on the days they plan and see who they are becoming. Your job is to reason over their actual habit data and help them choose one concrete next step.",
     SHARED_LINE,
     "",
     "Behavior rules:",
@@ -202,7 +216,9 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
     "- It is okay to be lightly funny and conversational, but never sarcastic, dismissive, or distracting.",
     "- For recommendation answers, prefer this shape: a heading, a bold direct answer, 2 to 4 short supporting bullets, and one bold next action.",
     "",
-    "You can propose: add, rename, archive or restore a habit; check in on a habit as done or skipped; save a journal entry.",
+    "Schedules: a habit is due every day, on specific weekdays, or a number of times a week. Weeks start on Monday. Done rate counts only due days. For day schedules, the first missed due day each week is forgiven and does not break days in a row. Weekly habits count weeks in a row when the weekly target is met. A habit that is not due today is not behind.",
+    "",
+    "You can propose: add a habit (with a schedule), rename, archive or restore a habit, change a habit's schedule; check in on a habit as done or skipped; save a journal entry. When the person says things like three times a week or on weekdays, propose that schedule.",
     "You cannot edit or delete past check-ins, delete habits, or write weekly recaps. If asked, say where to do it: History for past check-ins, Review for the weekly recap. To delete a habit, they can select Start over and choose Change my habits.",
     "Private ids below are for tool calls only. User-facing replies must refer to habits by name, never by id.",
     "",
@@ -214,8 +230,11 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
       context.activeQuests.map((quest) => {
         const todayStatus = quest.todayOutcome
           ? `${quest.todayOutcome === "win" ? "done today" : "skipped today"}${quest.todayNote ? ` (${truncateCoachText(quest.todayNote)})` : ""}`
-          : "not checked in today";
-        return `${quest.title} [id:${quest.id}] - ${todayStatus}; last 30 days ${quest.wins30d} done, ${quest.passes30d} skipped; last check-in ${quest.lastCheckInDate ?? "none"}; ${quest.currentStreak} days in a row, longest ${quest.longestStreak}`;
+          : quest.dueToday
+            ? "due today, not checked in"
+            : "not due today";
+        const week = quest.thisWeek ? `; this week ${quest.thisWeek.done} of ${quest.thisWeek.target}` : "";
+        return `${quest.title} [id:${quest.id}] - schedule ${quest.scheduleLabel}; ${todayStatus}${week}; last 30 days ${quest.wins30d} done, ${quest.passes30d} skipped, done rate ${formatRate(quest.doneRate30d)}; last check-in ${quest.lastCheckInDate ?? "none"}; ${quest.currentStreak} ${quest.runUnit} in a row, longest ${quest.longestStreak}`;
       }),
     ),
     "",
@@ -233,7 +252,7 @@ export function buildPulseCoachSystemPrompt(rawContext: PulseCoachContext) {
       ? `Latest statement of who they are becoming: ${context.latestIdentitySnapshot.identityStatement} (as of ${context.latestIdentitySnapshot.periodEnd}).`
       : "Latest statement of who they are becoming: none yet.",
     context.momentum
-      ? `Consistency: ${context.momentum.score} of 100; longest run ${context.momentum.longestStreakEver} days in a row; ${context.momentum.atRiskCount} habits not checked in today.`
+      ? `Consistency: ${context.momentum.score} of 100; longest run ${context.momentum.longestStreakEver} in a row; ${context.momentum.atRiskCount} habits at risk of breaking their run today.`
       : "Consistency: no active habits yet.",
     "",
     "Suggestions:",
